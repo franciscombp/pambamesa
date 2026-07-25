@@ -15,8 +15,11 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 const SAVE_KEY = 'pambamesa_save_v2';
-const RARITY_LABEL = { semilla: 'Semilla', hallazgo: 'Hallazgo', receta: 'Receta' };
+/* nombres que ve el jugador (los ids internos 'semilla'/'hallazgo'
+   se quedan igual en el motor, solo cambia la etiqueta) */
+const RARITY_LABEL = { semilla: 'Ingrediente', hallazgo: 'Preparación', receta: 'Receta' };
 const RARITY_ORDER = ['semilla', 'hallazgo', 'receta'];
+const VERBO_LABEL = { pelar: 'Pelar', cocer: 'Cocinar', majar: 'Majar', freir: 'Freír', moler: 'Moler' };
 
 /* ---------- Economía de sobres ---------- */
 
@@ -25,15 +28,21 @@ const SOBRE_INTERVALO_MS = 3 * 60 * 60 * 1000; /* un sobre gratis cada 3h */
 const SOBRE_MAX_STASH = 3;                    /* tope de sobres guardados */
 const REGALOS_DIARIOS_MAX = 3;
 
-/* ---------- Granos: la moneda de la feria ---------- */
+/* ---------- Sucres: la moneda de la feria ---------- */
 /* se ganan cocinando (así el mercado nunca compite con el taller,
    lo alimenta); se gastan cuando la despensa se queda corta. */
-const GRANOS_POR_COCINAR = 1;
-const GRANOS_POR_RAREZA = { semilla: 3, hallazgo: 6, receta: 25 };
+const SUCRES_POR_COCINAR = 1;
+const SUCRES_POR_RAREZA = { semilla: 3, hallazgo: 6, receta: 25 };
 const MERCADO_COSTO_SEMILLA = 4;
 const MERCADO_COSTO_SOBRE = 20;
 const PREGON_COOLDOWN_MS = 20 * 60 * 1000;   /* cada 20 min hay pregón nuevo */
 const PREGON_RECOMPENSA = 15;
+
+/* racha diaria: recompensa creciente por volver cada día (7 días, luego se repite) */
+const RACHA_RECOMPENSAS = [5, 8, 12, 16, 20, 25, 40];
+/* combo de cocina: cocinar varias veces seguidas sin salir del taller da un extra */
+const COMBO_CADA = 3;
+const COMBO_BONO = 5;
 
 function regionesAbiertas() { return state.regionsUnlocked || ['costa']; }
 
@@ -70,8 +79,9 @@ function newState() {
     proximoSobreGratisEn: 0,
     regalosHechos: { fecha: '', usados: 0 },
     regalosCanjeados: [],
-    granos: 0,
+    sucres: 0,
     pregonProximoEn: 0,
+    racha: { dias: 0, ultimaFecha: '' },
     seenCover: false,
     starterOpened: false,
   };
@@ -185,7 +195,7 @@ function cardBackInner() {
 }
 function toolInner(id) {
   const t = UTENSILIOS.find(u => u.id === id);
-  return `<div class="carta-art">${iconOf(id)}</div><div class="carta-plate"><span class="carta-nombre">${t.name}</span><span class="carta-rareza">Herramienta</span></div>`;
+  return `<div class="carta-art">${iconOf(id)}</div><div class="carta-plate"><span class="carta-nombre">${t.name}</span><span class="carta-rareza">Utensilio</span></div>`;
 }
 
 /* en la mesa una carta deja de ser carta: se planta como un ingrediente
@@ -227,7 +237,7 @@ function regaloCard(id) {
   return card;
 }
 
-/* ---------- Mesa de fusión (Taller) ---------- */
+/* ---------- El fogón (Taller) ---------- */
 
 function renderTaller() {
   const a = $('#slot-a'), b = $('#slot-b');
@@ -236,9 +246,25 @@ function renderTaller() {
   b.innerHTML = slots[1] ? mesaItemInner(slots[1]) : slotEmptyHTML();
   b.className = 'carta-slot' + (slots[1] ? ' filled' : '');
   renderTallerAction();
-  renderTrays();
+  renderComboIndicador();
 }
 function slotEmptyHTML() { return '<span class="slot-plus" aria-hidden="true">+</span><span class="slot-txt">elige un ingrediente</span>'; }
+
+/* qué acciones rápidas puede hacer un solo ingrediente ya puesto en el
+   fogón (p. ej. "verde" solo, sin necesitar poner el cuchillo a mano):
+   busca fórmulas donde el otro lado es un utensilio que ya tienes */
+function accionesRapidasPara(id) {
+  const out = [];
+  RECETAS.forEach(r => {
+    if (r.a === id && isUtensilio(r.b) && hasTool(r.b)) out.push({ rec: r, tool: r.b });
+    else if (r.b === id && isUtensilio(r.a) && hasTool(r.a)) out.push({ rec: r, tool: r.a });
+  });
+  return out;
+}
+function ejecutarAccionRapida(accion) {
+  slots = [slots[0], accion.tool];
+  combinarMesa();
+}
 
 function renderTallerAction() {
   const zone = $('#taller-action'); zone.innerHTML = '';
@@ -250,30 +276,83 @@ function renderTallerAction() {
     zone.appendChild(combinar);
     const limpiar = document.createElement('button');
     limpiar.type = 'button'; limpiar.className = 'btn-ghost small';
-    limpiar.textContent = 'limpiar la mesa';
+    limpiar.textContent = 'limpiar el fogón';
     limpiar.addEventListener('click', clearSlots);
     zone.appendChild(limpiar);
-  } else {
-    zone.innerHTML = `<span class="taller-hint">${slots[0] || slots[1] ? 'Elige el segundo ingrediente…' : 'Toca dos ingredientes para probarlos juntos'}</span>`;
+    return;
   }
+  if (slots[0] && !isUtensilio(slots[0])) {
+    const rapidas = accionesRapidasPara(slots[0]);
+    if (rapidas.length) {
+      rapidas.forEach(accion => {
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'btn-leather combinar-btn quick-action-btn';
+        btn.textContent = `${VERBO_LABEL[accion.rec.verbo] || accion.rec.verbo} ✦`;
+        btn.addEventListener('click', () => ejecutarAccionRapida(accion));
+        zone.appendChild(btn);
+      });
+      const limpiar = document.createElement('button');
+      limpiar.type = 'button'; limpiar.className = 'btn-ghost small';
+      limpiar.textContent = 'quitar';
+      limpiar.addEventListener('click', clearSlots);
+      zone.appendChild(limpiar);
+      return;
+    }
+    zone.innerHTML = `<span class="taller-hint">Abre la refri o la canasta y añade el segundo ingrediente</span>`;
+    return;
+  }
+  zone.innerHTML = `<span class="taller-hint">Abre la canasta 🧺 y elige un ingrediente para empezar</span>`;
 }
 
-function renderTrays() {
-  const tools = $('#tray-tools'); tools.innerHTML = '';
-  UTENSILIOS.filter(t => regionesAbiertas().includes(t.region)).forEach(t => tools.appendChild(miniChip(t.id, { tool: true })));
+/* ---------- Despensa: canasta / refri / utensilios (se abren bajo pedido) ---------- */
 
-  const cartas = $('#tray-cartas'); cartas.innerHTML = '';
-  state.discovered.forEach(id => { if (CARTAS[id]) cartas.appendChild(miniChip(id)); });
+let despensaTipo = null;
+const DESPENSA_TITULO = { ingredientes: 'La canasta', refri: 'La refri', utensilios: 'Utensilios' };
+const DESPENSA_VACIO = {
+  ingredientes: 'Sin ingredientes por ahora — cómpralos o abre un sobre en la feria.',
+  refri: 'Nada preparado todavía. Empieza con un ingrediente de la canasta.',
+  utensilios: 'Sin utensilios listos — consíguelos en la feria.',
+};
+function abrirDespensa(tipo) {
+  despensaTipo = tipo;
+  $('#despensa-titulo').textContent = DESPENSA_TITULO[tipo];
+  renderDespensaGrid();
+  $('#modal-despensa').classList.add('open');
+  sfx('tab');
+}
+function cerrarDespensa() { $('#modal-despensa').classList.remove('open'); }
+function renderDespensaGrid() {
+  const grid = $('#despensa-grid'); grid.innerHTML = '';
+  let ids = [];
+  if (despensaTipo === 'ingredientes') ids = CARTA_ORDEN.filter(id => CARTAS[id].rarity === 'semilla' && regionesAbiertas().includes(CARTAS[id].region) && stockOf(id) > 0);
+  else if (despensaTipo === 'refri') ids = state.discovered.filter(id => CARTAS[id] && CARTAS[id].rarity === 'hallazgo' && stockOf(id) > 0);
+  else if (despensaTipo === 'utensilios') ids = UTENSILIOS.filter(u => regionesAbiertas().includes(u.region) && hasTool(u.id)).map(u => u.id);
+
+  if (!ids.length) { grid.appendChild(el('p', 'despensa-vacio', DESPENSA_VACIO[despensaTipo])); return; }
+  ids.forEach(id => {
+    const chip = miniChip(id, { tool: despensaTipo === 'utensilios' });
+    chip.addEventListener('click', cerrarDespensa);
+    grid.appendChild(chip);
+  });
 }
 
 function tryPlace(id) {
   const i = slots[0] === null ? 0 : (slots[1] === null ? 1 : null);
-  if (i === null) { toast('La mesa ya tiene dos cartas. Combínalas o límpiala.'); return; }
+  if (i === null) { toast('El fogón ya tiene dos cosas. Combínalas o límpialo.'); return; }
   slots[i] = id;
   sfx('tab'); buzz(10);
   renderTaller();
 }
 function clearSlots() { slots = [null, null]; renderTaller(); }
+
+/* combo de cocina: cocinar seguido sin salir del taller da un extra;
+   se reinicia cada vez que entras de nuevo a la pantalla */
+let comboCocina = 0;
+function renderComboIndicador() {
+  const badge = $('#combo-indicador');
+  if (comboCocina > 1) { badge.textContent = `🔥 x${comboCocina}`; badge.classList.remove('hidden'); }
+  else badge.classList.add('hidden');
+}
 
 function findReceta(x, y) {
   return RECETAS.find(r => (r.a === x && r.b === y) || (r.a === y && r.b === x)) || null;
@@ -282,7 +361,7 @@ function combinarMesa() {
   const [x, y] = slots;
   if (!x || !y) return;
   const r = findReceta(x, y);
-  const surface = $('#mesa-fusion');
+  const surface = $('#fogon');
   if (!r) {
     surface.classList.remove('shake'); void surface.offsetWidth; surface.classList.add('shake');
     sfx('fail'); buzz(60);
@@ -297,12 +376,14 @@ function combinarMesa() {
   isUtensilio(y) ? useTool(y) : addStock(y, -1);
   const isNew = discoverCard(r.result);
   addStock(r.result, 1);
-  const granos = GRANOS_POR_COCINAR + (isNew ? (GRANOS_POR_RAREZA[CARTAS[r.result].rarity] || 0) : 0);
-  state.granos = (state.granos || 0) + granos;
+  comboCocina += 1;
+  const comboBono = (comboCocina % COMBO_CADA === 0) ? COMBO_BONO : 0;
+  const sucres = SUCRES_POR_COCINAR + (isNew ? (SUCRES_POR_RAREZA[CARTAS[r.result].rarity] || 0) : 0) + comboBono;
+  state.sucres = (state.sucres || 0) + sucres;
   revisarDesbloqueoRegiones();
   save();
   clearSlots();
-  showRevealQueue([{ id: r.result, tool: false, isNew, granos }], { finalLabel: 'Guardar en el álbum' });
+  showRevealQueue([{ id: r.result, tool: false, isNew, sucres, combo: comboBono ? comboCocina : 0 }], { finalLabel: 'Guardar en el álbum' });
 }
 
 /* ============================================================
@@ -371,8 +452,9 @@ function revealFlip() {
   const especial = item.isNew || revealIsGift;
   let msg = revealIsGift ? '¡Te compartieron esta carta! 🎁'
     : item.isNew ? '¡Nueva carta para tu álbum!' : `+1 ${nombre}`;
-  if (item.granos) msg += ` · +${item.granos} 🌽`;
-  $('#reveal-banner').textContent = msg;
+  if (item.sucres) msg += ` · +${item.sucres} <span class="icono-sucre">S</span>`;
+  if (item.combo) msg += ` · 🔥 Racha de cocina x${item.combo}`;
+  $('#reveal-banner').innerHTML = msg;
   $('#reveal-banner').classList.add('visible');
   $('#reveal-banner').classList.toggle('is-new', especial);
   $('#reveal-hint').classList.add('hidden');
@@ -380,6 +462,7 @@ function revealFlip() {
   sfx(especial ? 'win' : 'flip');
   buzz(especial ? [30, 40, 60] : 15);
   if (especial && !item.tool && CARTAS[item.id].rarity === 'receta') burstConfetti($('#reveal-front'));
+  if (item.combo) burstConfetti($('#reveal-front'));
 }
 function revealAdvance() {
   if (!revealCurrent) return;
@@ -507,9 +590,9 @@ function renderProgress() {
   const got = state.discovered.filter(id => CARTAS[id]).length;
   $$('.progress-count').forEach(n => n.textContent = `${got} / ${total}`);
   $$('.progress-fill').forEach(n => n.style.width = (total ? (got / total * 100) : 0) + '%');
-  renderGranos();
+  renderSucres();
 }
-function renderGranos() { $$('.hud-granos-count').forEach(n => n.textContent = state.granos || 0); }
+function renderSucres() { $$('.hud-sucres-count').forEach(n => n.textContent = state.sucres || 0); }
 
 function showDetalle(id) {
   const c = CARTAS[id];
@@ -637,36 +720,36 @@ function renderFeria() {
   else disponibles.forEach(id => grid.appendChild(regaloCard(id)));
 }
 
-/* ---------- El mercado: cambia granos (ganados al cocinar) por despensa ---------- */
+/* ---------- El mercado: cambia sucres (ganados al cocinar) por despensa ---------- */
 
 function mercadoChip(id) {
   const c = CARTAS[id];
   const costo = MERCADO_COSTO_SEMILLA;
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'carta-mini rarity-' + c.rarity + ' mercado-chip' + ((state.granos || 0) < costo ? ' agotado' : '');
-  btn.innerHTML = `<span class="mini-cant">${stockOf(id)}</span><span class="mini-icon">${iconOf(id)}</span><span class="mini-name">${c.name}</span><span class="mini-costo">${costo} 🌽</span>`;
+  btn.className = 'carta-mini rarity-' + c.rarity + ' mercado-chip' + ((state.sucres || 0) < costo ? ' agotado' : '');
+  btn.innerHTML = `<span class="mini-cant">${stockOf(id)}</span><span class="mini-icon">${iconOf(id)}</span><span class="mini-name">${c.name}</span><span class="mini-costo">${costo} <span class="icono-sucre">S</span></span>`;
   btn.addEventListener('click', () => comprarSemilla(id, costo));
   return btn;
 }
 function comprarSemilla(id, costo) {
-  if ((state.granos || 0) < costo) { toast('No te alcanzan los granos. Cocina algo o escucha el pregón 📣'); return; }
-  state.granos -= costo;
+  if ((state.sucres || 0) < costo) { toast('No te alcanzan los sucres. Cocina algo o escucha el pregón 📣'); return; }
+  state.sucres -= costo;
   addStock(id, 1);
   save(); sfx('win'); buzz(15);
   toast(`+1 ${CARTAS[id].name}`);
   renderFeria();
   if (currentScreen === 'taller') renderTaller();
-  renderGranos();
+  renderSucres();
 }
-function comprarSobreConGranos() {
+function comprarSobreConSucres() {
   if (state.sobres >= SOBRE_MAX_STASH) { toast('Tu bolsa de sobres está llena.'); return; }
-  if ((state.granos || 0) < MERCADO_COSTO_SOBRE) { toast('Te faltan granos para un sobre.'); return; }
-  state.granos -= MERCADO_COSTO_SOBRE;
+  if ((state.sucres || 0) < MERCADO_COSTO_SOBRE) { toast('Te faltan sucres para un sobre.'); return; }
+  state.sucres -= MERCADO_COSTO_SOBRE;
   state.sobres += 1;
   save(); sfx('win'); buzz([20, 30, 20]);
   toast('¡Sobre nuevo en tu bolsa!');
-  renderFeria(); renderGranos();
+  renderFeria(); renderSucres();
 }
 function escucharPregon() {
   const rest = Math.max(0, (state.pregonProximoEn || 0) - Date.now());
@@ -675,12 +758,12 @@ function escucharPregon() {
   btn.disabled = true; btn.textContent = '📣 Escuchando…';
   sfx('tab');
   setTimeout(() => {
-    state.granos = (state.granos || 0) + PREGON_RECOMPENSA;
+    state.sucres = (state.sucres || 0) + PREGON_RECOMPENSA;
     state.pregonProximoEn = Date.now() + PREGON_COOLDOWN_MS;
     save();
     sfx('win'); buzz([30, 40, 60]);
-    toast(`¡+${PREGON_RECOMPENSA} 🌽 de propina!`);
-    renderFeria(); renderGranos();
+    toast(`¡+${PREGON_RECOMPENSA} sucres de propina!`);
+    renderFeria(); renderSucres();
   }, 3200);
 }
 function renderMercado() {
@@ -688,13 +771,53 @@ function renderMercado() {
   GAME_DATA.ingredientes.filter(i => regionesAbiertas().includes(i.region)).forEach(i => grid.appendChild(mercadoChip(i.id)));
 
   const sobreBtn = $('#mercado-sobre-btn');
-  sobreBtn.disabled = (state.granos || 0) < MERCADO_COSTO_SOBRE || state.sobres >= SOBRE_MAX_STASH;
+  sobreBtn.disabled = (state.sucres || 0) < MERCADO_COSTO_SOBRE || state.sobres >= SOBRE_MAX_STASH;
 
   const rest = Math.max(0, (state.pregonProximoEn || 0) - Date.now());
   const pregonBtn = $('#pregon-btn');
   if (rest <= 0) pregonBtn.textContent = '📣 Escuchar el pregón';
   pregonBtn.disabled = rest > 0;
-  $('#pregon-timer').textContent = rest > 0 ? `El pregonero vuelve en ${formatDuracion(rest)}` : `Escúchalo y gana ${PREGON_RECOMPENSA} 🌽 de propina`;
+  $('#pregon-timer').innerHTML = rest > 0 ? `El pregonero vuelve en ${formatDuracion(rest)}` : `Escúchalo y gana ${PREGON_RECOMPENSA} <span class="icono-sucre">S</span> de propina`;
+}
+
+/* ---------- Racha diaria: recompensa creciente por volver cada día ---------- */
+
+let rachaPendiente = false;
+function revisarRachaDiaria() {
+  const hoy = hoyISO();
+  if (!state.racha) state.racha = { dias: 0, ultimaFecha: '' };
+  if (state.racha.ultimaFecha === hoy) { rachaPendiente = false; return; }
+  if (!state.racha.ultimaFecha) {
+    /* primera vez que abre el cuaderno: arranca la racha sin modal,
+       para no saturar el onboarding con otro premio más */
+    state.racha = { dias: 1, ultimaFecha: hoy };
+    save();
+    return;
+  }
+  const ayer = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  state.racha.diasCandidato = state.racha.ultimaFecha === ayer ? state.racha.dias + 1 : 1;
+  rachaPendiente = true;
+}
+function mostrarModalRacha() {
+  const dias = state.racha.diasCandidato || 1;
+  const recompensa = RACHA_RECOMPENSAS[(dias - 1) % RACHA_RECOMPENSAS.length];
+  $('#racha-dias').textContent = dias;
+  $('#racha-recompensa').innerHTML = `+${recompensa} <span class="icono-sucre">S</span>`;
+  $('#modal-racha').classList.add('open');
+  sfx('peel');
+}
+function reclamarRacha() {
+  const dias = state.racha.diasCandidato || 1;
+  const recompensa = RACHA_RECOMPENSAS[(dias - 1) % RACHA_RECOMPENSAS.length];
+  state.sucres = (state.sucres || 0) + recompensa;
+  state.racha.dias = dias;
+  state.racha.ultimaFecha = hoyISO();
+  rachaPendiente = false;
+  save();
+  $('#modal-racha').classList.remove('open');
+  sfx('win'); buzz([30, 40, 60]);
+  toast(`¡+${recompensa} sucres de racha!`);
+  renderSucres();
 }
 
 /* ---------- El sobre de bienvenida ---------- */
@@ -714,12 +837,17 @@ function abrirSobreInicial() {
 /* ---------- Navegación ---------- */
 
 function show(screen) {
+  const prev = currentScreen;
   currentScreen = screen;
   ['cover', 'taller', 'coleccion', 'feria'].forEach(s => $('#screen-' + s).classList.toggle('active', s === screen));
   $('#hud').classList.toggle('hidden', screen === 'cover');
   $('#tabs').classList.toggle('hidden', screen === 'cover');
   $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === screen));
-  if (screen === 'taller') renderTaller();
+  if (screen === 'taller') {
+    if (prev !== 'taller') comboCocina = 0;
+    renderTaller();
+    if (state.starterOpened && rachaPendiente) mostrarModalRacha();
+  }
   if (screen === 'coleccion') renderColeccion();
   if (screen === 'feria') renderFeria();
   renderProgress();
@@ -737,8 +865,16 @@ function bindEvents() {
   $$('.tab-btn').forEach(b => b.addEventListener('click', () => { sfx('tab'); show(b.dataset.tab); }));
 
   $('#feria-abrir-btn').addEventListener('click', () => { initAudio(); abrirSobre(); });
-  $('#mercado-sobre-btn').addEventListener('click', () => { initAudio(); comprarSobreConGranos(); });
+  $('#mercado-sobre-btn').addEventListener('click', () => { initAudio(); comprarSobreConSucres(); });
   $('#pregon-btn').addEventListener('click', () => { initAudio(); escucharPregon(); });
+
+  $('#acceso-canasta').addEventListener('click', () => abrirDespensa('ingredientes'));
+  $('#acceso-refri').addEventListener('click', () => abrirDespensa('refri'));
+  $('#acceso-utensilios').addEventListener('click', () => abrirDespensa('utensilios'));
+  $('#despensa-close').addEventListener('click', cerrarDespensa);
+  $('#modal-despensa').addEventListener('click', (e) => { if (e.target === $('#modal-despensa')) cerrarDespensa(); });
+
+  $('#racha-reclamar-btn').addEventListener('click', reclamarRacha);
 
   $('#reveal-ok').addEventListener('click', revealAdvance);
   $('#modal-reveal').addEventListener('click', (e) => { if (e.target === $('#modal-reveal')) revealSkipAll(); });
@@ -755,12 +891,14 @@ function bindEvents() {
     if ($('#modal-reveal').classList.contains('open')) revealSkipAll();
     $('#modal-detalle').classList.remove('open');
     $('#modal-pista').classList.remove('open');
+    cerrarDespensa();
   });
 }
 
 function init() {
   state = load() || newState();
   $$('[data-icon]').forEach(n => { n.innerHTML = iconOf(n.dataset.icon); });
+  revisarRachaDiaria();
   bindEvents();
   show(state.seenCover ? 'taller' : 'cover');
   intentarCanjearRegalo();

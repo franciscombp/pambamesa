@@ -27,8 +27,8 @@
       <span class="progress-count hud-count"></span>
       <div class="hud-bar"><span class="progress-fill hud-bar-fill"></span></div>
     </div>
-    <div class="hud-granos" aria-label="Granos">
-      <span class="hud-granos-ic" aria-hidden="true">🌽</span><span class="hud-granos-count">0</span>
+    <div class="hud-sucres" aria-label="Sucres">
+      <span class="hud-sucres-ic icono-sucre" aria-hidden="true">S</span><span class="hud-sucres-count">0</span>
     </div>
   </header>
 
@@ -43,27 +43,33 @@
         <div class="cover-peek" aria-hidden="true">
           <span data-icon="verde"></span><span data-icon="bolon"></span><span data-icon="tigrillo"></span>
         </div>
-        <p class="cover-quote">Una gran pambamesa se sirve entre todos: cada quien trae lo suyo a la mesa. Abre tu primer sobre —semillas y las herramientas de la abuela— y combínalas para descubrir hallazgos y recetas nuevas. Empiezas en la Costa; completa su colección y el cuaderno se abre hacia otras regiones.</p>
+        <p class="cover-quote">Una gran pambamesa se sirve entre todos: cada quien trae lo suyo a la mesa. Abre tu primera canasta —ingredientes y los utensilios de la abuela— y cocínalos en el fogón para descubrir preparaciones y recetas nuevas. Empiezas en la Costa; completa su colección y el cuaderno se abre hacia otras regiones.</p>
         <button type="button" id="btn-abrir" class="btn-leather wide">Abrir el cuaderno</button>
       </div>
     </div>
   </main>
 
-  <!-- ================= Taller: la mesa de fusión ================= -->
+  <!-- ================= Taller: el fogón ================= -->
   <main id="screen-taller" class="screen">
     <div class="taller-wrap">
-      <div id="mesa-fusion" class="mesa-fusion">
-        <button type="button" id="slot-a" class="carta-slot" aria-label="Primera carta"></button>
+      <div id="fogon" class="fogon">
+        <span id="combo-indicador" class="combo-indicador hidden"></span>
+        <button type="button" id="slot-a" class="carta-slot" aria-label="Primer ingrediente"></button>
         <span class="fusion-plus" aria-hidden="true">+</span>
-        <button type="button" id="slot-b" class="carta-slot" aria-label="Segunda carta"></button>
+        <button type="button" id="slot-b" class="carta-slot" aria-label="Segundo ingrediente"></button>
       </div>
       <div id="taller-action" class="taller-action"></div>
 
-      <div class="tray-wrap">
-        <h3 class="tray-title">Herramientas</h3>
-        <div id="tray-tools" class="tray tray-tools"></div>
-        <h3 class="tray-title">Tus cartas</h3>
-        <div id="tray-cartas" class="tray tray-cartas"></div>
+      <div class="despensa-accesos">
+        <button type="button" id="acceso-canasta" class="acceso-btn">
+          <span class="acceso-ic" aria-hidden="true">🧺</span><span class="acceso-txt">Canasta</span>
+        </button>
+        <button type="button" id="acceso-refri" class="acceso-btn">
+          <span class="acceso-ic" aria-hidden="true">🧊</span><span class="acceso-txt">Refri</span>
+        </button>
+        <button type="button" id="acceso-utensilios" class="acceso-btn">
+          <span class="acceso-ic" aria-hidden="true">🔪</span><span class="acceso-txt">Utensilios</span>
+        </button>
       </div>
     </div>
   </main>
@@ -99,10 +105,10 @@
 
       <section class="mercado-section">
         <h3 class="mercado-title">El mercado</h3>
-        <p class="mercado-blurb">Cocinar en el taller te da <strong>granos</strong> 🌽. Cámbialos aquí si te quedaste sin ingredientes.</p>
+        <p class="mercado-blurb">Cocinar en el fogón te da <strong>sucres</strong> <span class="icono-sucre">S</span>. Cámbialos aquí si te quedaste sin ingredientes.</p>
         <div id="mercado-semillas" class="mercado-grid"></div>
         <div class="mercado-acciones">
-          <button type="button" id="mercado-sobre-btn" class="btn-ghost">Comprar sobre · 20 🌽</button>
+          <button type="button" id="mercado-sobre-btn" class="btn-ghost">Comprar sobre · 20 <span class="icono-sucre">S</span></button>
           <button type="button" id="pregon-btn" class="btn-ghost">📣 Escuchar el pregón</button>
         </div>
         <p id="pregon-timer" class="pregon-timer"></p>
@@ -162,6 +168,26 @@
       <p class="pista-label">el cuaderno murmura…</p>
       <p id="pista-texto" class="pista-texto"></p>
       <button type="button" id="pista-close" class="btn-ghost wide">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Modal: la despensa bajo pedido (canasta / refri / utensilios) -->
+  <div id="modal-despensa" class="modal" role="dialog" aria-modal="true">
+    <div class="despensa-panel">
+      <h3 id="despensa-titulo" class="despensa-titulo"></h3>
+      <div id="despensa-grid" class="despensa-grid"></div>
+      <button type="button" id="despensa-close" class="btn-ghost wide">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Modal: racha diaria -->
+  <div id="modal-racha" class="modal" role="dialog" aria-modal="true">
+    <div class="detalle-panel racha-panel">
+      <span class="racha-ic" aria-hidden="true">🔥</span>
+      <h3 class="racha-titulo">Racha de <span id="racha-dias">1</span> día(s)</h3>
+      <p class="racha-sub">Volviste a tu cuaderno de viaje</p>
+      <p id="racha-recompensa" class="racha-recompensa"></p>
+      <button type="button" id="racha-reclamar-btn" class="btn-leather wide">Reclamar</button>
     </div>
   </div>
 

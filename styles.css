@@ -142,14 +142,24 @@ svg { display: block; width: 100%; height: 100%; }
   display: flex; align-items: center; gap: .6rem;
 }
 .hud-progress { flex: 1; display: flex; align-items: center; gap: .6rem; }
-.hud-granos {
+.hud-sucres {
   flex-shrink: 0; display: flex; align-items: center; gap: .3rem;
   font-weight: 700; font-size: .96rem; color: var(--ink); white-space: nowrap;
   background: rgba(255,250,235,.75); border: 1px solid var(--line); border-radius: 999px;
   padding: .18rem .65rem .18rem .5rem;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
 }
-.hud-granos-ic { font-size: 1rem; }
+.hud-sucres-ic { font-size: 1rem; }
+
+/* la moneda: una monedita de latón grabada con una "S" de sucre */
+.icono-sucre {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.15em; height: 1.15em; border-radius: 50%;
+  background: conic-gradient(from 210deg, var(--brass), var(--brass-d), var(--brass));
+  color: #3a2b12; font-weight: 800; font-size: .74em; line-height: 1; font-family: var(--serif);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 1px 2px rgba(0,0,0,.35);
+  vertical-align: -0.15em;
+}
 .hud-count {
   font-weight: 700; font-size: 1rem; color: var(--ink); white-space: nowrap;
   background: rgba(255,250,235,.75); border: 1px solid var(--line); border-radius: 999px;
@@ -213,7 +223,7 @@ svg { display: block; width: 100%; height: 100%; }
 .cover-book .btn-leather { max-width: 320px; background: linear-gradient(180deg, var(--brass), var(--brass-d)); color: #3a2b12; text-shadow: 0 1px 0 rgba(255,255,255,.25); }
 
 /* ============================================================
-   TALLER — la mesa de fusión
+   TALLER — el fogón
    ============================================================ */
 
 .taller-wrap {
@@ -223,7 +233,8 @@ svg { display: block; width: 100%; height: 100%; }
   min-height: 100vh; min-height: 100dvh;
 }
 
-.mesa-fusion {
+.fogon {
+  position: relative;
   flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: .9rem;
   padding: 1.6rem .8rem; margin-top: .4rem;
   background:
@@ -234,9 +245,18 @@ svg { display: block; width: 100%; height: 100%; }
   border-radius: 20px;
   box-shadow: inset 0 2px 8px rgba(58,47,34,.25), 0 16px 32px -18px rgba(0,0,0,.5);
 }
-.mesa-fusion.shake { animation: mesa-shake .4s ease; }
+.fogon.shake { animation: mesa-shake .4s ease; }
 @keyframes mesa-shake { 25% { transform: translateX(-7px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
 .fusion-plus { font-size: 1.9rem; color: var(--ink-soft); opacity: .7; }
+.combo-indicador {
+  position: absolute; top: -.6rem; right: 1rem; z-index: 2;
+  font-size: .92rem; font-weight: 700; color: #fff;
+  background: linear-gradient(180deg, #e0703f, #b8502a);
+  border-radius: 999px; padding: .2rem .6rem;
+  box-shadow: 0 3px 8px rgba(0,0,0,.4);
+  animation: combo-pop .3s cubic-bezier(.3, 1.6, .4, 1) both;
+}
+@keyframes combo-pop { from { transform: scale(.5); opacity: 0; } }
 
 .carta-slot {
   width: clamp(108px, 30vw, 136px); aspect-ratio: 5 / 7;
@@ -270,15 +290,24 @@ svg { display: block; width: 100%; height: 100%; }
 
 .taller-action { min-height: 3.6rem; display: flex; align-items: center; justify-content: center; gap: .6rem; flex-wrap: wrap; }
 .combinar-btn { font-size: 1.18rem; padding: .85rem 2rem; }
-.taller-hint { font-family: var(--hand); font-size: 1.35rem; color: var(--ink-soft); }
+.quick-action-btn { background: linear-gradient(180deg, var(--hallazgo), var(--hallazgo-d)); }
+.taller-hint { font-family: var(--hand); font-size: 1.35rem; color: var(--ink-soft); text-align: center; }
 
-.tray-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .3rem; }
-.tray-title {
-  font-size: .72rem; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
-  color: var(--ink-soft); margin-top: .5rem;
+/* accesos a la despensa: se abren bajo pedido, la mesa queda despejada */
+.despensa-accesos { flex: 1; display: flex; align-items: flex-start; justify-content: center; gap: .8rem; padding-top: .4rem; }
+.acceso-btn {
+  display: flex; flex-direction: column; align-items: center; gap: .35rem;
+  padding: 1rem .6rem;
+  background: linear-gradient(180deg, #fffaee, var(--parchment));
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  box-shadow: 0 3px 10px -5px rgba(58,47,34,.35);
+  transition: transform .12s ease;
+  flex: 1; max-width: 130px;
 }
-.tray { display: flex; gap: .5rem; overflow-x: auto; padding: .3rem .1rem .5rem; -webkit-overflow-scrolling: touch; }
-.tray::-webkit-scrollbar { height: 0; }
+.acceso-btn:active { transform: scale(.95); }
+.acceso-ic { font-size: 1.9rem; }
+.acceso-txt { font-size: .82rem; font-weight: 600; color: var(--ink); }
 
 .carta-mini {
   position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem;
@@ -586,7 +615,7 @@ svg { display: block; width: 100%; height: 100%; }
 }
 .banner .banner-txt { min-width: 0; }
 
-.detalle-panel, .pista-panel {
+.detalle-panel, .pista-panel, .despensa-panel {
   width: 100%; max-width: 340px; text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: .6rem;
   background: linear-gradient(180deg, #fbf3dc, var(--parchment));
@@ -606,6 +635,22 @@ svg { display: block; width: 100%; height: 100%; }
 .pista-carta { width: 120px; margin-bottom: .2rem; pointer-events: none; }
 .pista-label { font-size: .74rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); }
 .pista-texto { font-family: var(--hand); font-size: 1.5rem; line-height: 1.3; color: var(--ink); margin-bottom: .4rem; }
+
+/* la despensa bajo pedido: canasta / refri / utensilios */
+.despensa-panel { max-width: 400px; }
+.despensa-titulo { font-size: 1.4rem; font-weight: 700; color: var(--leather); }
+.despensa-grid {
+  display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center;
+  max-height: 50vh; overflow-y: auto; padding: .3rem;
+}
+.despensa-vacio { font-size: .96rem; color: var(--ink-soft); font-style: italic; padding: 1rem; }
+
+/* racha diaria: un premio pequeño por volver */
+.racha-panel { max-width: 300px; }
+.racha-ic { font-size: 2.6rem; }
+.racha-titulo { font-size: 1.4rem; font-weight: 700; color: var(--ink); }
+.racha-sub { font-size: .92rem; color: var(--ink-soft); }
+.racha-recompensa { font-family: var(--hand); font-size: 1.9rem; color: var(--receta-d); margin: .2rem 0; }
 
 /* ============================================================
    TOAST
@@ -631,7 +676,7 @@ svg { display: block; width: 100%; height: 100%; }
 @media (max-height: 700px) {
   html { font-size: 16px; }
   .carta-slot, .carta { width: clamp(92px, 26vw, 116px); }
-  .mesa-fusion { padding: 1.1rem .6rem; }
+  .fogon { padding: 1.1rem .6rem; }
 }
 
 @media (min-width: 640px) {
