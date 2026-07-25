@@ -40,7 +40,7 @@
         <div class="cover-peek" aria-hidden="true">
           <span data-icon="verde"></span><span data-icon="bolon"></span><span data-icon="tigrillo"></span>
         </div>
-        <p class="cover-quote">Una gran pambamesa se sirve entre todos: cada quien trae lo suyo a la mesa. Abre tu primer sobre —semillas y las herramientas de la abuela— y combínalas para descubrir hallazgos y recetas nuevas. Cuando se te acaben, la feria siempre tiene otro sobre… o un vecino generoso.</p>
+        <p class="cover-quote">Una gran pambamesa se sirve entre todos: cada quien trae lo suyo a la mesa. Abre tu primer sobre —semillas y las herramientas de la abuela— y combínalas para descubrir hallazgos y recetas nuevas. Empiezas en la Costa; completa su colección y el cuaderno se abre hacia otras regiones.</p>
         <button type="button" id="btn-abrir" class="btn-leather wide">Abrir el cuaderno</button>
       </div>
     </div>
@@ -109,12 +109,22 @@
     <button type="button" class="tab-btn" data-tab="feria"><span class="tab-ic" data-icon="tab_mercado"></span>Feria</button>
   </nav>
 
-  <!-- Modal: revelación (apertura de carta) -->
+  <!-- Modal: revelación (apertura de carta, giro 3D + swipe) -->
   <div id="modal-reveal" class="modal reveal-modal" role="dialog" aria-modal="true">
     <div class="reveal-wrap">
-      <div id="reveal-card" class="carta"></div>
+      <div id="reveal-stage" class="reveal-stage">
+        <div id="reveal-flip" class="carta-flip">
+          <div class="carta-face carta-face-back">
+            <div id="reveal-back" class="carta back"><div class="carta-textura"></div><span class="carta-interrogante">?</span></div>
+          </div>
+          <div class="carta-face carta-face-front">
+            <div id="reveal-front" class="carta"></div>
+          </div>
+        </div>
+      </div>
+      <p id="reveal-hint" class="reveal-hint hand">↑ desliza para revelar</p>
       <p id="reveal-banner" class="reveal-banner"></p>
-      <button type="button" id="reveal-ok" class="btn-leather wide">Guardar en el álbum</button>
+      <button type="button" id="reveal-ok" class="btn-leather wide">Revelar</button>
     </div>
   </div>
 
@@ -141,6 +151,7 @@
     </div>
   </div>
 
+  <div id="banner" class="banner" role="status" aria-live="polite"></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 </div>

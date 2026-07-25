@@ -6,6 +6,9 @@
    - state.discovered  → tu ÁLBUM. Permanente. Nunca se pierde.
    - state.stock/tools → tu DESPENSA. Se gasta al combinar y se
      repone abriendo sobres (o con un regalo de alguien más).
+   - state.regionsUnlocked → qué colecciones (Costa, Sierra…) ya
+     se abrieron. Completar los platos de una región abre la
+     siguiente, con su propio sobre de bienvenida.
    ============================================================ */
 
 const $ = (sel) => document.querySelector(sel);
@@ -22,25 +25,27 @@ const SOBRE_INTERVALO_MS = 3 * 60 * 60 * 1000; /* un sobre gratis cada 3h */
 const SOBRE_MAX_STASH = 3;                    /* tope de sobres guardados */
 const REGALOS_DIARIOS_MAX = 3;
 
-const SOBRE_INICIAL = [
-  { id: 'verde', n: 3 }, { id: 'queso', n: 2 }, { id: 'huevo', n: 1 }, { id: 'cerdo', n: 1 },
-];
-const HERRAMIENTAS_INICIALES = ['cuchillo', 'olla', 'pilon', 'sarten'];
+function regionesAbiertas() { return state.regionsUnlocked || ['costa']; }
 
 function tablaDeSobre() {
+  const abiertas = regionesAbiertas();
+  const semillas = GAME_DATA.ingredientes.filter(i => abiertas.includes(i.region)).map(i => i.id);
+  const hallazgos = CARTA_ORDEN.filter(id => CARTAS[id].rarity === 'hallazgo' && abiertas.includes(CARTAS[id].region));
+  const recetas = CARTA_ORDEN.filter(id => CARTAS[id].rarity === 'receta' && abiertas.includes(CARTAS[id].region));
+  const herramientas = UTENSILIOS.filter(u => abiertas.includes(u.region)).map(u => u.id);
   return [
-    { peso: 45, tipo: 'semilla',    pool: GAME_DATA.ingredientes.map(i => i.id) },
-    { peso: 25, tipo: 'herramienta', pool: UTENSILIOS.map(u => u.id) },
-    { peso: 22, tipo: 'hallazgo',   pool: GAME_DATA.resultados.map(r => r.id) },
-    { peso: 8,  tipo: 'receta',     pool: GAME_DATA.recetas.map(r => r.plato) },
-  ];
+    { peso: 45, tipo: 'semilla',    pool: semillas },
+    { peso: 25, tipo: 'herramienta', pool: herramientas },
+    { peso: 22, tipo: 'hallazgo',   pool: hallazgos },
+    { peso: 8,  tipo: 'receta',     pool: recetas },
+  ].filter(t => t.pool.length);
 }
 function sacarCarta() {
   const tabla = tablaDeSobre();
   const total = tabla.reduce((s, t) => s + t.peso, 0);
   let r = Math.random() * total;
   for (const t of tabla) { r -= t.peso; if (r <= 0) return { tipo: t.tipo, id: t.pool[Math.floor(Math.random() * t.pool.length)] }; }
-  return { tipo: 'semilla', id: tabla[0].pool[0] };
+  return { tipo: tabla[0].tipo, id: tabla[0].pool[0] };
 }
 
 /* ---------- Estado ---------- */
@@ -50,6 +55,7 @@ function newState() {
     discovered: [],           /* álbum: permanente */
     stock: {},                /* despensa: copias que tienes ahora */
     tools: {},                /* {id: usos restantes} */
+    regionsUnlocked: ['costa'],
     sobres: 0,
     proximoSobreGratisEn: 0,
     regalosHechos: { fecha: '', usados: 0 },
@@ -63,8 +69,7 @@ function load() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (!s) return null;
-    /* completa campos si vienen de un guardado anterior */
-    return Object.assign(newState(), s);
+    return Object.assign(newState(), s);   /* completa campos si vienen de un guardado anterior */
   } catch (e) { return null; }
 }
 
@@ -82,6 +87,26 @@ const hasTool = (id) => toolUses(id) > 0;
 function grantTool(id) { state.tools[id] = DURABILIDAD_HERRAMIENTA[id]; }
 function useTool(id) { state.tools[id] = Math.max(0, toolUses(id) - 1); }
 
+/* ---------- Regiones: desbloqueo progresivo ---------- */
+
+let pendingRegionUnlock = null;
+function revisarDesbloqueoRegiones() {
+  for (const rid of REGION_ORDEN) {
+    const r = REGIONES[rid];
+    if (!r.desbloqueo_recetas || regionesAbiertas().includes(rid)) continue;
+    if (r.desbloqueo_recetas.every(plato => state.discovered.includes(plato))) { pendingRegionUnlock = rid; return; }
+  }
+}
+function iniciarSobreDeRegion(rid) {
+  const r = REGIONES[rid];
+  if (!state.regionsUnlocked.includes(rid)) state.regionsUnlocked.push(rid);
+  const items = [];
+  r.kitHerramientas.forEach(id => { const isNew = !hasTool(id); grantTool(id); items.push({ id, tool: true, isNew }); });
+  r.kitSemillas.forEach(x => { addStock(x.id, x.n); items.push({ id: x.id, tool: false, isNew: discoverCard(x.id) }); });
+  save();
+  showRevealQueue(items, { finalLabel: `¡A explorar ${r.nombre}! ✦`, finalCb: () => banner(`Se abrió ${r.nombre}`, '🗺') });
+}
+
 /* ---------- Juice mínimo: sonido y vibración ---------- */
 
 let audioCtx = null;
@@ -94,6 +119,7 @@ const SFX = {
   fail: [{ f: 200, d: .18, g: .09, w: 'sawtooth' }],
   win:  [{ f: 523, d: .1, g: .1 }, { f: 659, t: .08, d: .1, g: .1 }, { f: 784, t: .16, d: .18, g: .12 }],
   flip: [{ f: 440, d: .07, g: .08 }, { f: 660, t: .05, d: .08, g: .07 }],
+  peel: [{ f: 300, d: .06, g: .05 }],
 };
 function sfx(type) {
   initAudio(); if (!audioCtx) return;
@@ -118,6 +144,17 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('visible'), 2600);
 }
+
+/* mensaje grande para momentos que sí importan (abrir una región nueva) */
+let bannerTimer = null;
+function banner(msg, icon = '🗺') {
+  const b = $('#banner');
+  b.innerHTML = `<span class="banner-ic" aria-hidden="true">${icon}</span><span class="banner-txt">${msg}</span>`;
+  b.classList.remove('visible'); void b.offsetWidth; b.classList.add('visible');
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => b.classList.remove('visible'), 3600);
+}
+function el(tag, cls, text) { const n = document.createElement(tag); n.className = cls; if (text != null) n.textContent = text; return n; }
 
 /* ---------- Fichas de carta (HTML) ---------- */
 
@@ -199,7 +236,7 @@ function renderTallerAction() {
 
 function renderTrays() {
   const tools = $('#tray-tools'); tools.innerHTML = '';
-  UTENSILIOS.forEach(t => tools.appendChild(miniChip(t.id, { tool: true })));
+  UTENSILIOS.filter(t => regionesAbiertas().includes(t.region)).forEach(t => tools.appendChild(miniChip(t.id, { tool: true })));
 
   const cartas = $('#tray-cartas'); cartas.innerHTML = '';
   state.discovered.forEach(id => { if (CARTAS[id]) cartas.appendChild(miniChip(id)); });
@@ -236,67 +273,193 @@ function combinarMesa() {
   isUtensilio(y) ? useTool(y) : addStock(y, -1);
   const isNew = discoverCard(r.result);
   addStock(r.result, 1);
+  revisarDesbloqueoRegiones();
   save();
   clearSlots();
   showRevealQueue([{ id: r.result, tool: false, isNew }], { finalLabel: 'Guardar en el álbum' });
 }
 
-/* ---------- Revelación (apertura tipo sobre de cartas) ----------
-   Soporta una cola: sobres/regalos revelan varias cartas seguidas,
-   una por una, sin cerrar el modal entre medio. */
+/* ============================================================
+   REVELACIÓN — al estilo de un sobre de cartas coleccionables:
+   giro 3D para voltear la carta, desliza para pasar a la
+   siguiente. El botón sigue ahí como respaldo (teclado/escritorio).
+   ============================================================ */
 
 let revealQueue = [];
 let revealFinalLabel = 'Guardar en el álbum';
 let revealFinalCb = null;
 let revealIsGift = false;
+let revealCurrent = null;
+let revealPhase = 'back';   /* 'back' | 'front' */
 
 function showRevealQueue(items, opts = {}) {
   revealQueue = items.slice();
   revealFinalLabel = opts.finalLabel || 'Guardar en el álbum';
   revealFinalCb = opts.finalCb || null;
   revealIsGift = !!opts.giftFrom;
-  advanceReveal();
+  $('#modal-reveal').classList.add('open');
+  nextRevealCard(true);
 }
-function advanceReveal() {
+function terminarRevelacion() {
+  $('#modal-reveal').classList.remove('open');
+  revealCurrent = null;
+  const cb = revealFinalCb; revealFinalCb = null;
+  if (cb) cb();
+  if (currentScreen === 'taller') renderTaller();
+  if (currentScreen === 'coleccion') renderColeccion();
+  if (currentScreen === 'feria') renderFeria();
+  renderProgress();
+}
+function nextRevealCard(first) {
   if (!revealQueue.length) {
-    $('#modal-reveal').classList.remove('open');
-    const cb = revealFinalCb; revealFinalCb = null;
-    if (cb) cb();
-    if (currentScreen === 'taller') renderTaller();
-    if (currentScreen === 'coleccion') renderColeccion();
-    if (currentScreen === 'feria') renderFeria();
-    renderProgress();
+    if (pendingRegionUnlock) { const rid = pendingRegionUnlock; pendingRegionUnlock = null; iniciarSobreDeRegion(rid); return; }
+    terminarRevelacion();
     return;
   }
-  const item = revealQueue.shift();
-  const rarity = item.tool ? 'tool' : CARTAS[item.id].rarity;
-  const name = item.tool ? UTENSILIOS.find(u => u.id === item.id).name : CARTAS[item.id].name;
-  const wrap = $('#reveal-card');
-  wrap.className = 'carta rarity-' + rarity + ' carta-flip-anim';
-  wrap.innerHTML = item.tool ? toolInner(item.id) : cardInner(item.id);
-  $('#reveal-banner').textContent = revealIsGift ? '¡Te compartieron esta carta! 🎁'
-    : item.isNew ? '¡Nueva carta para tu álbum!'
-    : `+1 ${name}`;
-  $('#reveal-banner').classList.toggle('is-new', !!item.isNew || revealIsGift);
-  $('#reveal-ok').textContent = revealQueue.length ? 'Siguiente carta →' : revealFinalLabel;
-  $('#modal-reveal').classList.add('open');
-  sfx(item.isNew || revealIsGift ? 'win' : 'flip');
-  buzz(item.isNew || revealIsGift ? [30, 40, 60] : 15);
+  revealCurrent = revealQueue.shift();
+  revealPhase = 'back';
+  const rarity = revealCurrent.tool ? 'tool' : CARTAS[revealCurrent.id].rarity;
+  $('#reveal-back').className = 'carta back rarity-' + rarity;
+  $('#reveal-front').className = 'carta rarity-' + rarity;
+  $('#reveal-front').innerHTML = revealCurrent.tool ? toolInner(revealCurrent.id) : cardInner(revealCurrent.id);
+  const flip = $('#reveal-flip');
+  flip.classList.remove('is-front');
+  flip.style.transition = first ? 'none' : '';
+  flip.style.transform = 'rotateY(0deg)';
+  void flip.offsetWidth;
+  flip.style.transition = '';
+  $('#reveal-banner').classList.remove('visible', 'is-new');
+  $('#reveal-banner').textContent = '';
+  $('#reveal-hint').classList.remove('hidden');
+  $('#reveal-ok').textContent = 'Revelar';
+  sfx('peel'); buzz(8);
 }
-function skipReveal() { revealQueue = []; advanceReveal(); }
+function revealFlip() {
+  if (!revealCurrent || revealPhase === 'front') return;
+  revealPhase = 'front';
+  const flip = $('#reveal-flip');
+  flip.style.transform = 'rotateY(180deg)';
+  flip.classList.add('is-front');
+  const item = revealCurrent;
+  const nombre = item.tool ? UTENSILIOS.find(u => u.id === item.id).name : CARTAS[item.id].name;
+  const especial = item.isNew || revealIsGift;
+  $('#reveal-banner').textContent = revealIsGift ? '¡Te compartieron esta carta! 🎁'
+    : item.isNew ? '¡Nueva carta para tu álbum!' : `+1 ${nombre}`;
+  $('#reveal-banner').classList.add('visible');
+  $('#reveal-banner').classList.toggle('is-new', especial);
+  $('#reveal-hint').classList.add('hidden');
+  $('#reveal-ok').textContent = revealQueue.length ? 'Siguiente carta →' : revealFinalLabel;
+  sfx(especial ? 'win' : 'flip');
+  buzz(especial ? [30, 40, 60] : 15);
+  if (especial && !item.tool && CARTAS[item.id].rarity === 'receta') burstConfetti($('#reveal-front'));
+}
+function revealAdvance() {
+  if (!revealCurrent) return;
+  if (revealPhase === 'back') { revealFlip(); return; }
+  const flip = $('#reveal-flip');
+  flip.style.transform = 'translateX(-560px) rotateY(220deg) rotateZ(-16deg)';
+  setTimeout(() => nextRevealCard(false), 260);
+}
+function revealSkipAll() { revealQueue = []; pendingRegionUnlock = null; terminarRevelacion(); }
 
-/* ---------- El álbum (Colección) ---------- */
+function burstConfetti(target) {
+  const rect = target.getBoundingClientRect();
+  const wrap = document.createElement('div');
+  wrap.className = 'reveal-burst';
+  wrap.style.left = (rect.left + rect.width / 2) + 'px';
+  wrap.style.top = (rect.top + rect.height / 2) + 'px';
+  const colors = ['#c9982f', '#e8c877', '#fff3d0', '#f6dcae'];
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('i');
+    const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 70;
+    p.style.setProperty('--dx', (Math.cos(a) * d).toFixed(1) + 'px');
+    p.style.setProperty('--dy', (Math.sin(a) * d - 20).toFixed(1) + 'px');
+    p.style.background = colors[i % colors.length];
+    if (i % 2) p.style.borderRadius = '50%';
+    wrap.appendChild(p);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(() => wrap.remove(), 900);
+}
+
+/* gestos: desliza arriba para revelar, desliza a los lados para pasar
+   a la siguiente; el giro 3D sigue al dedo mientras tanto */
+function bindRevealGestures() {
+  const stage = $('#reveal-stage');
+  const flip = $('#reveal-flip');
+  let dragging = false, moved = false, startX = 0, startY = 0;
+
+  stage.addEventListener('pointerdown', (e) => {
+    if (!revealCurrent) return;
+    dragging = true; moved = false;
+    startX = e.clientX; startY = e.clientY;
+    flip.style.transition = 'none';
+    try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  stage.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
+    if (revealPhase === 'back') {
+      const lift = Math.max(-80, Math.min(10, dy));
+      const tiltX = Math.max(-16, Math.min(16, -dy * .22));
+      const tiltY = Math.max(-14, Math.min(14, dx * .12));
+      flip.style.transform = `translateY(${lift}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    } else {
+      const tiltX = Math.max(-10, Math.min(10, -dy * .08));
+      const tiltY = Math.max(-10, Math.min(10, dx * .06));
+      flip.style.transform = `translateX(${dx}px) rotateY(${180 + tiltY}deg) rotateX(${tiltX}deg) rotateZ(${(dx * .04).toFixed(2)}deg)`;
+    }
+  });
+  const onUp = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    flip.style.transition = '';
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (revealPhase === 'back') {
+      if (dy < -46 || !moved) revealFlip();
+      else flip.style.transform = 'rotateY(0deg)';
+    } else {
+      if (Math.abs(dx) > 90) {
+        const dir = dx < 0 ? -1 : 1;
+        flip.style.transform = `translateX(${dir * 560}px) rotateY(${180 + dir * 40}deg) rotateZ(${dir * 16}deg)`;
+        setTimeout(() => nextRevealCard(false), 240);
+      } else if (!moved) revealAdvance();
+      else flip.style.transform = 'rotateY(180deg)';
+    }
+  };
+  stage.addEventListener('pointerup', onUp);
+  stage.addEventListener('pointercancel', () => { dragging = false; });
+}
+
+/* ---------- El álbum (Colección), organizado por región ---------- */
 
 function renderColeccion() {
   const body = $('#coleccion-body'); body.innerHTML = '';
-  RARITY_ORDER.forEach(rar => {
-    const ids = CARTA_ORDEN.filter(id => CARTAS[id].rarity === rar);
-    if (!ids.length) return;
-    const section = document.createElement('section'); section.className = 'album-seccion';
-    section.innerHTML = `<h3 class="album-seccion-title">${RARITY_LABEL[rar]}s</h3>`;
-    const grid = document.createElement('div'); grid.className = 'album-grid';
-    ids.forEach(id => grid.appendChild(albumCard(id, rar)));
-    section.appendChild(grid);
+  REGION_ORDEN.forEach(rid => {
+    const r = REGIONES[rid];
+    const abierta = regionesAbiertas().includes(rid);
+    const idsRegion = CARTA_ORDEN.filter(id => CARTAS[id].region === rid);
+    const gotRegion = idsRegion.filter(id => state.discovered.includes(id)).length;
+
+    const section = el('section', 'region-seccion');
+    const head = document.createElement('header');
+    head.className = 'region-head';
+    head.style.setProperty('--region-acento', r.acento);
+    head.innerHTML = `<h3>${r.nombre}</h3><p class="region-tagline hand">${r.tagline}</p>` +
+      (abierta ? `<p class="region-progress">${gotRegion} / ${idsRegion.length}</p>` : '');
+    section.appendChild(head);
+
+    if (r.proximamente) {
+      section.appendChild(el('p', 'region-locked', '🗺 Muy pronto en tu cuaderno de viaje…'));
+    } else if (!abierta) {
+      const faltan = (r.desbloqueo_recetas || []).map(id => CARTAS[id] && CARTAS[id].name).filter(Boolean).join(', ');
+      section.appendChild(el('p', 'region-locked', `🔒 Completa ${faltan} para abrir esta región.`));
+    } else {
+      const grid = document.createElement('div'); grid.className = 'album-grid';
+      idsRegion.forEach(id => grid.appendChild(albumCard(id, CARTAS[id].rarity)));
+      section.appendChild(grid);
+    }
     body.appendChild(section);
   });
   renderProgress();
@@ -367,6 +530,7 @@ function abrirSobre() {
       pulls.push({ id: p.id, tool: false, isNew });
     }
   }
+  revisarDesbloqueoRegiones();
   save();
   showRevealQueue(pulls, { finalLabel: '¡Genial!' });
 }
@@ -419,6 +583,7 @@ function intentarCanjearRegalo() {
   state.regalosCanjeados.push(marca);
   const isNew = discoverCard(id);
   addStock(id, 1);
+  revisarDesbloqueoRegiones();
   save();
   setTimeout(() => showRevealQueue([{ id, tool: false, isNew }], { finalLabel: '¡Qué lindo detalle!', giftFrom: true }), 500);
 }
@@ -439,19 +604,19 @@ function renderFeria() {
   if (!disponibles.length) grid.appendChild(el('span', 'regalos-empty', 'Descubre una carta primero para poder compartirla.'));
   else disponibles.forEach(id => grid.appendChild(regaloCard(id)));
 }
-function el(tag, cls, text) { const n = document.createElement(tag); n.className = cls; if (text != null) n.textContent = text; return n; }
 
 /* ---------- El sobre de bienvenida ---------- */
 
 function abrirSobreInicial() {
-  const items = [];
-  SOBRE_INICIAL.forEach(x => { addStock(x.id, x.n); items.push({ id: x.id, tool: false, isNew: discoverCard(x.id) }); });
-  HERRAMIENTAS_INICIALES.forEach(id => { const isNew = !hasTool(id); grantTool(id); items.push({ id, tool: true, isNew }); });
+  iniciarSobreDeRegion('costa');
   state.starterOpened = true;
   state.sobres += 1;   /* un sobre de propina, para que abran uno "de verdad" enseguida */
   state.proximoSobreGratisEn = Date.now() + SOBRE_INTERVALO_MS;
   save();
-  showRevealQueue(items, { finalLabel: 'A la mesa ✦', finalCb: () => show('taller') });
+  /* iniciarSobreDeRegion ya llama a showRevealQueue; le cambiamos el cierre
+     para que aterrice en el taller en vez de solo mostrar el banner */
+  revealFinalLabel = 'A la mesa ✦';
+  revealFinalCb = () => show('taller');
 }
 
 /* ---------- Navegación ---------- */
@@ -481,8 +646,9 @@ function bindEvents() {
 
   $('#feria-abrir-btn').addEventListener('click', () => { initAudio(); abrirSobre(); });
 
-  $('#reveal-ok').addEventListener('click', advanceReveal);
-  $('#modal-reveal').addEventListener('click', (e) => { if (e.target === $('#modal-reveal')) skipReveal(); });
+  $('#reveal-ok').addEventListener('click', revealAdvance);
+  $('#modal-reveal').addEventListener('click', (e) => { if (e.target === $('#modal-reveal')) revealSkipAll(); });
+  bindRevealGestures();
 
   $('#detalle-close').addEventListener('click', () => $('#modal-detalle').classList.remove('open'));
   $('#modal-detalle').addEventListener('click', (e) => { if (e.target === $('#modal-detalle')) $('#modal-detalle').classList.remove('open'); });
@@ -492,7 +658,7 @@ function bindEvents() {
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if ($('#modal-reveal').classList.contains('open')) skipReveal();
+    if ($('#modal-reveal').classList.contains('open')) revealSkipAll();
     $('#modal-detalle').classList.remove('open');
     $('#modal-pista').classList.remove('open');
   });
