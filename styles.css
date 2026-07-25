@@ -139,8 +139,17 @@ svg { display: block; width: 100%; height: 100%; }
   width: 100%; max-width: var(--frame); height: var(--hud-h);
   padding: .55rem 1rem 0 1.6rem;
   z-index: 50;
+  display: flex; align-items: center; gap: .6rem;
 }
-.hud-progress { display: flex; align-items: center; gap: .6rem; }
+.hud-progress { flex: 1; display: flex; align-items: center; gap: .6rem; }
+.hud-granos {
+  flex-shrink: 0; display: flex; align-items: center; gap: .3rem;
+  font-weight: 700; font-size: .96rem; color: var(--ink); white-space: nowrap;
+  background: rgba(255,250,235,.75); border: 1px solid var(--line); border-radius: 999px;
+  padding: .18rem .65rem .18rem .5rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+}
+.hud-granos-ic { font-size: 1rem; }
 .hud-count {
   font-weight: 700; font-size: 1rem; color: var(--ink); white-space: nowrap;
   background: rgba(255,250,235,.75); border: 1px solid var(--line); border-radius: 999px;
@@ -218,11 +227,12 @@ svg { display: block; width: 100%; height: 100%; }
   flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: .9rem;
   padding: 1.6rem .8rem; margin-top: .4rem;
   background:
-    radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,.18), transparent 60%),
-    linear-gradient(180deg, var(--kraft-dark), #b89f6e);
+    radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,.1), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(58,47,34,.07) 0 3px, transparent 3px 30px),
+    linear-gradient(180deg, #c69b5e, #a9793f);
   border: 1px solid var(--line);
   border-radius: 20px;
-  box-shadow: inset 0 2px 8px rgba(58,47,34,.18), 0 16px 32px -18px rgba(0,0,0,.5);
+  box-shadow: inset 0 2px 8px rgba(58,47,34,.25), 0 16px 32px -18px rgba(0,0,0,.5);
 }
 .mesa-fusion.shake { animation: mesa-shake .4s ease; }
 @keyframes mesa-shake { 25% { transform: translateX(-7px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
@@ -231,14 +241,32 @@ svg { display: block; width: 100%; height: 100%; }
 .carta-slot {
   width: clamp(108px, 30vw, 136px); aspect-ratio: 5 / 7;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem;
-  background: rgba(255,250,235,.4);
-  border: 2.5px dashed var(--line);
+  background: rgba(255,250,235,.22);
+  border: 2.5px dashed rgba(58,47,34,.3);
   border-radius: 14px;
   transition: border-color .15s ease, background .15s ease;
 }
-.carta-slot .slot-plus { font-size: 1.9rem; color: var(--semilla-d); opacity: .8; }
-.carta-slot .slot-txt { font-size: .82rem; color: var(--ink-soft); text-align: center; padding: 0 .3rem; }
-.carta-slot.filled { border-style: solid; padding: 0; }
+.carta-slot .slot-plus { font-size: 1.9rem; color: #fff8e6; opacity: .8; }
+.carta-slot .slot-txt { font-size: .82rem; color: rgba(58,47,34,.65); text-align: center; padding: 0 .3rem; }
+
+/* al ponerla en la mesa, la carta deja de serlo: se planta como un
+   ingrediente de verdad sobre la tabla, sin marco ni rareza */
+.carta-slot.filled { border: none; background: none; padding: 0; }
+.ingrediente-mesa {
+  display: flex; flex-direction: column; align-items: center; gap: .3rem;
+  animation: ingrediente-plantado .3s cubic-bezier(.3, 1.6, .4, 1) both;
+}
+.ing-icono { width: 4.4rem; height: 4.4rem; filter: drop-shadow(0 8px 6px rgba(0,0,0,.4)); }
+.ing-sombra {
+  display: block; width: 58%; height: 10px; margin-top: -.5rem; border-radius: 50%;
+  background: radial-gradient(50% 100% at 50% 50%, rgba(0,0,0,.45), transparent 75%);
+}
+.ing-nombre {
+  font-size: 1.05rem; color: var(--ink);
+  background: rgba(255,250,235,.85); border: 1px solid var(--line-soft);
+  border-radius: 999px; padding: .05rem .6rem;
+}
+@keyframes ingrediente-plantado { from { opacity: 0; transform: translateY(-16px) scale(.7); } to { opacity: 1; transform: none; } }
 
 .taller-action { min-height: 3.6rem; display: flex; align-items: center; justify-content: center; gap: .6rem; flex-wrap: wrap; }
 .combinar-btn { font-size: 1.18rem; padding: .85rem 2rem; }
@@ -292,16 +320,9 @@ svg { display: block; width: 100%; height: 100%; }
   background: linear-gradient(180deg, #fffaee 0%, var(--parchment) 100%);
   box-shadow: 0 1px 2px rgba(58,47,34,.15), 0 10px 22px -12px rgba(0,0,0,.4);
 }
-.carta-slot.filled.rarity-semilla .carta,
 .carta.rarity-semilla  { border-color: var(--semilla-d); }
-.carta-slot.filled.rarity-hallazgo .carta,
 .carta.rarity-hallazgo { border-color: var(--hallazgo-d); }
-.carta-slot.filled.rarity-receta .carta,
 .carta.rarity-receta   { border-color: var(--receta-d); }
-.carta-slot.filled.rarity-semilla  { border: 2.5px solid var(--semilla-d); }
-.carta-slot.filled.rarity-hallazgo { border: 2.5px solid var(--hallazgo-d); }
-.carta-slot.filled.rarity-receta   { border: 2.5px solid var(--receta-d); }
-.carta-slot.filled.rarity-tool     { border: 2.5px solid var(--tool-d); }
 
 .carta-art {
   flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
@@ -449,6 +470,18 @@ svg { display: block; width: 100%; height: 100%; }
 .sobre-stash { font-size: 1.1rem; color: var(--ink); }
 .sobre-count { font-weight: 700; font-size: 1.3rem; color: var(--leather); }
 .sobre-timer { font-size: .92rem; color: var(--ink-soft); text-align: center; }
+
+.mercado-section { text-align: center; margin-bottom: 1.8rem; }
+.mercado-title { font-size: 1.3rem; font-weight: 700; color: var(--leather); margin-bottom: .3rem; }
+.mercado-blurb { font-size: .94rem; color: var(--ink-soft); line-height: 1.55; margin-bottom: .9rem; }
+.mercado-grid { display: flex; gap: .5rem; overflow-x: auto; padding: .2rem .1rem .6rem; -webkit-overflow-scrolling: touch; }
+.mercado-grid::-webkit-scrollbar { height: 0; }
+.mercado-chip .mini-costo {
+  font-size: .62rem; font-weight: 700; color: var(--receta-d);
+  background: rgba(201,152,47,.16); border-radius: 999px; padding: .05rem .4rem; margin-top: .1rem;
+}
+.mercado-acciones { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
+.pregon-timer { font-size: .92rem; color: var(--ink-soft); margin-top: .5rem; }
 
 .regalos-section { text-align: center; }
 .regalos-title { font-size: 1.3rem; font-weight: 700; color: var(--leather); margin-bottom: .3rem; }

@@ -25,6 +25,16 @@ const SOBRE_INTERVALO_MS = 3 * 60 * 60 * 1000; /* un sobre gratis cada 3h */
 const SOBRE_MAX_STASH = 3;                    /* tope de sobres guardados */
 const REGALOS_DIARIOS_MAX = 3;
 
+/* ---------- Granos: la moneda de la feria ---------- */
+/* se ganan cocinando (así el mercado nunca compite con el taller,
+   lo alimenta); se gastan cuando la despensa se queda corta. */
+const GRANOS_POR_COCINAR = 1;
+const GRANOS_POR_RAREZA = { semilla: 3, hallazgo: 6, receta: 25 };
+const MERCADO_COSTO_SEMILLA = 4;
+const MERCADO_COSTO_SOBRE = 20;
+const PREGON_COOLDOWN_MS = 20 * 60 * 1000;   /* cada 20 min hay pregón nuevo */
+const PREGON_RECOMPENSA = 15;
+
 function regionesAbiertas() { return state.regionsUnlocked || ['costa']; }
 
 function tablaDeSobre() {
@@ -60,6 +70,8 @@ function newState() {
     proximoSobreGratisEn: 0,
     regalosHechos: { fecha: '', usados: 0 },
     regalosCanjeados: [],
+    granos: 0,
+    pregonProximoEn: 0,
     seenCover: false,
     starterOpened: false,
   };
@@ -176,6 +188,18 @@ function toolInner(id) {
   return `<div class="carta-art">${iconOf(id)}</div><div class="carta-plate"><span class="carta-nombre">${t.name}</span><span class="carta-rareza">Herramienta</span></div>`;
 }
 
+/* en la mesa una carta deja de ser carta: se planta como un ingrediente
+   de verdad sobre la tabla, sin marco ni rareza (esos quedan para el
+   álbum y el sobre — aquí solo importa lo que estás cocinando) */
+function mesaItemInner(id) {
+  const name = isUtensilio(id) ? UTENSILIOS.find(u => u.id === id).name : CARTAS[id].name;
+  return `<div class="ingrediente-mesa">
+      <div class="ing-icono">${iconOf(id)}</div>
+      <span class="ing-sombra" aria-hidden="true"></span>
+      <span class="ing-nombre hand">${name}</span>
+    </div>`;
+}
+
 function miniChip(id, { tool = false } = {}) {
   const avail = tool ? hasTool(id) : stockOf(id) > 0;
   const rarity = tool ? 'tool' : CARTAS[id].rarity;
@@ -207,14 +231,14 @@ function regaloCard(id) {
 
 function renderTaller() {
   const a = $('#slot-a'), b = $('#slot-b');
-  a.innerHTML = slots[0] ? (isUtensilio(slots[0]) ? toolInner(slots[0]) : cardInner(slots[0])) : slotEmptyHTML();
-  a.className = 'carta-slot' + (slots[0] ? ' filled rarity-' + (isUtensilio(slots[0]) ? 'tool' : CARTAS[slots[0]].rarity) : '');
-  b.innerHTML = slots[1] ? (isUtensilio(slots[1]) ? toolInner(slots[1]) : cardInner(slots[1])) : slotEmptyHTML();
-  b.className = 'carta-slot' + (slots[1] ? ' filled rarity-' + (isUtensilio(slots[1]) ? 'tool' : CARTAS[slots[1]].rarity) : '');
+  a.innerHTML = slots[0] ? mesaItemInner(slots[0]) : slotEmptyHTML();
+  a.className = 'carta-slot' + (slots[0] ? ' filled' : '');
+  b.innerHTML = slots[1] ? mesaItemInner(slots[1]) : slotEmptyHTML();
+  b.className = 'carta-slot' + (slots[1] ? ' filled' : '');
   renderTallerAction();
   renderTrays();
 }
-function slotEmptyHTML() { return '<span class="slot-plus" aria-hidden="true">+</span><span class="slot-txt">elige una carta</span>'; }
+function slotEmptyHTML() { return '<span class="slot-plus" aria-hidden="true">+</span><span class="slot-txt">elige un ingrediente</span>'; }
 
 function renderTallerAction() {
   const zone = $('#taller-action'); zone.innerHTML = '';
@@ -230,7 +254,7 @@ function renderTallerAction() {
     limpiar.addEventListener('click', clearSlots);
     zone.appendChild(limpiar);
   } else {
-    zone.innerHTML = `<span class="taller-hint">${slots[0] || slots[1] ? 'Elige la segunda carta…' : 'Toca dos cartas para probarlas juntas'}</span>`;
+    zone.innerHTML = `<span class="taller-hint">${slots[0] || slots[1] ? 'Elige el segundo ingrediente…' : 'Toca dos ingredientes para probarlos juntos'}</span>`;
   }
 }
 
@@ -273,10 +297,12 @@ function combinarMesa() {
   isUtensilio(y) ? useTool(y) : addStock(y, -1);
   const isNew = discoverCard(r.result);
   addStock(r.result, 1);
+  const granos = GRANOS_POR_COCINAR + (isNew ? (GRANOS_POR_RAREZA[CARTAS[r.result].rarity] || 0) : 0);
+  state.granos = (state.granos || 0) + granos;
   revisarDesbloqueoRegiones();
   save();
   clearSlots();
-  showRevealQueue([{ id: r.result, tool: false, isNew }], { finalLabel: 'Guardar en el álbum' });
+  showRevealQueue([{ id: r.result, tool: false, isNew, granos }], { finalLabel: 'Guardar en el álbum' });
 }
 
 /* ============================================================
@@ -343,8 +369,10 @@ function revealFlip() {
   const item = revealCurrent;
   const nombre = item.tool ? UTENSILIOS.find(u => u.id === item.id).name : CARTAS[item.id].name;
   const especial = item.isNew || revealIsGift;
-  $('#reveal-banner').textContent = revealIsGift ? '¡Te compartieron esta carta! 🎁'
+  let msg = revealIsGift ? '¡Te compartieron esta carta! 🎁'
     : item.isNew ? '¡Nueva carta para tu álbum!' : `+1 ${nombre}`;
+  if (item.granos) msg += ` · +${item.granos} 🌽`;
+  $('#reveal-banner').textContent = msg;
   $('#reveal-banner').classList.add('visible');
   $('#reveal-banner').classList.toggle('is-new', especial);
   $('#reveal-hint').classList.add('hidden');
@@ -479,7 +507,9 @@ function renderProgress() {
   const got = state.discovered.filter(id => CARTAS[id]).length;
   $$('.progress-count').forEach(n => n.textContent = `${got} / ${total}`);
   $$('.progress-fill').forEach(n => n.style.width = (total ? (got / total * 100) : 0) + '%');
+  renderGranos();
 }
+function renderGranos() { $$('.hud-granos-count').forEach(n => n.textContent = state.granos || 0); }
 
 function showDetalle(id) {
   const c = CARTAS[id];
@@ -598,11 +628,73 @@ function renderFeria() {
     ? 'Tu bolsa de sobres está llena.'
     : rest <= 0 ? '¡Ya tienes un sobre nuevo!' : `Próximo sobre gratis en ${formatDuracion(rest)}`;
 
+  renderMercado();
+
   $('#regalos-restantes').textContent = regalosRestantesHoy();
   const grid = $('#regalos-grid'); grid.innerHTML = '';
   const disponibles = state.discovered.filter(id => CARTAS[id]);
   if (!disponibles.length) grid.appendChild(el('span', 'regalos-empty', 'Descubre una carta primero para poder compartirla.'));
   else disponibles.forEach(id => grid.appendChild(regaloCard(id)));
+}
+
+/* ---------- El mercado: cambia granos (ganados al cocinar) por despensa ---------- */
+
+function mercadoChip(id) {
+  const c = CARTAS[id];
+  const costo = MERCADO_COSTO_SEMILLA;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'carta-mini rarity-' + c.rarity + ' mercado-chip' + ((state.granos || 0) < costo ? ' agotado' : '');
+  btn.innerHTML = `<span class="mini-cant">${stockOf(id)}</span><span class="mini-icon">${iconOf(id)}</span><span class="mini-name">${c.name}</span><span class="mini-costo">${costo} 🌽</span>`;
+  btn.addEventListener('click', () => comprarSemilla(id, costo));
+  return btn;
+}
+function comprarSemilla(id, costo) {
+  if ((state.granos || 0) < costo) { toast('No te alcanzan los granos. Cocina algo o escucha el pregón 📣'); return; }
+  state.granos -= costo;
+  addStock(id, 1);
+  save(); sfx('win'); buzz(15);
+  toast(`+1 ${CARTAS[id].name}`);
+  renderFeria();
+  if (currentScreen === 'taller') renderTaller();
+  renderGranos();
+}
+function comprarSobreConGranos() {
+  if (state.sobres >= SOBRE_MAX_STASH) { toast('Tu bolsa de sobres está llena.'); return; }
+  if ((state.granos || 0) < MERCADO_COSTO_SOBRE) { toast('Te faltan granos para un sobre.'); return; }
+  state.granos -= MERCADO_COSTO_SOBRE;
+  state.sobres += 1;
+  save(); sfx('win'); buzz([20, 30, 20]);
+  toast('¡Sobre nuevo en tu bolsa!');
+  renderFeria(); renderGranos();
+}
+function escucharPregon() {
+  const rest = Math.max(0, (state.pregonProximoEn || 0) - Date.now());
+  if (rest > 0) return;
+  const btn = $('#pregon-btn');
+  btn.disabled = true; btn.textContent = '📣 Escuchando…';
+  sfx('tab');
+  setTimeout(() => {
+    state.granos = (state.granos || 0) + PREGON_RECOMPENSA;
+    state.pregonProximoEn = Date.now() + PREGON_COOLDOWN_MS;
+    save();
+    sfx('win'); buzz([30, 40, 60]);
+    toast(`¡+${PREGON_RECOMPENSA} 🌽 de propina!`);
+    renderFeria(); renderGranos();
+  }, 3200);
+}
+function renderMercado() {
+  const grid = $('#mercado-semillas'); grid.innerHTML = '';
+  GAME_DATA.ingredientes.filter(i => regionesAbiertas().includes(i.region)).forEach(i => grid.appendChild(mercadoChip(i.id)));
+
+  const sobreBtn = $('#mercado-sobre-btn');
+  sobreBtn.disabled = (state.granos || 0) < MERCADO_COSTO_SOBRE || state.sobres >= SOBRE_MAX_STASH;
+
+  const rest = Math.max(0, (state.pregonProximoEn || 0) - Date.now());
+  const pregonBtn = $('#pregon-btn');
+  if (rest <= 0) pregonBtn.textContent = '📣 Escuchar el pregón';
+  pregonBtn.disabled = rest > 0;
+  $('#pregon-timer').textContent = rest > 0 ? `El pregonero vuelve en ${formatDuracion(rest)}` : `Escúchalo y gana ${PREGON_RECOMPENSA} 🌽 de propina`;
 }
 
 /* ---------- El sobre de bienvenida ---------- */
@@ -645,6 +737,8 @@ function bindEvents() {
   $$('.tab-btn').forEach(b => b.addEventListener('click', () => { sfx('tab'); show(b.dataset.tab); }));
 
   $('#feria-abrir-btn').addEventListener('click', () => { initAudio(); abrirSobre(); });
+  $('#mercado-sobre-btn').addEventListener('click', () => { initAudio(); comprarSobreConGranos(); });
+  $('#pregon-btn').addEventListener('click', () => { initAudio(); escucharPregon(); });
 
   $('#reveal-ok').addEventListener('click', revealAdvance);
   $('#modal-reveal').addEventListener('click', (e) => { if (e.target === $('#modal-reveal')) revealSkipAll(); });

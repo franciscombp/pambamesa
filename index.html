@@ -27,6 +27,9 @@
       <span class="progress-count hud-count"></span>
       <div class="hud-bar"><span class="progress-fill hud-bar-fill"></span></div>
     </div>
+    <div class="hud-granos" aria-label="Granos">
+      <span class="hud-granos-ic" aria-hidden="true">🌽</span><span class="hud-granos-count">0</span>
+    </div>
   </header>
 
   <!-- ================= Portada: la tapa del cuaderno ================= -->
@@ -93,6 +96,17 @@
         <button type="button" id="feria-abrir-btn" class="btn-leather wide">Abrir un sobre</button>
         <p id="feria-timer" class="sobre-timer"></p>
       </div>
+
+      <section class="mercado-section">
+        <h3 class="mercado-title">El mercado</h3>
+        <p class="mercado-blurb">Cocinar en el taller te da <strong>granos</strong> 🌽. Cámbialos aquí si te quedaste sin ingredientes.</p>
+        <div id="mercado-semillas" class="mercado-grid"></div>
+        <div class="mercado-acciones">
+          <button type="button" id="mercado-sobre-btn" class="btn-ghost">Comprar sobre · 20 🌽</button>
+          <button type="button" id="pregon-btn" class="btn-ghost">📣 Escuchar el pregón</button>
+        </div>
+        <p id="pregon-timer" class="pregon-timer"></p>
+      </section>
 
       <section class="regalos-section">
         <h3 class="regalos-title">Compartir con alguien</h3>
