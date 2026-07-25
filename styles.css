@@ -253,21 +253,31 @@ svg { display: block; width: 100%; height: 100%; }
 .tray::-webkit-scrollbar { height: 0; }
 
 .carta-mini {
-  flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem;
+  position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem;
   width: 68px; padding: .4rem .3rem .35rem;
   background: linear-gradient(180deg, #fffaee, var(--parchment));
   border: 1.5px solid var(--line-soft);
   border-radius: 11px;
   border-bottom: 3px solid var(--tool);
   box-shadow: 0 3px 8px -4px rgba(58,47,34,.3);
-  transition: transform .12s ease;
+  transition: transform .12s ease, opacity .12s ease;
 }
 .carta-mini:active { transform: scale(.94); }
 .carta-mini.rarity-semilla  { border-bottom-color: var(--semilla); }
 .carta-mini.rarity-hallazgo { border-bottom-color: var(--hallazgo); }
 .carta-mini.rarity-receta   { border-bottom-color: var(--receta); }
+.carta-mini.agotado { opacity: .4; filter: grayscale(.6); }
 .mini-icon { width: 2.1rem; height: 2.1rem; }
 .mini-name { font-size: .66rem; line-height: 1.1; color: var(--ink); text-align: center; }
+.mini-cant {
+  position: absolute; top: -.35rem; right: -.3rem; min-width: 1.1rem; height: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .62rem; font-weight: 700; color: #fff;
+  background: linear-gradient(180deg, var(--semilla), var(--semilla-d));
+  border-radius: 999px; padding: 0 .25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.35);
+}
+.mini-durab { font-size: .55rem; letter-spacing: .04em; color: var(--tool-d); line-height: 1; }
 
 /* ============================================================
    LA CARTA (componente TCG compartido)
@@ -355,6 +365,11 @@ svg { display: block; width: 100%; height: 100%; }
 }
 .album-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; }
 .album-grid .carta { width: 100%; }
+.carta-cant {
+  position: absolute; top: .3rem; right: .3rem; z-index: 2;
+  font-size: .68rem; font-weight: 700; color: #fff;
+  background: rgba(58,47,34,.72); border-radius: 999px; padding: .05rem .4rem;
+}
 
 .coleccion-footnote { text-align: center; font-size: .88rem; font-style: italic; color: var(--ink-soft); margin-top: 1rem; }
 
@@ -380,6 +395,56 @@ svg { display: block; width: 100%; height: 100%; }
 .tab-btn.active { background: linear-gradient(90deg, var(--receta-d), var(--receta)); color: #3a2b12; padding-right: .8rem; }
 .tab-ic { width: 1.3rem; height: 1.3rem; }
 .tab-btn:active { transform: scale(.96); }
+
+/* ============================================================
+   LA FERIA — sobres y regalos
+   ============================================================ */
+
+.feria-wrap { max-width: 460px; margin: 0 auto; padding: calc(var(--hud-h) + 1rem) 4.4rem 2.4rem 1.4rem; }
+.feria-head { text-align: center; margin-bottom: 1.1rem; }
+.feria-head h2 { font-size: 2rem; font-weight: 700; color: var(--leather); }
+.feria-sub { font-size: 1.3rem; color: var(--ink-soft); margin-top: .1rem; }
+
+.sobre-box {
+  display: flex; flex-direction: column; align-items: center; gap: .7rem;
+  padding: 1.6rem 1.2rem 1.4rem;
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,.18), transparent 60%),
+    linear-gradient(180deg, var(--kraft-dark), #b89f6e);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: inset 0 2px 8px rgba(58,47,34,.18), 0 16px 32px -18px rgba(0,0,0,.5);
+  margin-bottom: 1.6rem;
+}
+.sobre-visual {
+  width: 110px; aspect-ratio: 5 / 7;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, var(--leather) 0%, var(--leather-2) 55%, var(--leather-d) 100%);
+  border: 2px solid var(--brass-d);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255,220,160,.2), 0 10px 20px -10px rgba(0,0,0,.5);
+  animation: sobre-float 3.2s ease-in-out infinite;
+}
+@keyframes sobre-float { 50% { transform: translateY(-5px) rotate(-1.5deg); } }
+.sobre-sello {
+  width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; color: #3a2b12;
+  background: conic-gradient(from 210deg, var(--brass), var(--brass-d), var(--brass));
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(0,0,0,.4);
+}
+.sobre-stash { font-size: 1.1rem; color: var(--ink); }
+.sobre-count { font-weight: 700; font-size: 1.3rem; color: var(--leather); }
+.sobre-timer { font-size: .92rem; color: var(--ink-soft); text-align: center; }
+
+.regalos-section { text-align: center; }
+.regalos-title { font-size: 1.3rem; font-weight: 700; color: var(--leather); margin-bottom: .3rem; }
+.regalos-blurb { font-size: .94rem; color: var(--ink-soft); line-height: 1.55; margin-bottom: 1rem; }
+#regalos-restantes { font-weight: 700; color: var(--ink); }
+.regalos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
+.regalo-mini { width: 100%; transition: transform .15s ease; }
+.regalo-mini:active { transform: scale(.94); }
+.regalos-empty { grid-column: 1 / -1; font-size: 1rem; color: var(--ink-soft); font-style: italic; }
 
 /* ============================================================
    MODALES

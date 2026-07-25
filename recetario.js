@@ -184,6 +184,10 @@ const UTENSILIOS = [
 ];
 const isUtensilio = (id) => UTENSILIOS.some(u => u.id === id);
 
+/* durabilidad: cuántos usos aguanta cada herramienta antes de gastarse
+   (se consigue una nueva o se "afila" abriendo otro sobre) */
+const DURABILIDAD_HERRAMIENTA = { cuchillo: 6, olla: 8, pilon: 8, sarten: 8 };
+
 function buildCartario() {
   /* lore de cada hallazgo = la instrucción real del paso que lo produce */
   const loreDeResultado = {};

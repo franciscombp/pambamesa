@@ -2,33 +2,85 @@
    PAMBAMESA — cuaderno de viaje de sabores
    app.js — motor de álbum coleccionable (Little Alchemy × TCG).
 
-   Sin clientes, sin arriendo, sin reloj: solo combinar dos cartas
-   sobre la mesa para descubrir la siguiente, y guardarla en el
-   álbum. Las semillas (ingredientes base) y las herramientas
-   siempre están a mano; todo lo demás se gana combinando.
+   Dos capas separadas a propósito:
+   - state.discovered  → tu ÁLBUM. Permanente. Nunca se pierde.
+   - state.stock/tools → tu DESPENSA. Se gasta al combinar y se
+     repone abriendo sobres (o con un regalo de alguien más).
    ============================================================ */
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-const SAVE_KEY = 'pambamesa_save_v1';
+const SAVE_KEY = 'pambamesa_save_v2';
 const RARITY_LABEL = { semilla: 'Semilla', hallazgo: 'Hallazgo', receta: 'Receta' };
 const RARITY_ORDER = ['semilla', 'hallazgo', 'receta'];
+
+/* ---------- Economía de sobres ---------- */
+
+const SOBRE_TAM = 3;                          /* cartas por sobre */
+const SOBRE_INTERVALO_MS = 3 * 60 * 60 * 1000; /* un sobre gratis cada 3h */
+const SOBRE_MAX_STASH = 3;                    /* tope de sobres guardados */
+const REGALOS_DIARIOS_MAX = 3;
+
+const SOBRE_INICIAL = [
+  { id: 'verde', n: 3 }, { id: 'queso', n: 2 }, { id: 'huevo', n: 1 }, { id: 'cerdo', n: 1 },
+];
+const HERRAMIENTAS_INICIALES = ['cuchillo', 'olla', 'pilon', 'sarten'];
+
+function tablaDeSobre() {
+  return [
+    { peso: 45, tipo: 'semilla',    pool: GAME_DATA.ingredientes.map(i => i.id) },
+    { peso: 25, tipo: 'herramienta', pool: UTENSILIOS.map(u => u.id) },
+    { peso: 22, tipo: 'hallazgo',   pool: GAME_DATA.resultados.map(r => r.id) },
+    { peso: 8,  tipo: 'receta',     pool: GAME_DATA.recetas.map(r => r.plato) },
+  ];
+}
+function sacarCarta() {
+  const tabla = tablaDeSobre();
+  const total = tabla.reduce((s, t) => s + t.peso, 0);
+  let r = Math.random() * total;
+  for (const t of tabla) { r -= t.peso; if (r <= 0) return { tipo: t.tipo, id: t.pool[Math.floor(Math.random() * t.pool.length)] }; }
+  return { tipo: 'semilla', id: tabla[0].pool[0] };
+}
 
 /* ---------- Estado ---------- */
 
 function newState() {
   return {
-    discovered: GAME_DATA.ingredientes.map(i => i.id),   /* las semillas ya son tuyas */
+    discovered: [],           /* álbum: permanente */
+    stock: {},                /* despensa: copias que tienes ahora */
+    tools: {},                /* {id: usos restantes} */
+    sobres: 0,
+    proximoSobreGratisEn: 0,
+    regalosHechos: { fecha: '', usados: 0 },
+    regalosCanjeados: [],
     seenCover: false,
+    starterOpened: false,
   };
 }
 function save() { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
-function load() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } }
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!s) return null;
+    /* completa campos si vienen de un guardado anterior */
+    return Object.assign(newState(), s);
+  } catch (e) { return null; }
+}
 
 let state = null;
 let currentScreen = 'cover';
 let slots = [null, null];
+let feriaTimerId = null;
+
+const stockOf = (id) => state.stock[id] || 0;
+function addStock(id, n) { state.stock[id] = Math.max(0, (state.stock[id] || 0) + n); }
+function discoverCard(id) { if (!state.discovered.includes(id)) { state.discovered.push(id); return true; } return false; }
+
+const toolUses = (id) => state.tools[id] || 0;
+const hasTool = (id) => toolUses(id) > 0;
+function grantTool(id) { state.tools[id] = DURABILIDAD_HERRAMIENTA[id]; }
+function useTool(id) { state.tools[id] = Math.max(0, toolUses(id) - 1); }
 
 /* ---------- Juice mínimo: sonido y vibración ---------- */
 
@@ -64,7 +116,7 @@ function toast(msg) {
   const t = $('#toast');
   t.textContent = msg; t.classList.add('visible');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('visible'), 2400);
+  toastTimer = setTimeout(() => t.classList.remove('visible'), 2600);
 }
 
 /* ---------- Fichas de carta (HTML) ---------- */
@@ -88,14 +140,30 @@ function toolInner(id) {
 }
 
 function miniChip(id, { tool = false } = {}) {
-  const btn = document.createElement('button');
-  btn.type = 'button';
+  const avail = tool ? hasTool(id) : stockOf(id) > 0;
   const rarity = tool ? 'tool' : CARTAS[id].rarity;
   const name = tool ? UTENSILIOS.find(u => u.id === id).name : CARTAS[id].name;
-  btn.className = `carta-mini rarity-${rarity}`;
-  btn.innerHTML = `<span class="mini-icon">${iconOf(id)}</span><span class="mini-name">${name}</span>`;
-  btn.addEventListener('click', () => tryPlace(id));
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = `carta-mini rarity-${rarity}` + (avail ? '' : ' agotado');
+  const badge = tool
+    ? `<span class="mini-durab">${'●'.repeat(toolUses(id))}${'○'.repeat(Math.max(0, (DURABILIDAD_HERRAMIENTA[id] || 0) - toolUses(id)))}</span>`
+    : `<span class="mini-cant">${stockOf(id)}</span>`;
+  btn.innerHTML = `${badge}<span class="mini-icon">${iconOf(id)}</span><span class="mini-name">${name}</span>`;
+  if (avail) btn.addEventListener('click', () => tryPlace(id));
+  else btn.addEventListener('click', () => toast(tool ? 'Se gastó. Consigue uno nuevo en la feria 🎟' : 'Ya no te queda. Consíguelo en la feria 🎟'));
   return btn;
+}
+
+/* pequeña carta de la colección, para elegir qué regalar (no gasta despensa) */
+function regaloCard(id) {
+  const c = CARTAS[id];
+  const card = document.createElement('button');
+  card.type = 'button';
+  card.className = 'carta rarity-' + c.rarity + ' regalo-mini';
+  card.innerHTML = cardInner(id);
+  card.addEventListener('click', () => generarRegalo(id));
+  return card;
 }
 
 /* ---------- Mesa de fusión (Taller) ---------- */
@@ -160,31 +228,62 @@ function combinarMesa() {
     toast('Estos dos no reaccionan… todavía.');
     return;
   }
-  const isNew = !state.discovered.includes(r.result);
-  if (isNew) { state.discovered.push(r.result); save(); }
+  const xOk = isUtensilio(x) ? hasTool(x) : stockOf(x) > 0;
+  const yOk = isUtensilio(y) ? hasTool(y) : stockOf(y) > 0;
+  if (!xOk || !yOk) { toast('Ya no te queda esto. Consíguelo en la feria 🎟'); return; }
+
+  isUtensilio(x) ? useTool(x) : addStock(x, -1);
+  isUtensilio(y) ? useTool(y) : addStock(y, -1);
+  const isNew = discoverCard(r.result);
+  addStock(r.result, 1);
+  save();
   clearSlots();
-  showReveal(r.result, isNew);
+  showRevealQueue([{ id: r.result, tool: false, isNew }], { finalLabel: 'Guardar en el álbum' });
 }
 
-/* ---------- Revelación (apertura tipo sobre de cartas) ---------- */
+/* ---------- Revelación (apertura tipo sobre de cartas) ----------
+   Soporta una cola: sobres/regalos revelan varias cartas seguidas,
+   una por una, sin cerrar el modal entre medio. */
 
-function showReveal(id, isNew) {
-  const c = CARTAS[id];
+let revealQueue = [];
+let revealFinalLabel = 'Guardar en el álbum';
+let revealFinalCb = null;
+let revealIsGift = false;
+
+function showRevealQueue(items, opts = {}) {
+  revealQueue = items.slice();
+  revealFinalLabel = opts.finalLabel || 'Guardar en el álbum';
+  revealFinalCb = opts.finalCb || null;
+  revealIsGift = !!opts.giftFrom;
+  advanceReveal();
+}
+function advanceReveal() {
+  if (!revealQueue.length) {
+    $('#modal-reveal').classList.remove('open');
+    const cb = revealFinalCb; revealFinalCb = null;
+    if (cb) cb();
+    if (currentScreen === 'taller') renderTaller();
+    if (currentScreen === 'coleccion') renderColeccion();
+    if (currentScreen === 'feria') renderFeria();
+    renderProgress();
+    return;
+  }
+  const item = revealQueue.shift();
+  const rarity = item.tool ? 'tool' : CARTAS[item.id].rarity;
+  const name = item.tool ? UTENSILIOS.find(u => u.id === item.id).name : CARTAS[item.id].name;
   const wrap = $('#reveal-card');
-  wrap.className = 'carta rarity-' + c.rarity + ' carta-flip-anim';
-  wrap.innerHTML = cardInner(id);
-  $('#reveal-banner').textContent = isNew ? '¡Nueva carta para tu álbum!' : 'Ya la tenías — pero bien combinado.';
-  $('#reveal-banner').classList.toggle('is-new', isNew);
+  wrap.className = 'carta rarity-' + rarity + ' carta-flip-anim';
+  wrap.innerHTML = item.tool ? toolInner(item.id) : cardInner(item.id);
+  $('#reveal-banner').textContent = revealIsGift ? '¡Te compartieron esta carta! 🎁'
+    : item.isNew ? '¡Nueva carta para tu álbum!'
+    : `+1 ${name}`;
+  $('#reveal-banner').classList.toggle('is-new', !!item.isNew || revealIsGift);
+  $('#reveal-ok').textContent = revealQueue.length ? 'Siguiente carta →' : revealFinalLabel;
   $('#modal-reveal').classList.add('open');
-  sfx(isNew ? 'win' : 'flip');
-  buzz(isNew ? [30, 40, 60] : 15);
+  sfx(item.isNew || revealIsGift ? 'win' : 'flip');
+  buzz(item.isNew || revealIsGift ? [30, 40, 60] : 15);
 }
-function closeReveal() {
-  $('#modal-reveal').classList.remove('open');
-  if (currentScreen === 'taller') renderTaller();
-  if (currentScreen === 'coleccion') renderColeccion();
-  renderProgress();
-}
+function skipReveal() { revealQueue = []; advanceReveal(); }
 
 /* ---------- El álbum (Colección) ---------- */
 
@@ -208,6 +307,7 @@ function albumCard(id, rar) {
   card.type = 'button';
   card.className = 'carta rarity-' + rar + (discovered ? '' : ' back');
   card.innerHTML = discovered ? cardInner(id) : cardBackInner();
+  if (discovered && stockOf(id) > 0) card.innerHTML += `<span class="carta-cant">×${stockOf(id)}</span>`;
   card.addEventListener('click', () => discovered ? showDetalle(id) : showPista(id));
   return card;
 }
@@ -223,7 +323,7 @@ function showDetalle(id) {
   $('#detalle-art').innerHTML = cardInner(id, { showName: false });
   $('#detalle-art').className = 'detalle-art rarity-' + c.rarity;
   $('#detalle-nombre').textContent = c.name;
-  $('#detalle-rareza').textContent = RARITY_LABEL[c.rarity] + (c.city ? ` · ${c.city}` : '');
+  $('#detalle-rareza').textContent = RARITY_LABEL[c.rarity] + (c.city ? ` · ${c.city}` : '') + ` · tienes ×${stockOf(id)}`;
   $('#detalle-lore').textContent = c.lore || '';
   $('#modal-detalle').classList.add('open');
   sfx('tab');
@@ -235,30 +335,154 @@ function showPista(id) {
   sfx('tab');
 }
 
+/* ---------- La feria: sobres y regalos ---------- */
+
+function formatDuracion(ms) {
+  const totalMin = Math.max(0, Math.ceil(ms / 60000));
+  const h = Math.floor(totalMin / 60), m = totalMin % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+function actualizarSobresGratis() {
+  const now = Date.now();
+  if (!state.proximoSobreGratisEn) state.proximoSobreGratisEn = now + SOBRE_INTERVALO_MS;
+  if (state.sobres < SOBRE_MAX_STASH && now >= state.proximoSobreGratisEn) {
+    state.sobres += 1;
+    state.proximoSobreGratisEn = now + SOBRE_INTERVALO_MS;
+    save();
+  }
+}
+function abrirSobre() {
+  if (state.sobres <= 0) return;
+  state.sobres -= 1;
+  const pulls = [];
+  for (let i = 0; i < SOBRE_TAM; i++) {
+    const p = sacarCarta();
+    if (p.tipo === 'herramienta') {
+      const isNew = !hasTool(p.id);
+      grantTool(p.id);
+      pulls.push({ id: p.id, tool: true, isNew });
+    } else {
+      addStock(p.id, p.tipo === 'semilla' ? 2 : 1);
+      const isNew = discoverCard(p.id);
+      pulls.push({ id: p.id, tool: false, isNew });
+    }
+  }
+  save();
+  showRevealQueue(pulls, { finalLabel: '¡Genial!' });
+}
+
+function hoyISO() { return new Date().toISOString().slice(0, 10); }
+function regalosRestantesHoy() {
+  if (!state.regalosHechos || state.regalosHechos.fecha !== hoyISO()) return REGALOS_DIARIOS_MAX;
+  return Math.max(0, REGALOS_DIARIOS_MAX - state.regalosHechos.usados);
+}
+function registrarRegaloHecho() {
+  const hoy = hoyISO();
+  if (!state.regalosHechos || state.regalosHechos.fecha !== hoy) state.regalosHechos = { fecha: hoy, usados: 0 };
+  state.regalosHechos.usados += 1;
+  save();
+}
+function codificarRegalo(id) {
+  const nonce = Math.random().toString(36).slice(2, 8);
+  return btoa(`${id}:${nonce}`).replace(/=+$/, '');
+}
+async function generarRegalo(id) {
+  if (regalosRestantesHoy() <= 0) { toast('Ya compartiste tus regalos de hoy. Vuelve mañana 🎟'); return; }
+  const code = codificarRegalo(id);
+  const url = `${location.origin}${location.pathname}?regalo=${code}`;
+  const nombre = CARTAS[id].name;
+  const texto = `¡Te regalo mi carta de ${nombre} en Pambamesa! 🎁`;
+  registrarRegaloHecho();
+  renderFeria();
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Pambamesa', text: texto, url }); return; } catch (e) { /* canceló, no pasa nada */ }
+  }
+  try {
+    await navigator.clipboard.writeText(`${texto}\n${url}`);
+    toast('Enlace de regalo copiado. ¡Pégalo donde quieras! 📋');
+  } catch (e) {
+    toast(url);
+  }
+}
+function intentarCanjearRegalo() {
+  const params = new URLSearchParams(location.search);
+  const code = params.get('regalo');
+  if (!code) return;
+  history.replaceState({}, '', location.pathname);
+  let decoded;
+  try { decoded = atob(code); } catch (e) { return; }
+  const [id, nonce] = decoded.split(':');
+  if (!id || !CARTAS[id] || !nonce) return;
+  const marca = `${id}:${nonce}`;
+  if (!state.regalosCanjeados) state.regalosCanjeados = [];
+  if (state.regalosCanjeados.includes(marca)) { setTimeout(() => toast('Ya abriste este regalo en este cuaderno.'), 500); return; }
+  state.regalosCanjeados.push(marca);
+  const isNew = discoverCard(id);
+  addStock(id, 1);
+  save();
+  setTimeout(() => showRevealQueue([{ id, tool: false, isNew }], { finalLabel: '¡Qué lindo detalle!', giftFrom: true }), 500);
+}
+
+function renderFeria() {
+  actualizarSobresGratis();
+  $$('.sobre-count').forEach(n => n.textContent = state.sobres);
+  const abrirBtn = $('#feria-abrir-btn');
+  abrirBtn.disabled = state.sobres <= 0;
+  const rest = Math.max(0, state.proximoSobreGratisEn - Date.now());
+  $('#feria-timer').textContent = state.sobres >= SOBRE_MAX_STASH
+    ? 'Tu bolsa de sobres está llena.'
+    : rest <= 0 ? '¡Ya tienes un sobre nuevo!' : `Próximo sobre gratis en ${formatDuracion(rest)}`;
+
+  $('#regalos-restantes').textContent = regalosRestantesHoy();
+  const grid = $('#regalos-grid'); grid.innerHTML = '';
+  const disponibles = state.discovered.filter(id => CARTAS[id]);
+  if (!disponibles.length) grid.appendChild(el('span', 'regalos-empty', 'Descubre una carta primero para poder compartirla.'));
+  else disponibles.forEach(id => grid.appendChild(regaloCard(id)));
+}
+function el(tag, cls, text) { const n = document.createElement(tag); n.className = cls; if (text != null) n.textContent = text; return n; }
+
+/* ---------- El sobre de bienvenida ---------- */
+
+function abrirSobreInicial() {
+  const items = [];
+  SOBRE_INICIAL.forEach(x => { addStock(x.id, x.n); items.push({ id: x.id, tool: false, isNew: discoverCard(x.id) }); });
+  HERRAMIENTAS_INICIALES.forEach(id => { const isNew = !hasTool(id); grantTool(id); items.push({ id, tool: true, isNew }); });
+  state.starterOpened = true;
+  state.sobres += 1;   /* un sobre de propina, para que abran uno "de verdad" enseguida */
+  state.proximoSobreGratisEn = Date.now() + SOBRE_INTERVALO_MS;
+  save();
+  showRevealQueue(items, { finalLabel: 'A la mesa ✦', finalCb: () => show('taller') });
+}
+
 /* ---------- Navegación ---------- */
 
 function show(screen) {
   currentScreen = screen;
-  ['cover', 'taller', 'coleccion'].forEach(s => $('#screen-' + s).classList.toggle('active', s === screen));
+  ['cover', 'taller', 'coleccion', 'feria'].forEach(s => $('#screen-' + s).classList.toggle('active', s === screen));
   $('#hud').classList.toggle('hidden', screen === 'cover');
   $('#tabs').classList.toggle('hidden', screen === 'cover');
   $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === screen));
   if (screen === 'taller') renderTaller();
   if (screen === 'coleccion') renderColeccion();
+  if (screen === 'feria') renderFeria();
   renderProgress();
+  clearInterval(feriaTimerId);
+  if (screen === 'feria') feriaTimerId = setInterval(renderFeria, 30000);
   window.scrollTo(0, 0);
 }
 
 /* ---------- Arranque ---------- */
 
 function bindEvents() {
-  $('#btn-abrir').addEventListener('click', () => { initAudio(); state.seenCover = true; save(); show('taller'); });
+  $('#btn-abrir').addEventListener('click', () => { initAudio(); state.seenCover = true; save(); abrirSobreInicial(); });
   $('#slot-a').addEventListener('click', () => { if (slots[0]) { slots[0] = null; sfx('tab'); renderTaller(); } });
   $('#slot-b').addEventListener('click', () => { if (slots[1]) { slots[1] = null; sfx('tab'); renderTaller(); } });
   $$('.tab-btn').forEach(b => b.addEventListener('click', () => { sfx('tab'); show(b.dataset.tab); }));
 
-  $('#reveal-ok').addEventListener('click', closeReveal);
-  $('#modal-reveal').addEventListener('click', (e) => { if (e.target === $('#modal-reveal')) closeReveal(); });
+  $('#feria-abrir-btn').addEventListener('click', () => { initAudio(); abrirSobre(); });
+
+  $('#reveal-ok').addEventListener('click', advanceReveal);
+  $('#modal-reveal').addEventListener('click', (e) => { if (e.target === $('#modal-reveal')) skipReveal(); });
 
   $('#detalle-close').addEventListener('click', () => $('#modal-detalle').classList.remove('open'));
   $('#modal-detalle').addEventListener('click', (e) => { if (e.target === $('#modal-detalle')) $('#modal-detalle').classList.remove('open'); });
@@ -268,7 +492,7 @@ function bindEvents() {
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    $('#modal-reveal').classList.contains('open') ? closeReveal() : null;
+    if ($('#modal-reveal').classList.contains('open')) skipReveal();
     $('#modal-detalle').classList.remove('open');
     $('#modal-pista').classList.remove('open');
   });
@@ -279,5 +503,6 @@ function init() {
   $$('[data-icon]').forEach(n => { n.innerHTML = iconOf(n.dataset.icon); });
   bindEvents();
   show(state.seenCover ? 'taller' : 'cover');
+  intentarCanjearRegalo();
 }
 document.addEventListener('DOMContentLoaded', init);

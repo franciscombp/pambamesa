@@ -40,7 +40,7 @@
         <div class="cover-peek" aria-hidden="true">
           <span data-icon="verde"></span><span data-icon="bolon"></span><span data-icon="tigrillo"></span>
         </div>
-        <p class="cover-quote">Una gran pambamesa se sirve entre todos: cada quien trae lo suyo a la mesa. Aquí empiezas con unas pocas semillas — plátano, queso, huevo, cerdo — y las combinas para descubrir hallazgos y recetas nuevas. Cada una que encuentres se guarda como una carta en tu álbum.</p>
+        <p class="cover-quote">Una gran pambamesa se sirve entre todos: cada quien trae lo suyo a la mesa. Abre tu primer sobre —semillas y las herramientas de la abuela— y combínalas para descubrir hallazgos y recetas nuevas. Cuando se te acaben, la feria siempre tiene otro sobre… o un vecino generoso.</p>
         <button type="button" id="btn-abrir" class="btn-leather wide">Abrir el cuaderno</button>
       </div>
     </div>
@@ -77,10 +77,36 @@
     </div>
   </main>
 
+  <!-- ================= Feria: sobres y regalos ================= -->
+  <main id="screen-feria" class="screen">
+    <div class="feria-wrap">
+      <header class="feria-head">
+        <h2>La feria</h2>
+        <p class="feria-sub hand">sobres para reponer la despensa</p>
+      </header>
+
+      <div class="sobre-box">
+        <div class="sobre-visual" aria-hidden="true">
+          <span class="sobre-sello">✦</span>
+        </div>
+        <p class="sobre-stash"><span class="sobre-count">0</span> sobre(s) guardados</p>
+        <button type="button" id="feria-abrir-btn" class="btn-leather wide">Abrir un sobre</button>
+        <p id="feria-timer" class="sobre-timer"></p>
+      </div>
+
+      <section class="regalos-section">
+        <h3 class="regalos-title">Compartir con alguien</h3>
+        <p class="regalos-blurb">Elige una carta de tu álbum y regálasela a un vecino — a ti no te cuesta nada, y a él le llega una copia de verdad. Te quedan <span id="regalos-restantes">3</span> regalos hoy.</p>
+        <div id="regalos-grid" class="regalos-grid"></div>
+      </section>
+    </div>
+  </main>
+
   <!-- Navegación: la cinta lateral del cuaderno -->
   <nav id="tabs" class="tabs hidden">
     <button type="button" class="tab-btn" data-tab="taller"><span class="tab-ic" data-icon="mezclar"></span>Taller</button>
     <button type="button" class="tab-btn" data-tab="coleccion"><span class="tab-ic" data-icon="cuaderno"></span>Álbum</button>
+    <button type="button" class="tab-btn" data-tab="feria"><span class="tab-ic" data-icon="tab_mercado"></span>Feria</button>
   </nav>
 
   <!-- Modal: revelación (apertura de carta) -->
