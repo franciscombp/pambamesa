@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <title>Pambamesa (base heredada de Huecas — por rediseñar)</title>
+  <meta name="description" content="Prototipo base importado de Huecas. Pambamesa será un álbum de recetas: combina ingredientes para descubrir platos.">
+  <!-- App instalable a pantalla completa (iOS y Android) -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pambamesa">
+  <meta name="theme-color" content="#c99a67">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble"><feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter>
+</svg>
+<div id="stage">
+
+  <!-- HUD -->
+  <header id="hud" class="hud hidden">
+    <div id="hud-coins-pill" class="hud-pill coins">
+      <span class="coin-icon" data-icon="ficha" aria-hidden="true"></span>
+      <span id="hud-coins">S/ 0</span>
+    </div>
+    <div class="hud-hearts" id="hud-hearts" title="Fama de la hueca"></div>
+    <button type="button" id="hud-sound" class="hud-sound" title="Sonido" aria-label="Sonido">🔊</button>
+    <button type="button" id="hud-mode" class="hud-mode" title="Servicio / Tranquilo"></button>
+  </header>
+
+  <!-- ================= Portada ================= -->
+  <main id="screen-cover" class="screen active">
+    <div class="cover-scene">
+      <div class="cover">
+        <p class="cover-over">Ecuador · año 2000</p>
+        <h1>Huecas</h1>
+        <p class="cover-sub">el recetario de la abuela</p>
+        <div class="cover-icons" aria-hidden="true">
+          <span data-icon="bolon"></span><span data-icon="bolon_mixto"></span><span data-icon="tigrillo"></span>
+        </div>
+        <p class="cover-quote">Tu abuela ha enfermado y te encarga su hueca. Te deja un cuaderno de recetas escrito en acertijos, dibujado a mano — casi todo en blanco y negro. Cocina, descífralo, y devuélvele el color plato por plato.</p>
+        <div class="cover-actions">
+          <button type="button" id="btn-continue" class="btn-main">Continuar</button>
+          <button type="button" id="btn-new" class="btn-ghost">Abrir la hueca</button>
+        </div>
+        <button type="button" id="cover-fs" class="cover-fs"><span class="fs-ic" aria-hidden="true">⛶</span> Jugar en pantalla completa</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============= Cocina = la barra de la hueca ============= -->
+  <!-- Arriba: el fondo cálido de la hueca con EL COMENSAL en la barra.
+       El mostrador (repisa 3D) sostiene los platos listos.
+       Abajo: tu cocina de papel blanco con la mesa en perspectiva. -->
+  <main id="screen-cocina" class="screen screen-fixed">
+    <div class="barra">
+
+      <section id="comensal" class="comensal" aria-live="polite"></section>
+
+      <div class="mostrador" aria-hidden="false">
+        <div class="barra-linea" aria-hidden="true"></div>
+        <div id="ready-shelf" class="ready-strip"></div>
+      </div>
+
+      <section class="cocina">
+        <p id="cocina-riddle" class="cocina-riddle" aria-live="polite"></p>
+        <div class="mesa-persp">
+          <div class="mesa">
+            <div id="cocina-surface" class="cocina-surface">
+              <button type="button" id="slot-0" class="slot" aria-label="Lo que está en la mesa"></button>
+            </div>
+            <div id="mesa-action" class="mesa-action"></div>
+            <button type="button" id="mesa-clear" class="mesa-clear">limpiar la mesa</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ================= Recetario ================= -->
+  <main id="screen-shelf" class="screen">
+    <header class="page-head">
+      <h2 class="hand">El recetario</h2>
+      <div class="shelf-stats">
+        <div class="stat"><span class="stat-n" id="shelf-recipes">0/6</span><span class="stat-l">recetas</span></div>
+        <div class="stat"><span class="stat-n" id="shelf-served">0</span><span class="stat-l">servidos</span></div>
+      </div>
+      <p id="shelf-goal" class="shelf-goal hand"></p>
+    </header>
+    <div id="shelf-books" class="shelf-books"></div>
+    <p class="page-footnote">Toca una página para leerla. Las que siguen en boceto, el barrio las irá despertando.</p>
+  </main>
+
+  <!-- ================= Receta: Moleskine de una hoja por paso ================= -->
+  <main id="screen-receta" class="screen">
+    <div class="moleskine-wrap">
+      <button type="button" id="receta-back" class="back-link">← El recetario</button>
+
+      <header class="mk-head">
+        <span id="receta-dish-icon" class="mk-dish"></span>
+        <div class="mk-head-txt">
+          <h2 id="receta-title"></h2>
+          <p id="receta-city" class="mk-city"></p>
+          <p id="receta-intro" class="mk-intro"></p>
+        </div>
+        <div id="receta-stamp" class="stamp" aria-hidden="true">plato<br>recuperado</div>
+      </header>
+
+      <div id="mk-book" class="mk-book">
+        <span class="mk-band" aria-hidden="true"></span>
+        <span class="mk-ribbon" aria-hidden="true"></span>
+        <div id="mk-page" class="mk-page" data-ghost="1"></div>
+        <div class="mk-nav">
+          <button type="button" id="mk-prev" class="mk-arrow" aria-label="Hoja anterior">‹</button>
+          <div id="mk-dots" class="mk-dots" role="tablist"></div>
+          <button type="button" id="mk-next" class="mk-arrow" aria-label="Hoja siguiente">›</button>
+        </div>
+      </div>
+
+      <p id="receta-progress" class="mk-progress hand"></p>
+      <button type="button" id="receta-cook-btn" class="btn-main wide">Intentarlo en la mesa →</button>
+    </div>
+  </main>
+
+  <!-- ================= Mercado ================= -->
+  <main id="screen-mercado" class="screen">
+    <div class="mercado-wrap">
+      <div class="lona-top" aria-hidden="true"></div>
+      <h2 class="hand mercado-title">La lona del mercado</h2>
+      <p class="mercado-sub">“Lleve nomás, que mañana quién sabe.”</p>
+
+      <section id="market-books-section">
+        <h3 class="market-section hand">Cuadernos de otras casas</h3>
+        <div id="market-books" class="market-books"></div>
+      </section>
+
+      <h3 class="market-section hand">Ingredientes frescos</h3>
+      <div id="market-ingredients" class="market-grid"></div>
+
+      <section id="market-tools-section">
+        <h3 class="market-section hand">Utensilios y afilador</h3>
+        <div id="market-tools" class="market-grid"></div>
+      </section>
+
+      <h3 class="market-section hand">La caserita te compra</h3>
+      <div id="market-sell" class="market-grid"></div>
+
+      <button type="button" id="quick-cocina" class="quick-link">← Volver a la cocina</button>
+    </div>
+  </main>
+
+  <!-- Coach: guía paso a paso (señala qué hacer) -->
+  <div id="coach" class="coach hidden" aria-live="polite">
+    <div class="coach-bubble"><span id="coach-text"></span></div>
+  </div>
+
+  <!-- Despensa: se abre al tocar el + de la mesa -->
+  <div id="modal-despensa" class="modal sheet" role="dialog" aria-modal="true" aria-labelledby="despensa-title">
+    <div class="sheet-card">
+      <div class="sheet-head">
+        <h3 id="despensa-title" class="sheet-title hand">¿Qué ponemos?</h3>
+        <button type="button" id="despensa-close" class="sheet-close" aria-label="Cerrar">✕</button>
+      </div>
+      <p id="despensa-need" class="sheet-need"></p>
+      <div id="despensa-body" class="sheet-body"></div>
+    </div>
+  </div>
+
+  <!-- ================= Modales ================= -->
+  <div id="modal-carta" class="modal" role="dialog" aria-modal="true" aria-labelledby="carta-title">
+    <div class="carta-card">
+      <div class="carta-scroll">
+        <span class="carta-stamp" aria-hidden="true">Guayaquil, años 90</span>
+        <h3 id="carta-title" class="carta-title">De tu abuela Delfina</h3>
+        <div class="carta-body">
+          <p>Mi niño, mi niña: los médicos dicen que mi cabeza va a empezar a olvidar. Antes de que olvide quién soy, quiero que te quedes con lo que más quiero: mi hueca.</p>
+          <p>Te dejo mi cuaderno. Está escrito <b>en acertijos</b> — dirán que es manía de vieja para que no me copien. Tú descífralo <b>cocinando</b>, que así se guardan mejor las cosas.</p>
+          <p>Encontrarás verde y queso en la mesa, como pide la primera página. El barrio se acuerda de mi sazón; no los hagas esperar.</p>
+          <p>Ahora es tuya. Ponle nombre.</p>
+        </div>
+        <p class="carta-firma">— tu abuela Delfina 🌺</p>
+        <div class="carta-name">
+          <label for="carta-input">¿Cómo se va a llamar tu hueca?</label>
+          <input id="carta-input" class="carta-input" type="text" maxlength="26" placeholder="La hueca de la abuela" autocomplete="off">
+        </div>
+      </div>
+      <div class="carta-foot">
+        <button type="button" id="carta-open" class="btn-main wide">Abrir la hueca →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-intro" class="modal" role="dialog" aria-modal="true">
+    <div class="paso-card intro-card">
+      <h3 class="paso-name hand">Tu hueca costeña</h3>
+      <ul class="intro-list">
+        <li><span class="intro-ic" data-icon="tab_cocina"></span><b>Descubre.</b> Pon algo en la mesa y elige qué hacerle: agregar otra cosa o usar una acción aprendida (pelar, freír, majar…).</li>
+        <li><span class="intro-ic" data-icon="corazon"></span><b>Atiende la barra.</b> La gente llega sin parar. El tiempo solo corre aquí en la cocina: el mercado y el cuaderno son tu pausa.</li>
+        <li><span class="intro-ic" data-icon="cuaderno"></span><b>Conversa.</b> Si escuchas el chisme del comensal, te espera con más paciencia. Cada cliente que desatiendes pone más brava a la fila.</li>
+      </ul>
+      <p class="intro-tip hand">¿Sin apuros? Toca <b>Servicio/Tranquilo</b> arriba para explorar recetas sin clientela.</p>
+      <button type="button" id="intro-close" class="btn-main wide">¡A cocinar!</button>
+    </div>
+  </div>
+
+  <div id="modal-paso" class="modal" role="dialog" aria-modal="true" aria-labelledby="paso-name">
+    <div class="paso-card">
+      <div class="stamp small" aria-hidden="true">paso<br>registrado</div>
+      <span id="paso-icon" class="paso-icon"></span>
+      <h3 id="paso-name" class="paso-name hand"></h3>
+      <p id="paso-line" class="paso-line"></p>
+      <p id="paso-tech" class="paso-tech"></p>
+      <p id="paso-reward" class="paso-reward hand"></p>
+      <button type="button" id="paso-close" class="btn-main wide">Seguir cocinando</button>
+    </div>
+  </div>
+
+  <div id="modal-celebra" class="modal celebra" role="dialog" aria-modal="true" aria-labelledby="celebra-name">
+    <div id="confetti" class="confetti" aria-hidden="true"></div>
+    <div class="celebra-card">
+      <div class="celebra-burst" aria-hidden="true"><span id="celebra-icon"></span></div>
+      <div id="celebra-stamp" class="stamp big" aria-hidden="true">plato<br>recuperado</div>
+      <h3 id="celebra-name" class="celebra-name hand"></h3>
+      <p id="celebra-city" class="celebra-city"></p>
+      <p id="celebra-line" class="celebra-line"></p>
+      <p id="celebra-sell" class="celebra-sell hand"></p>
+      <p id="celebra-reward" class="celebra-reward hand"></p>
+      <button type="button" id="celebra-close" class="btn-main wide">Ver la página</button>
+    </div>
+  </div>
+
+  <div id="modal-milestone" class="modal celebra" role="dialog" aria-modal="true">
+    <div class="celebra-card">
+      <div class="celebra-burst" aria-hidden="true"><span id="milestone-icon"></span></div>
+      <div class="stamp big" aria-hidden="true">nueva<br>fama</div>
+      <h3 id="milestone-title" class="celebra-name hand"></h3>
+      <p id="milestone-served" class="celebra-city"></p>
+      <p id="milestone-note" class="celebra-line"></p>
+      <p id="milestone-reward" class="celebra-reward hand"></p>
+      <button type="button" id="milestone-close" class="btn-main wide">¡Qué orgullo!</button>
+    </div>
+  </div>
+
+  <div id="modal-mishap" class="modal" role="dialog" aria-modal="true">
+    <div class="paso-card mishap-card">
+      <span id="mishap-icon" class="paso-icon mishap-icon"></span>
+      <h3 id="mishap-title" class="paso-name hand"></h3>
+      <p id="mishap-text" class="paso-line"></p>
+      <div class="mishap-actions">
+        <button type="button" id="mishap-toss" class="btn-main">Botar</button>
+        <button type="button" id="mishap-keep" class="btn-ghost">Guardar igual</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-visita" class="modal" role="dialog" aria-modal="true" aria-labelledby="visita-title">
+    <div class="paso-card visita-card">
+      <span class="visita-badge" aria-hidden="true">★</span>
+      <span id="visita-icon" class="paso-icon"></span>
+      <h3 id="visita-title" class="paso-name hand"></h3>
+      <p id="visita-text" class="paso-line"></p>
+      <p id="visita-want" class="visita-want"></p>
+      <p id="visita-reward" class="celebra-reward hand"></p>
+      <button type="button" id="visita-ok" class="btn-main wide"></button>
+    </div>
+  </div>
+
+  <div id="modal-salubridad" class="modal" role="dialog" aria-modal="true">
+    <div class="paso-card">
+      <span id="salubridad-icon" class="paso-icon"></span>
+      <h3 id="salubridad-title" class="paso-name hand"></h3>
+      <p id="salubridad-text" class="paso-line"></p>
+      <button type="button" id="salubridad-ok" class="btn-main wide"></button>
+    </div>
+  </div>
+
+  <div id="modal-arriendo" class="modal" role="dialog" aria-modal="true">
+    <div class="paso-card">
+      <span class="paso-icon" data-icon="arriendo"></span>
+      <h3 class="paso-name hand">El arriendo</h3>
+      <p id="arriendo-text" class="paso-line"></p>
+      <p id="arriendo-note" class="paso-tech"></p>
+      <button type="button" id="arriendo-pay" class="btn-main wide">Pagar</button>
+    </div>
+  </div>
+
+  <div id="modal-cierre" class="modal" role="dialog" aria-modal="true">
+    <div class="paso-card">
+      <span class="paso-icon" data-icon="cuaderno"></span>
+      <h3 class="paso-name hand">La hueca cierra…</h3>
+      <p class="paso-line">Sin sucres y sin fama, toca bajar la persiana. Pero las recetas y los utensilios se quedan contigo, por si algún día quieres volver.</p>
+      <p id="cierre-veces" class="paso-tech"></p>
+      <button type="button" id="cierre-reopen" class="btn-main wide">Volver a abrir la hueca</button>
+    </div>
+  </div>
+
+  <!-- Escena de diálogo (novela visual): el personaje habla y el juego espera -->
+  <div id="modal-escena" class="modal escena" role="dialog" aria-modal="true" aria-labelledby="escena-nombre">
+    <div class="escena-card">
+      <span id="escena-avatar" class="escena-avatar" aria-hidden="true"></span>
+      <div class="escena-body">
+        <span id="escena-nombre" class="escena-nombre"></span>
+        <p id="escena-texto" class="escena-texto hand"></p>
+        <div id="escena-ops" class="escena-ops"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="banner" class="banner" role="status" aria-live="polite"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Navegación flotante contextual (GDD §4.2): objetos del cuaderno -->
+  <div id="float-nav" class="float-nav hidden">
+    <button type="button" id="fab-mercado" class="fab fab-main" aria-label="Ir al mercado">
+      <span class="fab-icon" data-icon="tab_mercado"></span>
+      <span class="fab-tag hand">mercado</span>
+    </button>
+    <button type="button" id="fab-cuaderno" class="fab fab-mini" aria-label="Abrir el cuaderno de recetas">
+      <span class="fab-icon" data-icon="cuaderno"></span>
+      <span class="fab-tag hand">cuaderno</span>
+    </button>
+  </div>
+  <button type="button" id="float-back" class="float-back hidden" aria-label="Volver">↩</button>
+
+</div>
+  <script src="icons.js"></script>
+  <script src="data.js"></script>
+  <script src="recetario.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
