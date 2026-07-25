@@ -1,14 +1,13 @@
 /* ============================================================
-   HUECAS — El recetario de la abuela
-   recetario.js — CONTENIDO en datos (GDD §2) + adapter de motor.
+   PAMBAMESA — cuaderno de viaje de sabores
+   recetario.js — CONTENIDO en datos + adapter a cartas de álbum.
 
-   GAME_DATA es JSON puro (esquema del GDD §2.2). El motor no
-   sabe nada de bolones: si agregas una receta aquí, el juego la
-   juega sin tocar app.js. buildRecetario() traduce el esquema a
-   las estructuras del motor (ITEMS / CUADERNOS / CUADERNO_ORDER).
-
-   REGLA DE ESCALAMIENTO (GDD §2.3): agregar la receta #4, #20 es
-   trabajo de contenido en este archivo, no de reingeniería.
+   GAME_DATA es JSON puro (heredado de Huecas: ingredientes, recetas
+   con pasos "a + b → resultado", pistas y notas). El motor no sabe
+   nada de bolones: buildCartario() traduce ese contenido a un
+   registro de CARTAS coleccionables (semilla/hallazgo/receta) y una
+   tabla de RECETAS de fusión (Little Alchemy). Agregar una receta
+   nueva es trabajo de contenido aquí, no de reingeniería.
    ============================================================ */
 
 const GAME_DATA = {
@@ -166,69 +165,65 @@ const GAME_DATA = {
 };
 
 /* ============================================================
-   ADAPTER — traduce GAME_DATA al motor (agnóstico al contenido).
-   Corre después de data.js y antes de app.js.
+   ADAPTER — traduce GAME_DATA a cartas + fórmulas de fusión.
+   Corre después de icons.js y antes de app.js.
+
+   CARTAS[id]      → { id, name, rarity, lore, city?, accent? }
+   RECETAS         → [{ a, b, result, verbo, pista }]  (Little Alchemy)
+   CARTA_ORDEN     → orden de exhibición en el álbum
+   UTENSILIOS      → herramientas fijas (no son cartas, no se coleccionan)
    ============================================================ */
-function buildRecetario() {
-  /* técnicas nuevas → ITEMS */
-  GAME_DATA.tecnicas_nuevas.forEach(t => {
-    ITEMS[t.id] = { name: t.nombre, type: 'technique', note: t.nota };
-  });
-  /* resultados intermedios → ITEMS */
-  GAME_DATA.resultados.forEach(r => {
-    ITEMS[r.id] = Object.assign(ITEMS[r.id] || {}, { name: r.nombre, type: r.tipo });
-  });
-  /* ingredientes → ITEMS (precio de mercado) */
+const CARTAS = {};
+const RECETAS = [];
+const CARTA_ORDEN = [];
+const UTENSILIOS = [
+  { id: 'cuchillo', name: 'Cuchillo' },
+  { id: 'olla',     name: 'Olla' },
+  { id: 'pilon',    name: 'Pilón' },
+  { id: 'sarten',   name: 'Sartén' },
+];
+const isUtensilio = (id) => UTENSILIOS.some(u => u.id === id);
+
+function buildCartario() {
+  /* lore de cada hallazgo = la instrucción real del paso que lo produce */
+  const loreDeResultado = {};
+  GAME_DATA.recetas.forEach(r => r.pasos.forEach(p => { loreDeResultado[p.resultado] = p.receta_real; }));
+
+  /* semillas: siempre en tu colección desde el día uno */
   GAME_DATA.ingredientes.forEach(i => {
-    ITEMS[i.id] = Object.assign(ITEMS[i.id] || {}, {
-      name: i.nombre, type: 'ingredient', price: i.costo_mercado, note: i.nota,
-    });
+    CARTAS[i.id] = { id: i.id, name: i.nombre, rarity: 'semilla', lore: i.nota };
+    CARTA_ORDEN.push(i.id);
   });
-
-  /* recetas → CUADERNOS + platos en ITEMS */
+  /* hallazgos: preparaciones intermedias, se descubren combinando */
+  GAME_DATA.resultados.forEach(r => {
+    CARTAS[r.id] = { id: r.id, name: r.nombre, rarity: 'hallazgo', lore: loreDeResultado[r.id] || '' };
+    CARTA_ORDEN.push(r.id);
+  });
+  /* recetas: el plato terminado, la pieza más rara del álbum */
   GAME_DATA.recetas.forEach(r => {
-    ITEMS[r.plato] = Object.assign(ITEMS[r.plato] || {}, {
-      name: r.nombre, type: 'dish', sell: r.precio_venta,
-    });
-    delete ITEMS[r.plato].variant;   /* en el MVP cada receta es plato propio */
+    CARTAS[r.plato] = {
+      id: r.plato, name: r.nombre, rarity: 'receta',
+      city: r.ciudad, accent: r.acento,
+      lore: (r.tarjeta && r.tarjeta.texto_cultural) || r.intro,
+    };
+    CARTA_ORDEN.push(r.plato);
 
-    const steps = r.pasos.map(p => {
+    /* cada paso es una fórmula de fusión: a + (b o utensilio) → resultado */
+    r.pasos.forEach(p => {
       const util = GAME_DATA.acciones[p.accion] && GAME_DATA.acciones[p.accion].utensilio;
-      return {
+      RECETAS.push({
         a: p.ingrediente_objetivo,
         b: p.ingrediente_secundario || util,
         result: p.resultado,
-        tech: p.accion,
-        hint: p.acertijo,
-        line: p.receta_real,
-      };
+        verbo: p.accion,
+        pista: p.acertijo,
+      });
     });
-
-    const grants = r.desbloqueada_por_default
-      ? [...GAME_DATA.utensilios_de_la_abuela,
-         ...r.ingredientes.flatMap(i => Array(i.cantidad).fill(i.id))]
-      : [];
-
-    CUADERNOS[r.plato] = {
-      dish: r.plato,
-      title: r.nombre,
-      city: r.ciudad, region: 'costa',
-      cost: 0,
-      storyUnlock: !r.desbloqueada_por_default,   /* la historia la trae, no la lona */
-      accent: r.acento,
-      blurb: r.intro,
-      intro: r.intro,
-      cultural: r.tarjeta && r.tarjeta.texto_cultural,
-      grants,
-      steps,
-    };
-    CUADERNO_ORDER.push(r.plato);
   });
 
-  /* alias de iconos para los ids nuevos (mientras no tengan dibujo propio) */
+  /* alias de iconos para los ids nuevos (comparten dibujo con uno existente) */
   const alias = { masa_verde: 'verde_majado', bolon_crudo: 'masa_bolon',
-                  masa_mixta: 'masa_bolon', bolon_mixto_crudo: 'masa_bolon',
-                  cocer: 'hervir', rellenar: 'mezclar', fundir: 'mezclar' };
+                  masa_mixta: 'masa_bolon', bolon_mixto_crudo: 'masa_bolon' };
   Object.entries(alias).forEach(([id, src]) => { if (!ICONS[id] && ICONS[src]) ICONS[id] = ICONS[src]; });
 }
-buildRecetario();
+buildCartario();

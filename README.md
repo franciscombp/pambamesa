@@ -1,31 +1,32 @@
 # Pambamesa
 
-**Aún por diseñar.** Este repo arranca con el motor de [Huecas](https://github.com/franciscombp/huecas)
-importado tal cual, como base para no empezar de cero — el juego que se
-juega hoy sigue siendo el de Huecas (una hueca costeña, cliente por
-cliente). La idea real de Pambamesa es otra:
+Un cuaderno de viaje coleccionable: combina ingredientes sobre la mesa
+para descubrir cartas nuevas — al estilo **Little Alchemy** — y
+guárdalas en tu álbum, como un **TCG coleccionable**. Sin clientes, sin
+arriendo, sin reloj: solo el gusto de combinar y completar la colección.
 
-> Un álbum de recetas al estilo **Little Alchemy** combinado con un
-> **TCG coleccionable**: combinas ingredientes sobre la mesa para
-> descubrir páginas/cartas nuevas, sin la presión de atender una fila
-> de clientes. Pambamesa — el picnic comunitario andino — como excusa
-> para reunir y compartir esas recetas descubiertas.
+Jugable en: https://franciscombp.github.io/pambamesa/
 
-## Qué se heredó de Huecas y por qué
+## Cómo funciona
 
-| Archivo | Se reutiliza porque… |
+- **Semillas**: empiezas con unos pocos ingredientes base (plátano
+  verde, queso, huevo, carne de cerdo) — siempre a mano, como las
+  herramientas (cuchillo, olla, pilón, sartén).
+- **Taller**: pon dos cartas en la mesa y combínalas. Si hay una fórmula
+  para esa pareja, descubres un **hallazgo** (una preparación) o una
+  **receta** (un plato terminado) y se guarda en tu álbum.
+- **Álbum**: todas las cartas, ordenadas por rareza. Las que aún no
+  descubres se ven como el reverso de una carta — con su pista ya
+  escrita en el cuaderno, esperando que la resuelvas combinando.
+
+## Arquitectura (heredada de Huecas, adaptada)
+
+| Archivo | Rol |
 |---|---|
-| `icons.js` | Set de ilustraciones acuarela + tinta, reusable para cualquier ingrediente/plato nuevo. |
-| `styles.css` | Dirección de arte "cuaderno blanco" skeumórfico (relieves, blur, Moleskine por hojas) — el look que Pambamesa también quiere. |
-| `recetario.js` | El *adapter* que traduce contenido en JSON (`GAME_DATA`) a las estructuras del motor. Agregar una receta es trabajo de datos, no de código — eso es exactamente lo que un álbum tipo Little Alchemy necesita. |
-| `app.js` / `data.js` | El motor de combinación (mesa, boceto→color, descubrimiento) sirve de base; todo lo que es servicio de clientes, arriendo, salubridad, comensales de historia, presión de tiempo **se va a retirar o reemplazar** — eso era el juego de Huecas, no el de Pambamesa. |
-
-## Próximo paso
-
-Rediseñar el bucle: quitar la cola de clientes / arriendo / presión de
-tiempo, y construir la pantalla de álbum (cartas descubiertas vs. en
-silueta, como un binder de TCG) sobre la mesa de combinar que ya
-existe.
+| `recetario.js` | `GAME_DATA` (ingredientes, recetas con pasos "a + b → resultado", pistas, notas) + `buildCartario()`: el adapter que arma el registro de cartas (`CARTAS`), la tabla de fusión (`RECETAS`) y el orden del álbum (`CARTA_ORDEN`). Agregar una carta nueva es trabajo de datos, no de código. |
+| `app.js` | El motor: mesa de dos casillas, combinar, revelar, álbum, guardado. Sin economía, sin cola de clientes. |
+| `icons.js` | Ilustraciones acuarela + tinta (heredadas de Huecas), reutilizadas como arte de las cartas. |
+| `index.html` / `styles.css` | Cuaderno de viaje andino: tapa de cuero con esquinas de latón, páginas de kraft, cartas con marco de rareza y reverso tejido para lo no descubierto. |
 
 ## Cómo correrlo localmente
 

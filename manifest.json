@@ -1,14 +1,14 @@
 {
   "name": "Pambamesa",
   "short_name": "Pambamesa",
-  "description": "Álbum de recetas: combina ingredientes para descubrir platos (base heredada de Huecas, en rediseño).",
+  "description": "Cuaderno de viaje coleccionable: combina ingredientes para descubrir cartas y llenar tu álbum.",
   "lang": "es",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#faf4e4",
-  "theme_color": "#c99a67",
+  "background_color": "#2a2019",
+  "theme_color": "#6b4a35",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
