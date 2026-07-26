@@ -309,6 +309,19 @@ svg { display: block; width: 100%; height: 100%; }
 .acceso-ic { font-size: 1.9rem; }
 .acceso-txt { font-size: .82rem; font-weight: 600; color: var(--ink); }
 
+/* lo que ya preparaste se queda a la vista sobre la mesa, no en un
+   cajón aparte, para que no se te olvide seguir usándolo */
+.en-preparacion {
+  background: rgba(255,250,235,.4); border: 1px dashed var(--line);
+  border-radius: 16px; padding: .7rem .8rem .5rem;
+}
+.en-preparacion-label {
+  display: block; font-size: .72rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: .5rem;
+}
+.en-preparacion-row { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .1rem; -webkit-overflow-scrolling: touch; }
+.en-preparacion-row::-webkit-scrollbar { height: 0; }
+
 .carta-mini {
   position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem;
   width: 68px; padding: .4rem .3rem .35rem;
@@ -538,17 +551,35 @@ svg { display: block; width: 100%; height: 100%; }
 /* ---------- Revelación: giro 3D + swipe, al estilo de un sobre TCG ---------- */
 .reveal-wrap { display: flex; flex-direction: column; align-items: center; gap: .9rem; max-width: 320px; width: 100%; }
 .reveal-stage {
+  position: relative;
   width: 200px; aspect-ratio: 5 / 7;
   perspective: 1100px;
   touch-action: none;                 /* el gesto lo maneja JS, no el scroll del navegador */
   cursor: grab;
 }
 .carta-flip {
-  position: relative; width: 100%; height: 100%;
+  position: relative; z-index: 3; width: 100%; height: 100%;
   transform-style: preserve-3d;
   transition: transform .5s cubic-bezier(.2, .85, .25, 1);
   will-change: transform;
 }
+
+/* pila detrás de la carta actual: se nota que hay más esperando su turno */
+.reveal-stack-layer {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0;
+  pointer-events: none;
+  transition: transform .3s ease, opacity .3s ease;
+}
+#reveal-stack-2 { z-index: 2; transform: translate(7px, 14px) rotate(3deg); }
+#reveal-stack-3 { z-index: 1; transform: translate(-8px, 24px) rotate(-4deg); }
+.reveal-restantes {
+  position: absolute; top: -.7rem; right: -.5rem; z-index: 4;
+  font-size: .8rem; font-weight: 700; color: #3a2b12;
+  background: conic-gradient(from 210deg, var(--brass), var(--brass-d), var(--brass));
+  border-radius: 999px; padding: .2rem .55rem;
+  box-shadow: 0 3px 8px rgba(0,0,0,.4);
+}
+.reveal-restantes.hidden { display: none; }
 .carta-face {
   position: absolute; inset: 0;
   backface-visibility: hidden; -webkit-backface-visibility: hidden;

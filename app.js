@@ -33,6 +33,7 @@ const REGALOS_DIARIOS_MAX = 3;
    lo alimenta); se gastan cuando la despensa se queda corta. */
 const SUCRES_POR_COCINAR = 1;
 const SUCRES_POR_RAREZA = { semilla: 3, hallazgo: 6, receta: 25 };
+const SUCRES_POR_RECETA_REPETIDA = 8;  /* cocinar de nuevo un plato ya terminado también vale: para eso sirve — vender o regalar */
 const MERCADO_COSTO_SEMILLA = 4;
 const MERCADO_COSTO_SOBRE = 20;
 const PREGON_COOLDOWN_MS = 20 * 60 * 1000;   /* cada 20 min hay pregón nuevo */
@@ -126,7 +127,7 @@ function iniciarSobreDeRegion(rid) {
   r.kitHerramientas.forEach(id => { const isNew = !hasTool(id); grantTool(id); items.push({ id, tool: true, isNew }); });
   r.kitSemillas.forEach(x => { addStock(x.id, x.n); items.push({ id: x.id, tool: false, isNew: discoverCard(x.id) }); });
   save();
-  showRevealQueue(items, { finalLabel: `¡A explorar ${r.nombre}! ✦`, finalCb: () => banner(`Se abrió ${r.nombre}`, '🗺') });
+  procesarColeccionables(items, { finalLabel: `¡A explorar ${r.nombre}! ✦`, finalCb: () => banner(`Se abrió ${r.nombre}`, '🗺') });
 }
 
 /* ---------- Juice mínimo: sonido y vibración ---------- */
@@ -247,6 +248,20 @@ function renderTaller() {
   b.className = 'carta-slot' + (slots[1] ? ' filled' : '');
   renderTallerAction();
   renderComboIndicador();
+  renderEnPreparacion();
+}
+
+/* lo que ya empezaste a preparar se queda a la vista, sobre la mesa
+   —no en un cajón aparte— para que no se te olvide seguir usándolo */
+function renderEnPreparacion() {
+  const wrap = $('#en-preparacion');
+  const ids = state.discovered.filter(id => CARTAS[id] && CARTAS[id].rarity === 'hallazgo' && stockOf(id) > 0);
+  if (!ids.length) { wrap.classList.add('hidden'); wrap.innerHTML = ''; return; }
+  wrap.classList.remove('hidden');
+  wrap.innerHTML = '<span class="en-preparacion-label">En preparación</span>';
+  const row = el('div', 'en-preparacion-row');
+  ids.forEach(id => row.appendChild(miniChip(id)));
+  wrap.appendChild(row);
 }
 function slotEmptyHTML() { return '<span class="slot-plus" aria-hidden="true">+</span><span class="slot-txt">elige un ingrediente</span>'; }
 
@@ -298,19 +313,18 @@ function renderTallerAction() {
       zone.appendChild(limpiar);
       return;
     }
-    zone.innerHTML = `<span class="taller-hint">Abre la refri o la canasta y añade el segundo ingrediente</span>`;
+    zone.innerHTML = `<span class="taller-hint">Añade el segundo ingrediente desde la canasta, o toca algo de lo que tienes en preparación</span>`;
     return;
   }
   zone.innerHTML = `<span class="taller-hint">Abre la canasta 🧺 y elige un ingrediente para empezar</span>`;
 }
 
-/* ---------- Despensa: canasta / refri / utensilios (se abren bajo pedido) ---------- */
+/* ---------- Despensa: canasta / utensilios (se abren bajo pedido) ---------- */
 
 let despensaTipo = null;
-const DESPENSA_TITULO = { ingredientes: 'La canasta', refri: 'La refri', utensilios: 'Utensilios' };
+const DESPENSA_TITULO = { ingredientes: 'La canasta', utensilios: 'Utensilios' };
 const DESPENSA_VACIO = {
   ingredientes: 'Sin ingredientes por ahora — cómpralos o abre un sobre en la feria.',
-  refri: 'Nada preparado todavía. Empieza con un ingrediente de la canasta.',
   utensilios: 'Sin utensilios listos — consíguelos en la feria.',
 };
 function abrirDespensa(tipo) {
@@ -325,7 +339,6 @@ function renderDespensaGrid() {
   const grid = $('#despensa-grid'); grid.innerHTML = '';
   let ids = [];
   if (despensaTipo === 'ingredientes') ids = CARTA_ORDEN.filter(id => CARTAS[id].rarity === 'semilla' && regionesAbiertas().includes(CARTAS[id].region) && stockOf(id) > 0);
-  else if (despensaTipo === 'refri') ids = state.discovered.filter(id => CARTAS[id] && CARTAS[id].rarity === 'hallazgo' && stockOf(id) > 0);
   else if (despensaTipo === 'utensilios') ids = UTENSILIOS.filter(u => regionesAbiertas().includes(u.region) && hasTool(u.id)).map(u => u.id);
 
   if (!ids.length) { grid.appendChild(el('p', 'despensa-vacio', DESPENSA_VACIO[despensaTipo])); return; }
@@ -378,12 +391,38 @@ function combinarMesa() {
   addStock(r.result, 1);
   comboCocina += 1;
   const comboBono = (comboCocina % COMBO_CADA === 0) ? COMBO_BONO : 0;
-  const sucres = SUCRES_POR_COCINAR + (isNew ? (SUCRES_POR_RAREZA[CARTAS[r.result].rarity] || 0) : 0) + comboBono;
+  const rarity = CARTAS[r.result].rarity;
+  /* un plato ya conocido no se descubre de nuevo, pero sí sirve para
+     vender o regalar — por eso repetirlo también da sucres */
+  const bonoRareza = isNew ? (SUCRES_POR_RAREZA[rarity] || 0) : (rarity === 'receta' ? SUCRES_POR_RECETA_REPETIDA : 0);
+  const sucres = SUCRES_POR_COCINAR + bonoRareza + comboBono;
   state.sucres = (state.sucres || 0) + sucres;
   revisarDesbloqueoRegiones();
   save();
   clearSlots();
-  showRevealQueue([{ id: r.result, tool: false, isNew, sucres, combo: comboBono ? comboCocina : 0 }], { finalLabel: 'Guardar en el álbum' });
+  procesarColeccionables([{ id: r.result, tool: false, isNew, sucres, combo: comboBono ? comboCocina : 0 }], { finalLabel: 'Guardar en el álbum' });
+}
+
+/* ============================================================
+   Ceremonia de revelación vs. resultado silencioso: una preparación
+   que ya tienes en el álbum no necesita mostrarse en grande otra vez
+   (rompe el ritmo de cocinar); un plato terminado o algo nuevo sí.
+   ============================================================ */
+function necesitaCeremonia(item) {
+  if (item.isNew) return true;
+  return !item.tool && CARTAS[item.id].rarity === 'receta';
+}
+function procesarColeccionables(items, opts = {}) {
+  const ceremonia = items.filter(necesitaCeremonia);
+  const silenciosos = items.filter(it => !necesitaCeremonia(it));
+  if (silenciosos.length) {
+    const resumen = silenciosos.map(it => `+1 ${it.tool ? UTENSILIOS.find(u => u.id === it.id).name : CARTAS[it.id].name}`).join(' · ');
+    toast(resumen);
+    sfx('tab');
+  }
+  if (ceremonia.length) { showRevealQueue(ceremonia, opts); return; }
+  if (pendingRegionUnlock) { const rid = pendingRegionUnlock; pendingRegionUnlock = null; iniciarSobreDeRegion(rid); return; }
+  if (opts.finalCb) opts.finalCb();
 }
 
 /* ============================================================
@@ -439,7 +478,17 @@ function nextRevealCard(first) {
   $('#reveal-banner').textContent = '';
   $('#reveal-hint').classList.remove('hidden');
   $('#reveal-ok').textContent = 'Revelar';
+  actualizarPilaReveal();
   sfx('peel'); buzz(8);
+}
+/* pila detrás de la carta actual: deja ver que hay más esperando */
+function actualizarPilaReveal() {
+  const restantes = revealQueue.length;
+  $('#reveal-stack-2').classList.toggle('hidden', restantes < 1);
+  $('#reveal-stack-3').classList.toggle('hidden', restantes < 2);
+  const badge = $('#reveal-restantes');
+  if (restantes > 0) { badge.textContent = `+${restantes} más`; badge.classList.remove('hidden'); }
+  else badge.classList.add('hidden');
 }
 function revealFlip() {
   if (!revealCurrent || revealPhase === 'front') return;
@@ -449,9 +498,13 @@ function revealFlip() {
   flip.classList.add('is-front');
   const item = revealCurrent;
   const nombre = item.tool ? UTENSILIOS.find(u => u.id === item.id).name : CARTAS[item.id].name;
-  const especial = item.isNew || revealIsGift;
+  const rarity = item.tool ? null : CARTAS[item.id].rarity;
+  const esRecetaRepetida = !item.isNew && rarity === 'receta';
+  const especial = item.isNew || revealIsGift || esRecetaRepetida;
   let msg = revealIsGift ? '¡Te compartieron esta carta! 🎁'
-    : item.isNew ? '¡Nueva carta para tu álbum!' : `+1 ${nombre}`;
+    : item.isNew ? '¡Nueva carta para tu álbum!'
+    : esRecetaRepetida ? `¡Otra vez ${nombre}! Sirve para vender o compartir`
+    : `+1 ${nombre}`;
   if (item.sucres) msg += ` · +${item.sucres} <span class="icono-sucre">S</span>`;
   if (item.combo) msg += ` · 🔥 Racha de cocina x${item.combo}`;
   $('#reveal-banner').innerHTML = msg;
@@ -461,7 +514,7 @@ function revealFlip() {
   $('#reveal-ok').textContent = revealQueue.length ? 'Siguiente carta →' : revealFinalLabel;
   sfx(especial ? 'win' : 'flip');
   buzz(especial ? [30, 40, 60] : 15);
-  if (especial && !item.tool && CARTAS[item.id].rarity === 'receta') burstConfetti($('#reveal-front'));
+  if (especial && !item.tool && rarity === 'receta') burstConfetti($('#reveal-front'));
   if (item.combo) burstConfetti($('#reveal-front'));
 }
 function revealAdvance() {
@@ -645,7 +698,7 @@ function abrirSobre() {
   }
   revisarDesbloqueoRegiones();
   save();
-  showRevealQueue(pulls, { finalLabel: '¡Genial!' });
+  procesarColeccionables(pulls, { finalLabel: '¡Genial!' });
 }
 
 function hoyISO() { return new Date().toISOString().slice(0, 10); }
@@ -869,7 +922,6 @@ function bindEvents() {
   $('#pregon-btn').addEventListener('click', () => { initAudio(); escucharPregon(); });
 
   $('#acceso-canasta').addEventListener('click', () => abrirDespensa('ingredientes'));
-  $('#acceso-refri').addEventListener('click', () => abrirDespensa('refri'));
   $('#acceso-utensilios').addEventListener('click', () => abrirDespensa('utensilios'));
   $('#despensa-close').addEventListener('click', cerrarDespensa);
   $('#modal-despensa').addEventListener('click', (e) => { if (e.target === $('#modal-despensa')) cerrarDespensa(); });
