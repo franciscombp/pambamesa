@@ -100,6 +100,7 @@ let state = null;
 let currentScreen = 'cover';
 let slots = [null, null];
 let feriaTimerId = null;
+let escenaOn = false;   /* ¿está corriendo el mesón 3D? (si no, fogón 2D) */
 
 const stockOf = (id) => state.stock[id] || 0;
 function addStock(id, n) { state.stock[id] = Math.max(0, (state.stock[id] || 0) + n); }
@@ -241,14 +242,33 @@ function regaloCard(id) {
 /* ---------- El fogón (Taller) ---------- */
 
 function renderTaller() {
-  const a = $('#slot-a'), b = $('#slot-b');
-  a.innerHTML = slots[0] ? mesaItemInner(slots[0]) : slotEmptyHTML();
-  a.className = 'carta-slot' + (slots[0] ? ' filled' : '');
-  b.innerHTML = slots[1] ? mesaItemInner(slots[1]) : slotEmptyHTML();
-  b.className = 'carta-slot' + (slots[1] ? ' filled' : '');
+  if (escenaOn) {
+    Escena3D.setSlots(slots);
+    renderMesaEtiquetas();
+  } else {
+    const a = $('#slot-a'), b = $('#slot-b');
+    a.innerHTML = slots[0] ? mesaItemInner(slots[0]) : slotEmptyHTML();
+    a.className = 'carta-slot' + (slots[0] ? ' filled' : '');
+    b.innerHTML = slots[1] ? mesaItemInner(slots[1]) : slotEmptyHTML();
+    b.className = 'carta-slot' + (slots[1] ? ' filled' : '');
+  }
   renderTallerAction();
   renderComboIndicador();
   renderEnPreparacion();
+}
+
+/* nombres de lo que hay sobre la tabla 3D; tocar la etiqueta lo quita */
+function nombreDe(id) { return isUtensilio(id) ? UTENSILIOS.find(u => u.id === id).name : CARTAS[id].name; }
+function renderMesaEtiquetas() {
+  const wrap = $('#mesa-etiquetas'); wrap.innerHTML = '';
+  slots.forEach((id, i) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'mesa-etiqueta' + (id ? '' : ' vacia');
+    chip.textContent = id ? `${nombreDe(id)} ✕` : (i === 0 ? 'elige un ingrediente' : '+');
+    if (id) chip.addEventListener('click', () => { slots[i] = null; sfx('tab'); renderTaller(); });
+    wrap.appendChild(chip);
+  });
 }
 
 /* lo que ya empezaste a preparar se queda a la vista, sobre la mesa
@@ -374,8 +394,9 @@ function combinarMesa() {
   const [x, y] = slots;
   if (!x || !y) return;
   const r = findReceta(x, y);
-  const surface = $('#fogon');
+  const surface = escenaOn ? $('#cocina3d') : $('#fogon');
   if (!r) {
+    if (escenaOn) Escena3D.shake();
     surface.classList.remove('shake'); void surface.offsetWidth; surface.classList.add('shake');
     sfx('fail'); buzz(60);
     toast('Esos dos no combinan… todavía. Prueba otra pareja.');
@@ -399,8 +420,9 @@ function combinarMesa() {
   state.sucres = (state.sucres || 0) + sucres;
   revisarDesbloqueoRegiones();
   save();
-  clearSlots();
-  procesarColeccionables([{ id: r.result, tool: false, isNew, sucres, combo: comboBono ? comboCocina : 0 }], { finalLabel: 'Al recetario ✦' });
+  const fin = () => procesarColeccionables([{ id: r.result, tool: false, isNew, sucres, combo: comboBono ? comboCocina : 0 }], { finalLabel: 'Al recetario ✦' });
+  if (escenaOn) { Escena3D.combinar(fin); clearSlots(); }   /* poof de estrellitas sobre la tabla, luego la carta */
+  else { clearSlots(); fin(); }
 }
 
 /* ============================================================
@@ -904,9 +926,23 @@ function show(screen) {
   if (screen === 'coleccion') renderColeccion();
   if (screen === 'feria') renderFeria();
   renderProgress();
+  if (escenaOn) Escena3D.setActive(screen === 'taller');   /* no gastar batería fuera de la cocina */
   clearInterval(feriaTimerId);
   if (screen === 'feria') feriaTimerId = setInterval(renderFeria, 30000);
   window.scrollTo(0, 0);
+}
+
+/* ---------- El mesón 3D (si hay WebGL; si no, fogón 2D de siempre) ---------- */
+
+function initEscena3D() {
+  const cont = $('#cocina3d');
+  if (!window.Escena3D || !cont) return;
+  try { escenaOn = Escena3D.init(cont); } catch (e) { escenaOn = false; }
+  if (!escenaOn) return;
+  cont.classList.remove('hidden');
+  $('#fogon').classList.add('hidden');
+  $('#mesa-etiquetas').classList.remove('hidden');
+  Escena3D.onItemTap(i => { if (slots[i]) { slots[i] = null; sfx('tab'); renderTaller(); } });
 }
 
 /* ---------- Arranque ---------- */
@@ -949,8 +985,12 @@ function bindEvents() {
 
 function init() {
   state = load() || newState();
+  /* los gradientes de acuarela de los iconos viven en ICON_DEFS y
+     deben estar en el documento para que url(#...) resuelva */
+  document.body.insertAdjacentHTML('beforeend', ICON_DEFS);
   $$('[data-icon]').forEach(n => { n.innerHTML = iconOf(n.dataset.icon); });
   revisarRachaDiaria();
+  initEscena3D();
   bindEvents();
   show(state.seenCover ? 'taller' : 'cover');
   intentarCanjearRegalo();

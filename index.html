@@ -9,14 +9,17 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Pambamesa">
-  <meta name="theme-color" content="#0d0f14">
+  <meta name="theme-color" content="#9cdae4">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500;1,600&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
+  </script>
 </head>
 <body>
 <div id="stage">
@@ -38,13 +41,13 @@
       <div class="cover-book">
         <span class="cover-spotlight" aria-hidden="true"></span>
         <span class="cover-star" aria-hidden="true">✦</span>
-        <p class="cover-over">tu cocina de autor</p>
+        <p class="cover-over">tu cocinita</p>
         <h1>Pambamesa</h1>
         <p class="cover-sub">prepara, prueba, descubre</p>
         <div class="cover-peek" aria-hidden="true">
           <span data-icon="verde"></span><span data-icon="bolon"></span><span data-icon="tigrillo"></span>
         </div>
-        <p class="cover-quote">Las luces se encienden y la cocina es toda tuya. Sin jueces, sin reloj, sin eliminaciones: abre tu primera caja de ingredientes, enciende la estación y combina lo que tengas a mano para descubrir preparaciones y platillos nuevos. Empiezas con el menú de la Costa; complétalo y tu recetario se abre hacia otras regiones.</p>
+        <p class="cover-quote">Entra el sol por la ventana y la cocina es toda tuya. Sin jueces, sin reloj, sin eliminaciones: abre tu primera caja de ingredientes, ponlos sobre la tabla y combina lo que tengas a mano para descubrir preparaciones y platillos nuevos. Empiezas con el menú de la Costa; complétalo y tu recetario se abre hacia otras regiones.</p>
         <button type="button" id="btn-abrir" class="btn-leather wide">Ponerse el delantal</button>
       </div>
     </div>
@@ -53,12 +56,17 @@
   <!-- ================= Cocina: la estación ================= -->
   <main id="screen-taller" class="screen">
     <div class="taller-wrap">
-      <p class="estacion-titulo"><span class="estacion-kicker">estación de cocina</span></p>
-      <div id="fogon" class="fogon">
+      <p class="estacion-titulo"><span class="estacion-kicker">tu mesón de cocina</span></p>
+      <div class="mesa-zona">
         <span id="combo-indicador" class="combo-indicador hidden"></span>
-        <button type="button" id="slot-a" class="carta-slot" aria-label="Primer ingrediente"></button>
-        <span class="fusion-plus" aria-hidden="true">+</span>
-        <button type="button" id="slot-b" class="carta-slot" aria-label="Segundo ingrediente"></button>
+        <!-- el mesón 3D (Three.js); si no hay WebGL, el fogón 2D de abajo sigue funcionando -->
+        <div id="cocina3d" class="cocina3d hidden"></div>
+        <div id="fogon" class="fogon">
+          <button type="button" id="slot-a" class="carta-slot" aria-label="Primer ingrediente"></button>
+          <span class="fusion-plus" aria-hidden="true">+</span>
+          <button type="button" id="slot-b" class="carta-slot" aria-label="Segundo ingrediente"></button>
+        </div>
+        <div id="mesa-etiquetas" class="mesa-etiquetas hidden"></div>
       </div>
       <div id="taller-action" class="taller-action"></div>
 
@@ -201,6 +209,7 @@
 </div>
   <script src="icons.js"></script>
   <script src="recetario.js"></script>
+  <script type="module" src="escena3d.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
