@@ -1,47 +1,66 @@
 /* ============================================================
-   PAMBAMESA — cuaderno de viaje de sabores
-   styles.css — Little Alchemy × TCG, en la piel de un cuaderno
-   de viaje andino: tapa de cuero, páginas de kraft, cartas con
-   marco de rareza, texturas tejidas para lo aún no descubierto.
+   PAMBAMESA — tu cocina de autor
+   styles.css — Little Alchemy × TCG, en la piel de un plató de
+   cocina profesional: escenario oscuro con foco dramático,
+   estación de acero pulido, platos de porcelana como cartas,
+   acento rojo de delantal y dorado para los platillos estrella.
    ============================================================ */
 
 :root {
-  /* tapa / madera de la mesa */
-  --leather:   #6b4a35;
-  --leather-2: #55392a;
-  --leather-d: #3d2818;
-  --brass:     #d4b06a;
-  --brass-d:   #9c7a3c;
-  --desk:      #2a2019;
+  /* el plató: oscuridad con un tinte azul acero */
+  --stage:    #0d0f14;
+  --stage-2:  #12151d;
+  --stage-3:  #1a1e29;
+  --panel:    #161a23;
+  --panel-2:  #1d222e;
+  --edge:      rgba(255,255,255,.09);
+  --edge-soft: rgba(255,255,255,.05);
 
-  /* páginas */
-  --kraft:      #e6d6ae;
-  --kraft-2:    #dcc797;
-  --kraft-dark: #cdb37f;
-  --parchment:  #f3e8c9;
+  /* la estación de acero */
+  --steel:    #262c37;
+  --steel-hi: #39414f;
+  --steel-lo: #1b202a;
+
+  /* el rojo del delantal y el dorado del plato estrella */
+  --red:    #d21c33;
+  --red-2:  #ef3049;
+  --red-d:  #8f1224;
+  --gold:   #d8ab4e;
+  --gold-2: #f0cd7e;
+  --gold-d: #a97e2c;
+
+  /* porcelana: la carta es un plato */
+  --plate:   #f8f5ef;
+  --plate-2: #ebe6db;
+  --plate-d: #d8d1c2;
 
   /* tinta */
-  --ink:      #3a2f22;
-  --ink-soft: #7a6a4d;
-  --line:     rgba(58, 47, 34, .22);
-  --line-soft: rgba(58, 47, 34, .12);
+  --ink:      #23262e;
+  --ink-soft: #6d7280;
+  --txt:      #edeae3;
+  --txt-soft: #9aa0ac;
+  --line:      rgba(255,255,255,.14);
+  --line-soft: rgba(255,255,255,.07);
 
-  /* rareza (los colores de las cartas) */
-  --semilla:   #b5602f;
-  --semilla-d: #8a4620;
-  --hallazgo:   #6f8f52;
-  --hallazgo-d: #556b3d;
-  --receta:   #c9982f;
-  --receta-d: #9c7620;
-  --tool:     #6b7480;
-  --tool-d:   #4f5760;
+  /* rareza (el metal del plato) */
+  --semilla:   #8a94a4;   /* acero — ingrediente */
+  --semilla-d: #667082;
+  --hallazgo:   #c9763b;  /* cobre — preparación */
+  --hallazgo-d: #9c5827;
+  --receta:   var(--gold); /* oro — platillo terminado */
+  --receta-d: var(--gold-d);
+  --tool:     #5d6572;
+  --tool-d:   #454c58;
 
-  --serif: 'Lora', Georgia, serif;
-  --hand:  'Caveat', 'Segoe Script', cursive;
+  --serif: 'Playfair Display', Georgia, serif;
+  --sans:  'Jost', 'Segoe UI', system-ui, sans-serif;
+  --hand:  var(--serif);
   --frame: 480px;
   --hud-h: 56px;
+  --nav-h: 64px;
 
-  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.22 0 0 0 0 0.16 0 0 0 0 0.08 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* grano fino de la cocina en penumbra */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.025 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -49,21 +68,21 @@ html { -webkit-text-size-adjust: 100%; font-size: 17px; }
 html, body { height: 100%; }
 
 body {
-  font-family: var(--serif);
-  color: var(--ink);
+  font-family: var(--sans);
+  color: var(--txt);
   line-height: 1.5;
-  /* la mesa de madera oscura donde descansa el cuaderno */
-  background: radial-gradient(120% 90% at 50% 0%, #3c2e20 0%, var(--desk) 60%, #1c1510 100%);
+  /* el estudio a oscuras, más allá del plató */
+  background: radial-gradient(120% 90% at 50% 0%, #14171f 0%, #0a0c10 60%, #050609 100%);
   min-height: 100vh;
 }
 
 button { font: inherit; color: inherit; cursor: pointer; background: none; border: none; -webkit-tap-highlight-color: transparent; }
 svg { display: block; width: 100%; height: 100%; }
-.hand { font-family: var(--hand); font-weight: 600; }
+.hand { font-family: var(--serif); font-style: italic; font-weight: 500; }
 .hidden { display: none !important; }
 
 /* ============================================================
-   EL CUADERNO (marco de juego)
+   EL PLATÓ (marco de juego)
    ============================================================ */
 
 #stage {
@@ -72,28 +91,26 @@ svg { display: block; width: 100%; height: 100%; }
   max-width: var(--frame);
   margin: 0 auto;
   min-height: 100vh; min-height: 100dvh;
-  background: var(--kraft);
-  background-image: var(--paper-grain), linear-gradient(180deg, var(--parchment) 0%, var(--kraft) 55%, var(--kraft-2) 100%);
-  box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 40px 90px -30px rgba(0,0,0,.7);
+  background: var(--stage);
+  background-image:
+    var(--grain),
+    /* el foco cenital que baña la estación */
+    radial-gradient(90% 46% at 50% -6%, rgba(240,220,180,.14), transparent 70%),
+    linear-gradient(180deg, var(--stage-2) 0%, var(--stage) 46%, #0a0c11 100%);
+  box-shadow: 0 1px 2px rgba(0,0,0,.5), 0 40px 90px -30px rgba(0,0,0,.9);
   overflow: hidden;
 }
-/* lomo de cuero cosido a la izquierda */
+/* filo de luz en los bordes del escenario */
 #stage::before {
-  content: ''; position: absolute; inset: 0 auto 0 0; width: 20px; z-index: 61;
-  background: linear-gradient(90deg, var(--leather-d), var(--leather) 55%, transparent);
-  box-shadow: 2px 0 8px rgba(0,0,0,.35);
-  pointer-events: none;
-}
-#stage::after {
-  content: ''; position: absolute; inset: 0 auto 0 3px; width: 1px; z-index: 62;
-  background: repeating-linear-gradient(180deg, rgba(212,176,106,.55) 0 8px, transparent 8px 17px);
+  content: ''; position: absolute; inset: 0; z-index: 61;
+  border-left: 1px solid var(--edge-soft); border-right: 1px solid var(--edge-soft);
   pointer-events: none;
 }
 
 .screen { display: none; min-height: 100vh; min-height: 100dvh; padding-bottom: 1rem; }
-.screen.active { display: block; animation: hoja-vuelta .48s cubic-bezier(.2,.85,.3,1) both; transform-origin: left center; }
-@keyframes hoja-vuelta {
-  from { opacity: 0; transform: perspective(1300px) rotateY(9deg) translateX(16px); filter: blur(3px); }
+.screen.active { display: block; animation: plato-entra .45s cubic-bezier(.2,.85,.3,1) both; }
+@keyframes plato-entra {
+  from { opacity: 0; transform: translateY(14px) scale(.99); filter: blur(3px); }
   60%  { filter: blur(0); }
   to   { opacity: 1; transform: none; }
 }
@@ -103,157 +120,197 @@ svg { display: block; width: 100%; height: 100%; }
    BOTONES
    ============================================================ */
 
+/* el botón principal viste el rojo del delantal */
 .btn-leather {
   display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
   padding: .85rem 1.7rem;
-  font-size: 1.08rem; font-weight: 700; color: #f5e9cf;
-  background: linear-gradient(180deg, var(--leather) 0%, var(--leather-2) 55%, var(--leather-d) 100%);
-  border: 1px solid rgba(0,0,0,.4);
+  font-size: 1.02rem; font-weight: 600; letter-spacing: .04em; color: #fff;
+  background: linear-gradient(180deg, var(--red-2) 0%, var(--red) 55%, var(--red-d) 100%);
+  border: 1px solid rgba(0,0,0,.45);
   border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255,220,160,.18), 0 1px 2px rgba(0,0,0,.4), 0 10px 20px -8px rgba(0,0,0,.55);
-  text-shadow: 0 1px 1px rgba(0,0,0,.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 1px 2px rgba(0,0,0,.5), 0 12px 26px -10px rgba(210,28,51,.55);
+  text-shadow: 0 1px 1px rgba(0,0,0,.35);
   transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
 }
 .btn-leather:active { transform: translateY(1px); box-shadow: inset 0 2px 6px rgba(0,0,0,.4); }
-.btn-leather.wide { width: 100%; padding: .95rem 1rem; font-size: 1.15rem; }
+.btn-leather.wide { width: 100%; padding: .95rem 1rem; font-size: 1.1rem; }
+.btn-leather:disabled { filter: grayscale(.7) brightness(.7); cursor: default; box-shadow: none; }
 
 .btn-ghost {
   display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
-  padding: .7rem 1.3rem; font-size: 1rem; font-weight: 500; color: var(--ink);
-  background: linear-gradient(180deg, #fbf3dc, var(--parchment));
+  padding: .7rem 1.3rem; font-size: .96rem; font-weight: 500; color: var(--txt);
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
   border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 3px rgba(58,47,34,.18);
-  transition: transform .12s ease;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  transition: transform .12s ease, border-color .12s ease;
 }
 .btn-ghost:active { transform: translateY(1px); }
+.btn-ghost:disabled { opacity: .45; cursor: default; }
 .btn-ghost.wide { width: 100%; }
-.btn-ghost.small { padding: .48rem .9rem; font-size: .88rem; border-radius: 10px; }
+.btn-ghost.small { padding: .48rem .9rem; font-size: .85rem; border-radius: 10px; }
 
 /* ============================================================
-   HUD — barra de progreso del álbum
+   HUD — barra de progreso del recetario
    ============================================================ */
 
 .hud {
   position: fixed; top: 0; left: 50%; transform: translateX(-50%);
   width: 100%; max-width: var(--frame); height: var(--hud-h);
-  padding: .55rem 1rem 0 1.6rem;
+  padding: .55rem 1.1rem 0;
   z-index: 50;
   display: flex; align-items: center; gap: .6rem;
+  background: linear-gradient(180deg, rgba(10,12,17,.92), rgba(10,12,17,.55) 80%, transparent);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
 }
 .hud-progress { flex: 1; display: flex; align-items: center; gap: .6rem; }
 .hud-sucres {
   flex-shrink: 0; display: flex; align-items: center; gap: .3rem;
-  font-weight: 700; font-size: .96rem; color: var(--ink); white-space: nowrap;
-  background: rgba(255,250,235,.75); border: 1px solid var(--line); border-radius: 999px;
+  font-weight: 600; font-size: .94rem; color: var(--txt); white-space: nowrap;
+  background: rgba(255,255,255,.06); border: 1px solid var(--line-soft); border-radius: 999px;
   padding: .18rem .65rem .18rem .5rem;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
 }
 .hud-sucres-ic { font-size: 1rem; }
 
-/* la moneda: una monedita de latón grabada con una "S" de sucre */
+/* la moneda: una monedita dorada grabada con la "S" de sucre */
 .icono-sucre {
   display: inline-flex; align-items: center; justify-content: center;
   width: 1.15em; height: 1.15em; border-radius: 50%;
-  background: conic-gradient(from 210deg, var(--brass), var(--brass-d), var(--brass));
-  color: #3a2b12; font-weight: 800; font-size: .74em; line-height: 1; font-family: var(--serif);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 1px 2px rgba(0,0,0,.35);
+  background: conic-gradient(from 210deg, var(--gold-2), var(--gold-d), var(--gold-2));
+  color: #3a2b12; font-weight: 800; font-size: .74em; line-height: 1; font-family: var(--serif); font-style: normal;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 1px 2px rgba(0,0,0,.5);
   vertical-align: -0.15em;
 }
 .hud-count {
-  font-weight: 700; font-size: 1rem; color: var(--ink); white-space: nowrap;
-  background: rgba(255,250,235,.75); border: 1px solid var(--line); border-radius: 999px;
+  font-weight: 600; font-size: .96rem; color: var(--txt); white-space: nowrap;
+  background: rgba(255,255,255,.06); border: 1px solid var(--line-soft); border-radius: 999px;
   padding: .18rem .65rem;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
 }
 .hud-bar {
-  flex: 1; height: 7px; border-radius: 999px; overflow: hidden;
-  background: rgba(58,47,34,.16); box-shadow: inset 0 1px 3px rgba(58,47,34,.25);
+  flex: 1; height: 6px; border-radius: 999px; overflow: hidden;
+  background: rgba(255,255,255,.1); box-shadow: inset 0 1px 3px rgba(0,0,0,.5);
 }
 .hud-bar-fill {
   display: block; height: 100%; border-radius: 999px;
-  background: linear-gradient(90deg, var(--semilla), var(--receta));
+  background: linear-gradient(90deg, var(--red), var(--gold));
+  box-shadow: 0 0 10px rgba(216,171,78,.5);
   transition: width .4s ease;
 }
 
 /* ============================================================
-   PORTADA — la tapa de cuero del cuaderno
+   PORTADA — las luces se encienden
    ============================================================ */
 
 .cover-scene { min-height: 100vh; min-height: 100dvh; display: flex; align-items: stretch; justify-content: center; padding: 0; }
 .cover-book {
   position: relative; width: 100%; min-height: 100vh; min-height: 100dvh;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-  padding: 3rem 1.6rem 2.2rem;
+  padding: 3rem 1.8rem 2.4rem;
+  overflow: hidden;
   background:
-    var(--paper-grain),
-    radial-gradient(140% 90% at 50% 0%, #7d5a42 0%, var(--leather) 45%, var(--leather-d) 100%);
-  color: #f3e6cd;
+    var(--grain),
+    radial-gradient(130% 80% at 50% 110%, #171b25 0%, var(--stage) 55%, #07080c 100%);
+  color: var(--txt);
 }
-/* esquinas de latón */
-.cover-book::before, .cover-book::after,
-.cover-strap::before, .cover-strap::after {
-  content: ''; position: absolute; width: 46px; height: 46px; z-index: 2;
-  background: conic-gradient(from 225deg, var(--brass), var(--brass-d), var(--brass));
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-  box-shadow: 1px 1px 3px rgba(0,0,0,.5);
+/* el cono de luz del foco cenital */
+.cover-spotlight {
+  position: absolute; top: -12%; left: 50%; transform: translateX(-50%);
+  width: 150%; aspect-ratio: 1;
+  background: radial-gradient(50% 50% at 50% 18%, rgba(244,226,186,.2), rgba(244,226,186,.06) 42%, transparent 62%);
+  pointer-events: none;
+  animation: foco-enciende 1.6s ease-out both;
 }
-.cover-book::before { top: 0; left: 0; }
-.cover-book::after   { top: 0; right: 0; transform: scaleX(-1); }
-.cover-strap::before { bottom: 0; left: 0; transform: scaleY(-1); }
-.cover-strap::after  { bottom: 0; right: 0; transform: scale(-1); }
-.cover-strap { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+@keyframes foco-enciende { from { opacity: 0; } 40% { opacity: .4; } 55% { opacity: .2; } to { opacity: 1; } }
 
-.cover-over { font-size: .78rem; letter-spacing: .32em; text-transform: uppercase; color: #d9c39a; margin-top: 1.2rem; }
+.cover-star {
+  position: relative; z-index: 1;
+  font-size: 1.9rem; color: var(--gold);
+  text-shadow: 0 0 22px rgba(216,171,78,.75);
+  margin-bottom: .4rem;
+}
+.cover-over { position: relative; z-index: 1; font-size: .76rem; letter-spacing: .38em; text-transform: uppercase; color: var(--txt-soft); }
 .cover-book h1 {
-  font-size: 3.2rem; font-weight: 700; letter-spacing: .01em; color: #f5e9cf;
-  text-shadow: 0 2px 0 rgba(0,0,0,.35), 0 0 26px rgba(212,176,106,.25);
-  margin-top: .1rem;
+  position: relative; z-index: 1;
+  font-family: var(--serif); font-size: 3.3rem; font-weight: 800; letter-spacing: .01em; color: #fff;
+  text-shadow: 0 2px 0 rgba(0,0,0,.5), 0 0 34px rgba(244,226,186,.28);
+  margin-top: .05rem;
 }
-.cover-sub { font-family: var(--hand); font-size: 1.5rem; color: #e2cda3; margin: .1rem 0 1.3rem; }
+.cover-sub {
+  position: relative; z-index: 1;
+  font-family: var(--serif); font-style: italic; font-size: 1.25rem; color: var(--gold-2);
+  margin: .15rem 0 1.4rem;
+}
 
-.cover-peek { display: flex; justify-content: center; gap: 1.3rem; margin-bottom: 1.3rem; }
-.cover-peek span { width: 58px; height: 58px; filter: drop-shadow(0 6px 6px rgba(0,0,0,.45)); }
+.cover-peek { position: relative; z-index: 1; display: flex; justify-content: center; gap: 1.3rem; margin-bottom: 1.4rem; }
+.cover-peek span {
+  width: 62px; height: 62px; padding: 9px;
+  background: radial-gradient(circle at 50% 42%, #fff, var(--plate-2) 78%);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px rgba(0,0,0,.06), inset 0 0 14px rgba(0,0,0,.1), 0 10px 22px -8px rgba(0,0,0,.8);
+}
 
 .cover-quote {
-  max-width: 34ch; font-size: .96rem; line-height: 1.65; color: #e6d4ae;
-  border-top: 1px solid rgba(212,176,106,.35); border-bottom: 1px solid rgba(212,176,106,.35);
-  padding: 1rem 0; margin-bottom: 1.6rem;
+  position: relative; z-index: 1;
+  max-width: 36ch; font-size: .95rem; line-height: 1.65; color: var(--txt-soft);
+  border-top: 1px solid rgba(216,171,78,.35); border-bottom: 1px solid rgba(216,171,78,.35);
+  padding: 1rem 0; margin-bottom: 1.7rem;
 }
-.cover-book .btn-leather { max-width: 320px; background: linear-gradient(180deg, var(--brass), var(--brass-d)); color: #3a2b12; text-shadow: 0 1px 0 rgba(255,255,255,.25); }
+.cover-book .btn-leather { position: relative; z-index: 1; max-width: 320px; }
 
 /* ============================================================
-   TALLER — el fogón
+   COCINA — la estación
    ============================================================ */
 
 .taller-wrap {
   max-width: 460px; margin: 0 auto;
-  padding: calc(var(--hud-h) + 1rem) 4.4rem 1.4rem 1.4rem;
+  padding: calc(var(--hud-h) + .9rem) 1.4rem calc(var(--nav-h) + env(safe-area-inset-bottom) + 1.2rem);
   display: flex; flex-direction: column; gap: 1rem;
   min-height: 100vh; min-height: 100dvh;
 }
 
+.estacion-titulo { text-align: center; margin-bottom: -.3rem; }
+.estacion-kicker {
+  display: inline-flex; align-items: center; gap: .6rem;
+  font-size: .72rem; letter-spacing: .34em; text-transform: uppercase; color: var(--txt-soft);
+}
+.estacion-kicker::before, .estacion-kicker::after {
+  content: ''; width: 26px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-d));
+}
+.estacion-kicker::after { background: linear-gradient(90deg, var(--gold-d), transparent); }
+
+/* la mesada de acero pulido bajo el foco */
 .fogon {
   position: relative;
   flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: .9rem;
-  padding: 1.6rem .8rem; margin-top: .4rem;
+  padding: 1.7rem .8rem 1.5rem; margin-top: .4rem;
   background:
-    radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,.1), transparent 60%),
-    repeating-linear-gradient(90deg, rgba(58,47,34,.07) 0 3px, transparent 3px 30px),
-    linear-gradient(180deg, #c69b5e, #a9793f);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  box-shadow: inset 0 2px 8px rgba(58,47,34,.25), 0 16px 32px -18px rgba(0,0,0,.5);
+    radial-gradient(120% 90% at 50% -10%, rgba(244,226,186,.13), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 2px, transparent 2px 5px),
+    linear-gradient(180deg, var(--steel-hi), var(--steel) 45%, var(--steel-lo));
+  border: 1px solid var(--edge);
+  border-top-color: rgba(255,255,255,.22);
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -10px 24px rgba(0,0,0,.35), 0 18px 36px -16px rgba(0,0,0,.8);
+}
+/* la franja roja de la estación, como el frente de los mesones del plató */
+.fogon::after {
+  content: ''; position: absolute; left: 10px; right: 10px; bottom: 5px; height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--red) 18%, var(--red) 82%, transparent);
+  opacity: .8;
 }
 .fogon.shake { animation: mesa-shake .4s ease; }
 @keyframes mesa-shake { 25% { transform: translateX(-7px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
-.fusion-plus { font-size: 1.9rem; color: var(--ink-soft); opacity: .7; }
+.fusion-plus { font-size: 1.9rem; color: var(--txt-soft); opacity: .8; }
 .combo-indicador {
   position: absolute; top: -.6rem; right: 1rem; z-index: 2;
-  font-size: .92rem; font-weight: 700; color: #fff;
-  background: linear-gradient(180deg, #e0703f, #b8502a);
+  font-size: .9rem; font-weight: 700; color: #fff;
+  background: linear-gradient(180deg, var(--red-2), var(--red-d));
   border-radius: 999px; padding: .2rem .6rem;
-  box-shadow: 0 3px 8px rgba(0,0,0,.4);
+  box-shadow: 0 3px 10px rgba(210,28,51,.5);
   animation: combo-pop .3s cubic-bezier(.3, 1.6, .4, 1) both;
 }
 @keyframes combo-pop { from { transform: scale(.5); opacity: 0; } }
@@ -261,63 +318,68 @@ svg { display: block; width: 100%; height: 100%; }
 .carta-slot {
   width: clamp(108px, 30vw, 136px); aspect-ratio: 5 / 7;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem;
-  background: rgba(255,250,235,.22);
-  border: 2.5px dashed rgba(58,47,34,.3);
+  background: rgba(0,0,0,.22);
+  border: 2px dashed rgba(255,255,255,.28);
   border-radius: 14px;
   transition: border-color .15s ease, background .15s ease;
 }
-.carta-slot .slot-plus { font-size: 1.9rem; color: #fff8e6; opacity: .8; }
-.carta-slot .slot-txt { font-size: .82rem; color: rgba(58,47,34,.65); text-align: center; padding: 0 .3rem; }
+.carta-slot .slot-plus { font-size: 1.9rem; color: #fff; opacity: .75; }
+.carta-slot .slot-txt { font-size: .8rem; color: rgba(255,255,255,.6); text-align: center; padding: 0 .3rem; }
 
-/* al ponerla en la mesa, la carta deja de serlo: se planta como un
-   ingrediente de verdad sobre la tabla, sin marco ni rareza */
+/* al ponerlo en la mesada deja de ser carta: se planta como un
+   ingrediente de verdad sobre el acero, sin marco ni rareza */
 .carta-slot.filled { border: none; background: none; padding: 0; }
 .ingrediente-mesa {
   display: flex; flex-direction: column; align-items: center; gap: .3rem;
   animation: ingrediente-plantado .3s cubic-bezier(.3, 1.6, .4, 1) both;
 }
-.ing-icono { width: 4.4rem; height: 4.4rem; filter: drop-shadow(0 8px 6px rgba(0,0,0,.4)); }
+/* cada ingrediente llega a la mesada sobre su platito de porcelana */
+.ing-icono {
+  width: 4.9rem; height: 4.9rem; padding: .6rem;
+  background: radial-gradient(circle at 50% 40%, #fff, var(--plate-2) 82%);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px rgba(0,0,0,.05), inset 0 0 12px rgba(0,0,0,.1), 0 10px 18px -8px rgba(0,0,0,.75);
+}
 .ing-sombra {
-  display: block; width: 58%; height: 10px; margin-top: -.5rem; border-radius: 50%;
-  background: radial-gradient(50% 100% at 50% 50%, rgba(0,0,0,.45), transparent 75%);
+  display: block; width: 58%; height: 10px; margin-top: -.4rem; border-radius: 50%;
+  background: radial-gradient(50% 100% at 50% 50%, rgba(0,0,0,.6), transparent 75%);
 }
 .ing-nombre {
-  font-size: 1.05rem; color: var(--ink);
-  background: rgba(255,250,235,.85); border: 1px solid var(--line-soft);
+  font-size: .98rem; font-style: normal; font-family: var(--sans); font-weight: 500; color: var(--txt);
+  background: rgba(0,0,0,.4); border: 1px solid var(--line-soft);
   border-radius: 999px; padding: .05rem .6rem;
 }
 @keyframes ingrediente-plantado { from { opacity: 0; transform: translateY(-16px) scale(.7); } to { opacity: 1; transform: none; } }
 
 .taller-action { min-height: 3.6rem; display: flex; align-items: center; justify-content: center; gap: .6rem; flex-wrap: wrap; }
-.combinar-btn { font-size: 1.18rem; padding: .85rem 2rem; }
-.quick-action-btn { background: linear-gradient(180deg, var(--hallazgo), var(--hallazgo-d)); }
-.taller-hint { font-family: var(--hand); font-size: 1.35rem; color: var(--ink-soft); text-align: center; }
+.combinar-btn { font-size: 1.12rem; padding: .85rem 2rem; }
+.quick-action-btn { background: linear-gradient(180deg, #de8447, var(--hallazgo) 55%, var(--hallazgo-d)); box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 1px 2px rgba(0,0,0,.5), 0 12px 26px -10px rgba(201,118,59,.45); }
+.taller-hint { font-family: var(--serif); font-style: italic; font-size: 1.12rem; color: var(--txt-soft); text-align: center; }
 
-/* accesos a la despensa: se abren bajo pedido, la mesa queda despejada */
+/* accesos a la despensa: se abren bajo pedido, la mesada queda limpia */
 .despensa-accesos { flex: 1; display: flex; align-items: flex-start; justify-content: center; gap: .8rem; padding-top: .4rem; }
 .acceso-btn {
   display: flex; flex-direction: column; align-items: center; gap: .35rem;
   padding: 1rem .6rem;
-  background: linear-gradient(180deg, #fffaee, var(--parchment));
-  border: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--edge);
   border-radius: 16px;
-  box-shadow: 0 3px 10px -5px rgba(58,47,34,.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 6px 16px -8px rgba(0,0,0,.7);
   transition: transform .12s ease;
-  flex: 1; max-width: 130px;
+  flex: 1; max-width: 140px;
 }
 .acceso-btn:active { transform: scale(.95); }
 .acceso-ic { font-size: 1.9rem; }
-.acceso-txt { font-size: .82rem; font-weight: 600; color: var(--ink); }
+.acceso-txt { font-size: .8rem; font-weight: 600; letter-spacing: .06em; color: var(--txt); }
 
-/* lo que ya preparaste se queda a la vista sobre la mesa, no en un
-   cajón aparte, para que no se te olvide seguir usándolo */
+/* lo que ya empezaste a preparar espera en el pase, a la vista */
 .en-preparacion {
-  background: rgba(255,250,235,.4); border: 1px dashed var(--line);
+  background: rgba(255,255,255,.04); border: 1px dashed var(--line);
   border-radius: 16px; padding: .7rem .8rem .5rem;
 }
 .en-preparacion-label {
-  display: block; font-size: .72rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--ink-soft); margin-bottom: .5rem;
+  display: block; font-size: .7rem; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: .5rem;
 }
 .en-preparacion-row { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .1rem; -webkit-overflow-scrolling: touch; }
 .en-preparacion-row::-webkit-scrollbar { height: 0; }
@@ -325,11 +387,11 @@ svg { display: block; width: 100%; height: 100%; }
 .carta-mini {
   position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem;
   width: 68px; padding: .4rem .3rem .35rem;
-  background: linear-gradient(180deg, #fffaee, var(--parchment));
-  border: 1.5px solid var(--line-soft);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--edge);
   border-radius: 11px;
   border-bottom: 3px solid var(--tool);
-  box-shadow: 0 3px 8px -4px rgba(58,47,34,.3);
+  box-shadow: 0 4px 10px -5px rgba(0,0,0,.7);
   transition: transform .12s ease, opacity .12s ease;
 }
 .carta-mini:active { transform: scale(.94); }
@@ -337,20 +399,25 @@ svg { display: block; width: 100%; height: 100%; }
 .carta-mini.rarity-hallazgo { border-bottom-color: var(--hallazgo); }
 .carta-mini.rarity-receta   { border-bottom-color: var(--receta); }
 .carta-mini.agotado { opacity: .4; filter: grayscale(.6); }
-.mini-icon { width: 2.1rem; height: 2.1rem; }
-.mini-name { font-size: .66rem; line-height: 1.1; color: var(--ink); text-align: center; }
+.mini-icon {
+  width: 2.3rem; height: 2.3rem; padding: .22rem;
+  background: radial-gradient(circle at 50% 42%, #fff, var(--plate-2) 85%);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.05), 0 2px 5px -2px rgba(0,0,0,.6);
+}
+.mini-name { font-size: .64rem; line-height: 1.1; color: var(--txt); text-align: center; }
 .mini-cant {
   position: absolute; top: -.35rem; right: -.3rem; min-width: 1.1rem; height: 1.1rem;
   display: flex; align-items: center; justify-content: center;
   font-size: .62rem; font-weight: 700; color: #fff;
-  background: linear-gradient(180deg, var(--semilla), var(--semilla-d));
+  background: linear-gradient(180deg, var(--red-2), var(--red-d));
   border-radius: 999px; padding: 0 .25rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,.35);
+  box-shadow: 0 1px 3px rgba(0,0,0,.5);
 }
-.mini-durab { font-size: .55rem; letter-spacing: .04em; color: var(--tool-d); line-height: 1; }
+.mini-durab { font-size: .55rem; letter-spacing: .04em; color: var(--txt-soft); line-height: 1; }
 
 /* ============================================================
-   LA CARTA (componente TCG compartido)
+   LA CARTA — un plato de porcelana emplatado (componente TCG)
    ============================================================ */
 
 .carta {
@@ -359,180 +426,202 @@ svg { display: block; width: 100%; height: 100%; }
   display: flex; flex-direction: column;
   border-radius: 14px;
   border: 2.5px solid var(--tool-d);
-  background: linear-gradient(180deg, #fffaee 0%, var(--parchment) 100%);
-  box-shadow: 0 1px 2px rgba(58,47,34,.15), 0 10px 22px -12px rgba(0,0,0,.4);
+  background: linear-gradient(180deg, #fffdf8 0%, var(--plate) 55%, var(--plate-2) 100%);
+  box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 26px -12px rgba(0,0,0,.75);
 }
 .carta.rarity-semilla  { border-color: var(--semilla-d); }
 .carta.rarity-hallazgo { border-color: var(--hallazgo-d); }
-.carta.rarity-receta   { border-color: var(--receta-d); }
+.carta.rarity-receta   { border-color: var(--receta-d); box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 26px -12px rgba(0,0,0,.75), 0 0 18px -4px rgba(216,171,78,.45); }
 
+/* el "plato": un círculo de porcelana bajo la comida */
 .carta-art {
   flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
   padding: 12%;
-  background: radial-gradient(75% 75% at 50% 38%, rgba(255,255,255,.6), transparent 70%);
+  background: radial-gradient(68% 68% at 50% 46%, #ffffff 0%, rgba(255,255,255,.85) 55%, rgba(216,209,194,.35) 72%, transparent 78%);
 }
-.carta-art svg, .carta-art > span { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(58,47,34,.2)); }
+.carta-art svg, .carta-art > span { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(35,38,46,.28)); }
 .carta-plate {
-  flex-shrink: 0; text-align: center; padding: .3rem .3rem .4rem;
-  border-top: 1px solid var(--line-soft);
+  flex-shrink: 0; text-align: center; padding: .32rem .3rem .42rem;
+  border-top: 1px solid rgba(35,38,46,.12);
 }
-.rarity-semilla .carta-plate  { background: linear-gradient(180deg, transparent, rgba(181,96,47,.14)); }
-.rarity-hallazgo .carta-plate { background: linear-gradient(180deg, transparent, rgba(111,143,82,.16)); }
-.rarity-receta .carta-plate   { background: linear-gradient(180deg, transparent, rgba(201,152,47,.2)); }
-.carta-nombre { display: block; font-size: .82rem; font-weight: 700; line-height: 1.15; color: var(--ink); }
-.carta-rareza { display: block; font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); margin-top: .1rem; }
+.rarity-semilla .carta-plate  { background: linear-gradient(180deg, transparent, rgba(138,148,164,.18)); }
+.rarity-hallazgo .carta-plate { background: linear-gradient(180deg, transparent, rgba(201,118,59,.16)); }
+.rarity-receta .carta-plate   { background: linear-gradient(180deg, transparent, rgba(216,171,78,.24)); }
+.carta-nombre { display: block; font-family: var(--serif); font-size: .84rem; font-weight: 700; line-height: 1.12; color: var(--ink); }
+.carta-rareza { display: block; font-size: .55rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-soft); margin-top: .12rem; }
 .rarity-semilla .carta-rareza  { color: var(--semilla-d); }
 .rarity-hallazgo .carta-rareza { color: var(--hallazgo-d); }
 .rarity-receta .carta-rareza   { color: var(--receta-d); }
 
-/* barniz dorado que recorre las cartas "receta" */
+/* barniz dorado que recorre las cartas "receta" — el plato estrella */
 .carta-foil {
   position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(115deg, transparent 35%, rgba(255,244,200,.55) 48%, rgba(255,255,255,.75) 52%, transparent 65%);
+  background: linear-gradient(115deg, transparent 35%, rgba(255,236,180,.55) 48%, rgba(255,255,255,.8) 52%, transparent 65%);
   background-size: 260% 100%; background-position: 130% 0;
   animation: foil-sweep 3.2s ease-in-out infinite;
   mix-blend-mode: soft-light;
 }
 @keyframes foil-sweep { 0%, 30% { background-position: 130% 0; } 65%, 100% { background-position: -60% 0; } }
 
-/* carta al revés: no descubierta — tejido andino como textura del reverso */
+/* carta al revés: el plato aún bajo la campana — negro y rojo del plató */
 .carta.back {
-  background: repeating-linear-gradient(45deg, #cbb27f 0 9px, #bfa46e 9px 18px),
-              repeating-linear-gradient(-45deg, rgba(58,47,34,.08) 0 9px, transparent 9px 18px);
+  background:
+    radial-gradient(70% 55% at 50% 34%, rgba(210,28,51,.28), transparent 68%),
+    repeating-linear-gradient(45deg, #191d27 0 9px, #14181f 9px 18px),
+    #14181f;
 }
 .carta.back.rarity-semilla  { border-color: var(--semilla); }
 .carta.back.rarity-hallazgo { border-color: var(--hallazgo); }
 .carta.back.rarity-receta   { border-color: var(--receta); }
 .carta.back.rarity-tool     { border-color: var(--tool); }
 .carta-textura { position: absolute; inset: 0; }
+/* la campana de plata que cubre el misterio */
+.carta-textura::after {
+  content: '✦'; position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%);
+  font-size: .9rem; color: rgba(216,171,78,.6);
+}
 .carta-interrogante {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-family: var(--serif); font-weight: 700; font-size: 2.6rem; color: rgba(58,47,34,.35);
-  text-shadow: 0 1px 0 rgba(255,255,255,.3);
+  font-family: var(--serif); font-weight: 700; font-size: 2.6rem; color: rgba(255,255,255,.4);
+  text-shadow: 0 0 18px rgba(210,28,51,.5);
 }
 
 /* ============================================================
-   ÁLBUM (Colección)
+   RECETARIO (Colección)
    ============================================================ */
 
-.coleccion-wrap { max-width: 520px; margin: 0 auto; padding: calc(var(--hud-h) + 1rem) 4.4rem 2.4rem 1.4rem; }
-.coleccion-head { text-align: center; margin-bottom: 1rem; }
-.coleccion-head h2 { font-size: 2rem; font-weight: 700; color: var(--leather); }
-.coleccion-progress { font-size: 1.05rem; color: var(--ink-soft); margin-top: .2rem; }
-.coleccion-progress .progress-count { font-weight: 700; color: var(--ink); }
+.coleccion-wrap { max-width: 520px; margin: 0 auto; padding: calc(var(--hud-h) + 1rem) 1.4rem calc(var(--nav-h) + env(safe-area-inset-bottom) + 1.6rem); }
+.coleccion-head { text-align: center; margin-bottom: 1.1rem; }
+.coleccion-head h2 { font-family: var(--serif); font-size: 2rem; font-weight: 700; color: #fff; }
+.coleccion-progress { font-size: .98rem; color: var(--txt-soft); margin-top: .2rem; }
+.coleccion-progress .progress-count { font-weight: 600; color: var(--txt); }
 
-/* cada región es su propia colección grande, con su propio acento de color */
-.region-seccion { margin-bottom: 2rem; }
+/* cada región es un menú del recetario, con su propio acento */
+.region-seccion { margin-bottom: 2.1rem; }
 .region-head {
   position: relative; padding-left: .9rem; margin-bottom: .9rem;
-  border-left: 4px solid var(--region-acento, var(--leather));
+  border-left: 4px solid var(--region-acento, var(--gold));
 }
-.region-head h3 { font-size: 1.5rem; font-weight: 700; color: var(--ink); line-height: 1.1; }
-.region-tagline { font-size: 1.15rem; color: var(--ink-soft); margin-top: .1rem; }
+.region-head h3 { font-family: var(--serif); font-size: 1.5rem; font-weight: 700; color: var(--txt); line-height: 1.1; }
+.region-tagline { font-size: 1rem; color: var(--txt-soft); margin-top: .1rem; }
 .region-progress {
-  position: absolute; top: 0; right: 0; font-size: .82rem; font-weight: 700;
-  color: var(--region-acento, var(--ink-soft));
-  background: rgba(255,255,255,.55); border-radius: 999px; padding: .15rem .55rem;
+  position: absolute; top: 0; right: 0; font-size: .8rem; font-weight: 600;
+  color: var(--region-acento, var(--txt-soft));
+  background: rgba(255,255,255,.06); border: 1px solid var(--line-soft); border-radius: 999px; padding: .15rem .55rem;
 }
 .region-locked {
-  font-size: .96rem; color: var(--ink-soft); font-style: italic;
+  font-size: .94rem; color: var(--txt-soft); font-style: italic;
   padding: .9rem 1rem; text-align: center;
-  background: rgba(255,255,255,.35); border: 1px dashed var(--line); border-radius: 14px;
+  background: rgba(255,255,255,.04); border: 1px dashed var(--line); border-radius: 14px;
 }
 .album-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; }
 .album-grid .carta { width: 100%; }
 .carta-cant {
   position: absolute; top: .3rem; right: .3rem; z-index: 2;
   font-size: .68rem; font-weight: 700; color: #fff;
-  background: rgba(58,47,34,.72); border-radius: 999px; padding: .05rem .4rem;
+  background: rgba(13,15,20,.78); border: 1px solid var(--line-soft); border-radius: 999px; padding: .05rem .4rem;
 }
 
-.coleccion-footnote { text-align: center; font-size: .88rem; font-style: italic; color: var(--ink-soft); margin-top: 1rem; }
+.coleccion-footnote { text-align: center; font-size: .88rem; font-style: italic; color: var(--txt-soft); margin-top: 1.1rem; }
 
 /* ============================================================
-   NAVEGACIÓN — la cinta lateral del cuaderno
+   NAVEGACIÓN — la barra del plató
    ============================================================ */
 
 .tabs {
-  position: fixed; right: 0; top: 50%; transform: translateY(-50%);
-  z-index: 55; display: flex; flex-direction: column; gap: .55rem;
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: var(--frame);
+  z-index: 55; display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: linear-gradient(180deg, rgba(18,21,29,.96), rgba(10,12,17,.98));
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-top: 1px solid var(--edge);
+  box-shadow: 0 -12px 30px -14px rgba(0,0,0,.9);
 }
 .tab-btn {
-  writing-mode: vertical-rl;
-  display: flex; align-items: center; gap: .5rem;
-  padding: .9rem .5rem;
-  font-size: .92rem; font-weight: 700; color: #f3e6cd;
-  background: linear-gradient(90deg, var(--leather-2), var(--leather));
-  border: 1px solid rgba(0,0,0,.35); border-right: none;
-  border-radius: 10px 0 0 10px;
-  box-shadow: -3px 3px 10px -4px rgba(0,0,0,.45);
-  transition: transform .15s ease, padding-right .15s ease;
+  position: relative; flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .22rem;
+  height: var(--nav-h);
+  font-size: .74rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--txt-soft);
+  transition: color .15s ease;
 }
-.tab-btn.active { background: linear-gradient(90deg, var(--receta-d), var(--receta)); color: #3a2b12; padding-right: .8rem; }
-.tab-ic { width: 1.3rem; height: 1.3rem; }
+.tab-btn::before {
+  content: ''; position: absolute; top: 0; left: 22%; right: 22%; height: 3px;
+  border-radius: 0 0 4px 4px; background: var(--red); opacity: 0;
+  box-shadow: 0 2px 10px rgba(210,28,51,.7);
+  transition: opacity .18s ease;
+}
+.tab-btn.active { color: #fff; }
+.tab-btn.active::before { opacity: 1; }
+.tab-ic { width: 1.45rem; height: 1.45rem; filter: grayscale(1) brightness(1.4) opacity(.7); transition: filter .18s ease; }
+.tab-btn.active .tab-ic { filter: none; }
 .tab-btn:active { transform: scale(.96); }
 
 /* ============================================================
-   LA FERIA — sobres y regalos
+   LA DESPENSA — cajas del mercado y regalos
    ============================================================ */
 
-.feria-wrap { max-width: 460px; margin: 0 auto; padding: calc(var(--hud-h) + 1rem) 4.4rem 2.4rem 1.4rem; }
+.feria-wrap { max-width: 460px; margin: 0 auto; padding: calc(var(--hud-h) + 1rem) 1.4rem calc(var(--nav-h) + env(safe-area-inset-bottom) + 1.6rem); }
 .feria-head { text-align: center; margin-bottom: 1.1rem; }
-.feria-head h2 { font-size: 2rem; font-weight: 700; color: var(--leather); }
-.feria-sub { font-size: 1.3rem; color: var(--ink-soft); margin-top: .1rem; }
+.feria-head h2 { font-family: var(--serif); font-size: 2rem; font-weight: 700; color: #fff; }
+.feria-sub { font-size: 1.05rem; color: var(--txt-soft); margin-top: .1rem; }
 
 .sobre-box {
   display: flex; flex-direction: column; align-items: center; gap: .7rem;
   padding: 1.6rem 1.2rem 1.4rem;
   background:
-    radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,.18), transparent 60%),
-    linear-gradient(180deg, var(--kraft-dark), #b89f6e);
-  border: 1px solid var(--line);
+    radial-gradient(120% 90% at 50% -10%, rgba(244,226,186,.1), transparent 60%),
+    linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--edge);
   border-radius: 20px;
-  box-shadow: inset 0 2px 8px rgba(58,47,34,.18), 0 16px 32px -18px rgba(0,0,0,.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 18px 36px -18px rgba(0,0,0,.85);
   margin-bottom: 1.6rem;
 }
+/* la caja del mercado: negra con sello dorado, digna del plató */
 .sobre-visual {
   width: 110px; aspect-ratio: 5 / 7;
   display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(160deg, var(--leather) 0%, var(--leather-2) 55%, var(--leather-d) 100%);
-  border: 2px solid var(--brass-d);
+  background:
+    radial-gradient(70% 55% at 50% 30%, rgba(210,28,51,.3), transparent 68%),
+    linear-gradient(160deg, #1c212c 0%, #14181f 55%, #0e1117 100%);
+  border: 2px solid var(--gold-d);
   border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255,220,160,.2), 0 10px 20px -10px rgba(0,0,0,.5);
+  box-shadow: inset 0 1px 0 rgba(255,236,180,.16), 0 12px 24px -10px rgba(0,0,0,.8);
   animation: sobre-float 3.2s ease-in-out infinite;
 }
 @keyframes sobre-float { 50% { transform: translateY(-5px) rotate(-1.5deg); } }
 .sobre-sello {
   width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
   font-size: 1.5rem; color: #3a2b12;
-  background: conic-gradient(from 210deg, var(--brass), var(--brass-d), var(--brass));
+  background: conic-gradient(from 210deg, var(--gold-2), var(--gold-d), var(--gold-2));
   border-radius: 50%;
-  box-shadow: 0 3px 8px rgba(0,0,0,.4);
+  box-shadow: 0 3px 10px rgba(0,0,0,.6), 0 0 18px rgba(216,171,78,.35);
 }
-.sobre-stash { font-size: 1.1rem; color: var(--ink); }
-.sobre-count { font-weight: 700; font-size: 1.3rem; color: var(--leather); }
-.sobre-timer { font-size: .92rem; color: var(--ink-soft); text-align: center; }
+.sobre-stash { font-size: 1.05rem; color: var(--txt); }
+.sobre-count { font-weight: 700; font-size: 1.3rem; color: var(--gold); }
+.sobre-timer { font-size: .9rem; color: var(--txt-soft); text-align: center; }
 
 .mercado-section { text-align: center; margin-bottom: 1.8rem; }
-.mercado-title { font-size: 1.3rem; font-weight: 700; color: var(--leather); margin-bottom: .3rem; }
-.mercado-blurb { font-size: .94rem; color: var(--ink-soft); line-height: 1.55; margin-bottom: .9rem; }
+.mercado-title { font-family: var(--serif); font-size: 1.3rem; font-weight: 700; color: var(--txt); margin-bottom: .3rem; }
+.mercado-blurb { font-size: .92rem; color: var(--txt-soft); line-height: 1.55; margin-bottom: .9rem; }
 .mercado-grid { display: flex; gap: .5rem; overflow-x: auto; padding: .2rem .1rem .6rem; -webkit-overflow-scrolling: touch; }
 .mercado-grid::-webkit-scrollbar { height: 0; }
 .mercado-chip .mini-costo {
-  font-size: .62rem; font-weight: 700; color: var(--receta-d);
-  background: rgba(201,152,47,.16); border-radius: 999px; padding: .05rem .4rem; margin-top: .1rem;
+  font-size: .62rem; font-weight: 700; color: var(--gold);
+  background: rgba(216,171,78,.14); border-radius: 999px; padding: .05rem .4rem; margin-top: .1rem;
 }
 .mercado-acciones { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
-.pregon-timer { font-size: .92rem; color: var(--ink-soft); margin-top: .5rem; }
+.pregon-timer { font-size: .9rem; color: var(--txt-soft); margin-top: .5rem; }
 
 .regalos-section { text-align: center; }
-.regalos-title { font-size: 1.3rem; font-weight: 700; color: var(--leather); margin-bottom: .3rem; }
-.regalos-blurb { font-size: .94rem; color: var(--ink-soft); line-height: 1.55; margin-bottom: 1rem; }
-#regalos-restantes { font-weight: 700; color: var(--ink); }
+.regalos-title { font-family: var(--serif); font-size: 1.3rem; font-weight: 700; color: var(--txt); margin-bottom: .3rem; }
+.regalos-blurb { font-size: .92rem; color: var(--txt-soft); line-height: 1.55; margin-bottom: 1rem; }
+#regalos-restantes { font-weight: 700; color: var(--txt); }
 .regalos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
 .regalo-mini { width: 100%; transition: transform .15s ease; }
 .regalo-mini:active { transform: scale(.94); }
-.regalos-empty { grid-column: 1 / -1; font-size: 1rem; color: var(--ink-soft); font-style: italic; }
+.regalos-empty { grid-column: 1 / -1; font-size: .96rem; color: var(--txt-soft); font-style: italic; }
 
 /* ============================================================
    MODALES
@@ -542,13 +631,13 @@ svg { display: block; width: 100%; height: 100%; }
   position: fixed; inset: 0; z-index: 90;
   display: none; align-items: center; justify-content: center;
   padding: 1.4rem;
-  background: rgba(20, 14, 8, .68);
+  background: rgba(4, 5, 8, .78);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
 }
 .modal.open { display: flex; animation: modal-in .3s ease both; }
 @keyframes modal-in { from { opacity: 0; } }
 
-/* ---------- Revelación: giro 3D + swipe, al estilo de un sobre TCG ---------- */
+/* ---------- Revelación: el plato se destapa bajo el foco ---------- */
 .reveal-wrap { display: flex; flex-direction: column; align-items: center; gap: .9rem; max-width: 320px; width: 100%; }
 .reveal-stage {
   position: relative;
@@ -556,6 +645,13 @@ svg { display: block; width: 100%; height: 100%; }
   perspective: 1100px;
   touch-action: none;                 /* el gesto lo maneja JS, no el scroll del navegador */
   cursor: grab;
+}
+/* el foco cae sobre la carta que se revela */
+.reveal-stage::before {
+  content: ''; position: absolute; left: 50%; top: -70%; transform: translateX(-50%);
+  width: 300%; height: 200%;
+  background: radial-gradient(42% 42% at 50% 32%, rgba(244,226,186,.14), transparent 68%);
+  pointer-events: none; z-index: 0;
 }
 .carta-flip {
   position: relative; z-index: 3; width: 100%; height: 100%;
@@ -575,9 +671,9 @@ svg { display: block; width: 100%; height: 100%; }
 .reveal-restantes {
   position: absolute; top: -.7rem; right: -.5rem; z-index: 4;
   font-size: .8rem; font-weight: 700; color: #3a2b12;
-  background: conic-gradient(from 210deg, var(--brass), var(--brass-d), var(--brass));
+  background: conic-gradient(from 210deg, var(--gold-2), var(--gold-d), var(--gold-2));
   border-radius: 999px; padding: .2rem .55rem;
-  box-shadow: 0 3px 8px rgba(0,0,0,.4);
+  box-shadow: 0 3px 8px rgba(0,0,0,.6);
 }
 .reveal-restantes.hidden { display: none; }
 .carta-face {
@@ -587,32 +683,32 @@ svg { display: block; width: 100%; height: 100%; }
 .carta-face-front { transform: rotateY(180deg); }
 .carta-face .carta { width: 100%; height: 100%; margin: 0; }
 
-/* halo bajo la carta, más marcado cuando ya se reveló una "receta" */
+/* halo bajo la carta, más marcado cuando el plato ya se destapó */
 .reveal-stage::after {
   content: ''; position: absolute; left: 50%; bottom: -14%; width: 70%; height: 18%;
   transform: translateX(-50%);
-  background: radial-gradient(50% 100% at 50% 50%, rgba(0,0,0,.35), transparent 75%);
-  filter: blur(3px); z-index: -1; opacity: .4; transition: opacity .3s ease;
+  background: radial-gradient(50% 100% at 50% 50%, rgba(0,0,0,.7), transparent 75%);
+  filter: blur(3px); z-index: -1; opacity: .5; transition: opacity .3s ease;
 }
-.reveal-stage:has(.carta-flip.is-front)::after { opacity: .8; }
+.reveal-stage:has(.carta-flip.is-front)::after { opacity: .9; }
 
-.reveal-hint { font-size: 1.15rem; color: #e6d4ae; text-align: center; animation: hint-bob 1.6s ease-in-out infinite; }
+.reveal-hint { font-size: 1.05rem; color: var(--gold-2); text-align: center; animation: hint-bob 1.6s ease-in-out infinite; }
 .reveal-hint.hidden { display: none; }
 @keyframes hint-bob { 50% { transform: translateY(-5px); } }
 
 .reveal-banner {
   min-height: 1.9rem;
-  font-family: var(--hand); font-size: 1.55rem; text-align: center; color: #f3e6cd;
-  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+  font-family: var(--serif); font-style: italic; font-size: 1.28rem; text-align: center; color: var(--txt);
+  text-shadow: 0 1px 3px rgba(0,0,0,.6);
   opacity: 0; transform: translateY(6px);
   transition: opacity .3s ease, transform .3s ease;
 }
 .reveal-banner.visible { opacity: 1; transform: none; }
-.reveal-banner.is-new { color: #ffd97a; }
+.reveal-banner.is-new { color: var(--gold-2); }
 
-.carta-face-front .carta.rarity-receta { box-shadow: 0 0 50px -6px rgba(201,152,47,.65), 0 10px 22px -12px rgba(0,0,0,.5); }
+.carta-face-front .carta.rarity-receta { box-shadow: 0 0 54px -6px rgba(216,171,78,.75), 0 10px 22px -12px rgba(0,0,0,.6); }
 
-/* estallido de celebración al revelar una receta nueva */
+/* estallido de celebración al destapar un platillo nuevo */
 .reveal-burst { position: fixed; z-index: 119; pointer-events: none; }
 .reveal-burst i {
   position: absolute; width: 7px; height: 10px; border-radius: 2px;
@@ -620,18 +716,18 @@ svg { display: block; width: 100%; height: 100%; }
 }
 @keyframes reveal-burst-fly { to { transform: translate(var(--dx), var(--dy)) rotate(220deg); opacity: 0; } }
 
-/* banner grande: para lo que sí importa (abrir una región nueva) */
+/* banner grande: para lo que sí importa (abrir un menú nuevo) */
 .banner {
   position: fixed; left: 50%; transform: translateX(-50%) translateY(-140%);
   top: calc(env(safe-area-inset-top) + 8px); z-index: 97;
   width: min(360px, calc(100% - 1.6rem));
   display: flex; align-items: center; gap: .7rem;
-  background: linear-gradient(180deg, var(--leather), var(--leather-2));
-  border: 1px solid rgba(0,0,0,.35); border-left: 5px solid var(--brass);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--edge); border-left: 5px solid var(--red);
   border-radius: 16px;
-  box-shadow: inset 0 1px 0 rgba(255,220,160,.18), 0 18px 44px -14px rgba(0,0,0,.55);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 18px 44px -14px rgba(0,0,0,.85);
   padding: .75rem .95rem;
-  font-size: 1.05rem; font-weight: 700; line-height: 1.4; color: #f5e9cf;
+  font-size: 1rem; font-weight: 600; line-height: 1.4; color: var(--txt);
   pointer-events: none; opacity: 0;
   transition: transform .38s cubic-bezier(.2, 1.15, .35, 1), opacity .3s ease;
 }
@@ -640,48 +736,49 @@ svg { display: block; width: 100%; height: 100%; }
   flex-shrink: 0; width: 2.1rem; height: 2.1rem;
   display: flex; align-items: center; justify-content: center;
   font-size: 1.15rem; color: #3a2b12;
-  background: conic-gradient(from 210deg, var(--brass), var(--brass-d), var(--brass));
+  background: conic-gradient(from 210deg, var(--gold-2), var(--gold-d), var(--gold-2));
   border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  box-shadow: 0 2px 6px rgba(0,0,0,.5);
 }
 .banner .banner-txt { min-width: 0; }
 
 .detalle-panel, .pista-panel, .despensa-panel {
   width: 100%; max-width: 340px; text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: .6rem;
-  background: linear-gradient(180deg, #fbf3dc, var(--parchment));
-  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--edge);
+  border-top-color: rgba(255,255,255,.18);
   border-radius: 20px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 24px 60px -20px rgba(0,0,0,.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 24px 60px -20px rgba(0,0,0,.9);
   padding: 1.6rem 1.4rem 1.4rem;
   animation: panel-in .4s cubic-bezier(.2,1.1,.35,1) both;
 }
 @keyframes panel-in { from { opacity: 0; transform: translateY(18px) scale(.96); } }
 .detalle-art { width: 150px; margin-bottom: .2rem; }
 .detalle-art .carta-art { border-radius: 12px; }
-.detalle-nombre { font-size: 1.55rem; font-weight: 700; color: var(--ink); }
-.detalle-rareza { font-size: .74rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); }
-.detalle-lore { font-size: .98rem; line-height: 1.6; color: var(--ink); font-style: italic; margin: .3rem 0 .5rem; }
+.detalle-nombre { font-family: var(--serif); font-size: 1.55rem; font-weight: 700; color: var(--txt); }
+.detalle-rareza { font-size: .72rem; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+.detalle-lore { font-size: .95rem; line-height: 1.6; color: var(--txt-soft); font-style: italic; margin: .3rem 0 .5rem; }
 
 .pista-carta { width: 120px; margin-bottom: .2rem; pointer-events: none; }
-.pista-label { font-size: .74rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); }
-.pista-texto { font-family: var(--hand); font-size: 1.5rem; line-height: 1.3; color: var(--ink); margin-bottom: .4rem; }
+.pista-label { font-size: .72rem; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--txt-soft); }
+.pista-texto { font-family: var(--serif); font-style: italic; font-size: 1.25rem; line-height: 1.4; color: var(--gold-2); margin-bottom: .4rem; }
 
-/* la despensa bajo pedido: canasta / refri / utensilios */
+/* la despensa bajo pedido: ingredientes / utensilios */
 .despensa-panel { max-width: 400px; }
-.despensa-titulo { font-size: 1.4rem; font-weight: 700; color: var(--leather); }
+.despensa-titulo { font-family: var(--serif); font-size: 1.4rem; font-weight: 700; color: var(--txt); }
 .despensa-grid {
   display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center;
   max-height: 50vh; overflow-y: auto; padding: .3rem;
 }
-.despensa-vacio { font-size: .96rem; color: var(--ink-soft); font-style: italic; padding: 1rem; }
+.despensa-vacio { font-size: .94rem; color: var(--txt-soft); font-style: italic; padding: 1rem; }
 
-/* racha diaria: un premio pequeño por volver */
+/* racha diaria: un premio pequeño por volver a encender la cocina */
 .racha-panel { max-width: 300px; }
 .racha-ic { font-size: 2.6rem; }
-.racha-titulo { font-size: 1.4rem; font-weight: 700; color: var(--ink); }
-.racha-sub { font-size: .92rem; color: var(--ink-soft); }
-.racha-recompensa { font-family: var(--hand); font-size: 1.9rem; color: var(--receta-d); margin: .2rem 0; }
+.racha-titulo { font-family: var(--serif); font-size: 1.4rem; font-weight: 700; color: var(--txt); }
+.racha-sub { font-size: .9rem; color: var(--txt-soft); }
+.racha-recompensa { font-family: var(--serif); font-style: italic; font-size: 1.7rem; color: var(--gold); margin: .2rem 0; }
 
 /* ============================================================
    TOAST
@@ -689,12 +786,13 @@ svg { display: block; width: 100%; height: 100%; }
 
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%) translateY(16px);
-  bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 95;
+  bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom)); z-index: 95;
   max-width: min(360px, 86vw);
-  font-size: .96rem; color: #f3e6cd; text-align: center;
-  background: rgba(58, 47, 34, .95);
+  font-size: .94rem; color: var(--txt); text-align: center;
+  background: rgba(24, 28, 38, .96);
+  border: 1px solid var(--edge); border-left: 3px solid var(--red);
   border-radius: 12px; padding: .6rem 1.05rem;
-  box-shadow: 0 12px 28px -10px rgba(0,0,0,.5);
+  box-shadow: 0 12px 28px -10px rgba(0,0,0,.8);
   opacity: 0; pointer-events: none;
   transition: opacity .25s ease, transform .25s ease;
 }
@@ -707,16 +805,17 @@ svg { display: block; width: 100%; height: 100%; }
 @media (max-height: 700px) {
   html { font-size: 16px; }
   .carta-slot, .carta { width: clamp(92px, 26vw, 116px); }
-  .fogon { padding: 1.1rem .6rem; }
+  .fogon { padding: 1.1rem .6rem .9rem; }
 }
 
 @media (min-width: 640px) {
   #stage { min-height: calc(100dvh - 40px); margin: 20px auto; border-radius: 22px; }
+  .tabs { border-radius: 0 0 22px 22px; }
 }
 @media (min-width: 768px) {
   :root { --frame: 720px; }
   html { font-size: 18px; }
-  .taller-wrap, .coleccion-wrap { padding-left: 2.4rem; padding-right: 5.2rem; }
+  .taller-wrap, .coleccion-wrap { padding-left: 2.4rem; padding-right: 2.4rem; }
   .album-grid { grid-template-columns: repeat(4, 1fr); }
   .carta-slot, .reveal-wrap .carta { width: 150px; }
 }
@@ -725,7 +824,7 @@ svg { display: block; width: 100%; height: 100%; }
   .album-grid { grid-template-columns: repeat(5, 1fr); }
 }
 
-:focus-visible { outline: 2.5px solid var(--hallazgo-d); outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 2.5px solid var(--gold); outline-offset: 2px; border-radius: 6px; }
 button:focus:not(:focus-visible) { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01s !important; transition-duration: .01s !important; }

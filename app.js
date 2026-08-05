@@ -17,7 +17,7 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 const SAVE_KEY = 'pambamesa_save_v2';
 /* nombres que ve el jugador (los ids internos 'semilla'/'hallazgo'
    se quedan igual en el motor, solo cambia la etiqueta) */
-const RARITY_LABEL = { semilla: 'Ingrediente', hallazgo: 'Preparación', receta: 'Receta' };
+const RARITY_LABEL = { semilla: 'Ingrediente', hallazgo: 'Preparación', receta: 'Platillo' };
 const RARITY_ORDER = ['semilla', 'hallazgo', 'receta'];
 const VERBO_LABEL = { pelar: 'Pelar', cocer: 'Cocinar', majar: 'Majar', freir: 'Freír', moler: 'Moler' };
 
@@ -127,7 +127,7 @@ function iniciarSobreDeRegion(rid) {
   r.kitHerramientas.forEach(id => { const isNew = !hasTool(id); grantTool(id); items.push({ id, tool: true, isNew }); });
   r.kitSemillas.forEach(x => { addStock(x.id, x.n); items.push({ id: x.id, tool: false, isNew: discoverCard(x.id) }); });
   save();
-  procesarColeccionables(items, { finalLabel: `¡A explorar ${r.nombre}! ✦`, finalCb: () => banner(`Se abrió ${r.nombre}`, '🗺') });
+  procesarColeccionables(items, { finalLabel: `¡A cocinar ${r.nombre}! ✦`, finalCb: () => banner(`Nuevo menú: ${r.nombre}`, '🍽') });
 }
 
 /* ---------- Juice mínimo: sonido y vibración ---------- */
@@ -223,7 +223,7 @@ function miniChip(id, { tool = false } = {}) {
     : `<span class="mini-cant">${stockOf(id)}</span>`;
   btn.innerHTML = `${badge}<span class="mini-icon">${iconOf(id)}</span><span class="mini-name">${name}</span>`;
   if (avail) btn.addEventListener('click', () => tryPlace(id));
-  else btn.addEventListener('click', () => toast(tool ? 'Se gastó. Consigue uno nuevo en la feria 🎟' : 'Ya no te queda. Consíguelo en la feria 🎟'));
+  else btn.addEventListener('click', () => toast(tool ? 'Se gastó. Consigue uno nuevo en la despensa 🛒' : 'Ya no te queda. Repónlo en la despensa 🛒'));
   return btn;
 }
 
@@ -291,7 +291,7 @@ function renderTallerAction() {
     zone.appendChild(combinar);
     const limpiar = document.createElement('button');
     limpiar.type = 'button'; limpiar.className = 'btn-ghost small';
-    limpiar.textContent = 'limpiar el fogón';
+    limpiar.textContent = 'limpiar la estación';
     limpiar.addEventListener('click', clearSlots);
     zone.appendChild(limpiar);
     return;
@@ -313,19 +313,19 @@ function renderTallerAction() {
       zone.appendChild(limpiar);
       return;
     }
-    zone.innerHTML = `<span class="taller-hint">Añade el segundo ingrediente desde la canasta, o toca algo de lo que tienes en preparación</span>`;
+    zone.innerHTML = `<span class="taller-hint">Añade el segundo ingrediente, o toca algo de lo que tienes en preparación</span>`;
     return;
   }
-  zone.innerHTML = `<span class="taller-hint">Abre la canasta 🧺 y elige un ingrediente para empezar</span>`;
+  zone.innerHTML = `<span class="taller-hint">Abre tus ingredientes 🧺 y elige uno para empezar el plato</span>`;
 }
 
 /* ---------- Despensa: canasta / utensilios (se abren bajo pedido) ---------- */
 
 let despensaTipo = null;
-const DESPENSA_TITULO = { ingredientes: 'La canasta', utensilios: 'Utensilios' };
+const DESPENSA_TITULO = { ingredientes: 'Tus ingredientes', utensilios: 'Utensilios' };
 const DESPENSA_VACIO = {
-  ingredientes: 'Sin ingredientes por ahora — cómpralos o abre un sobre en la feria.',
-  utensilios: 'Sin utensilios listos — consíguelos en la feria.',
+  ingredientes: 'Sin ingredientes por ahora — cómpralos o abre una caja en la despensa.',
+  utensilios: 'Sin utensilios listos — consíguelos en la despensa.',
 };
 function abrirDespensa(tipo) {
   despensaTipo = tipo;
@@ -351,7 +351,7 @@ function renderDespensaGrid() {
 
 function tryPlace(id) {
   const i = slots[0] === null ? 0 : (slots[1] === null ? 1 : null);
-  if (i === null) { toast('El fogón ya tiene dos cosas. Combínalas o límpialo.'); return; }
+  if (i === null) { toast('La estación ya tiene dos cosas. Combínalas o límpiala.'); return; }
   slots[i] = id;
   sfx('tab'); buzz(10);
   renderTaller();
@@ -378,12 +378,12 @@ function combinarMesa() {
   if (!r) {
     surface.classList.remove('shake'); void surface.offsetWidth; surface.classList.add('shake');
     sfx('fail'); buzz(60);
-    toast('Estos dos no reaccionan… todavía.');
+    toast('Esos dos no combinan… todavía. Prueba otra pareja.');
     return;
   }
   const xOk = isUtensilio(x) ? hasTool(x) : stockOf(x) > 0;
   const yOk = isUtensilio(y) ? hasTool(y) : stockOf(y) > 0;
-  if (!xOk || !yOk) { toast('Ya no te queda esto. Consíguelo en la feria 🎟'); return; }
+  if (!xOk || !yOk) { toast('Ya no te queda esto. Repónlo en la despensa 🛒'); return; }
 
   isUtensilio(x) ? useTool(x) : addStock(x, -1);
   isUtensilio(y) ? useTool(y) : addStock(y, -1);
@@ -400,7 +400,7 @@ function combinarMesa() {
   revisarDesbloqueoRegiones();
   save();
   clearSlots();
-  procesarColeccionables([{ id: r.result, tool: false, isNew, sucres, combo: comboBono ? comboCocina : 0 }], { finalLabel: 'Guardar en el álbum' });
+  procesarColeccionables([{ id: r.result, tool: false, isNew, sucres, combo: comboBono ? comboCocina : 0 }], { finalLabel: 'Al recetario ✦' });
 }
 
 /* ============================================================
@@ -432,7 +432,7 @@ function procesarColeccionables(items, opts = {}) {
    ============================================================ */
 
 let revealQueue = [];
-let revealFinalLabel = 'Guardar en el álbum';
+let revealFinalLabel = 'Al recetario ✦';
 let revealFinalCb = null;
 let revealIsGift = false;
 let revealCurrent = null;
@@ -440,7 +440,7 @@ let revealPhase = 'back';   /* 'back' | 'front' */
 
 function showRevealQueue(items, opts = {}) {
   revealQueue = items.slice();
-  revealFinalLabel = opts.finalLabel || 'Guardar en el álbum';
+  revealFinalLabel = opts.finalLabel || 'Al recetario ✦';
   revealFinalCb = opts.finalCb || null;
   revealIsGift = !!opts.giftFrom;
   $('#modal-reveal').classList.add('open');
@@ -501,8 +501,8 @@ function revealFlip() {
   const rarity = item.tool ? null : CARTAS[item.id].rarity;
   const esRecetaRepetida = !item.isNew && rarity === 'receta';
   const especial = item.isNew || revealIsGift || esRecetaRepetida;
-  let msg = revealIsGift ? '¡Te compartieron esta carta! 🎁'
-    : item.isNew ? '¡Nueva carta para tu álbum!'
+  let msg = revealIsGift ? '¡Te invitaron a probar este plato! 🎁'
+    : item.isNew ? '¡Nuevo descubrimiento para tu recetario!'
     : esRecetaRepetida ? `¡Otra vez ${nombre}! Sirve para vender o compartir`
     : `+1 ${nombre}`;
   if (item.sucres) msg += ` · +${item.sucres} <span class="icono-sucre">S</span>`;
@@ -717,11 +717,11 @@ function codificarRegalo(id) {
   return btoa(`${id}:${nonce}`).replace(/=+$/, '');
 }
 async function generarRegalo(id) {
-  if (regalosRestantesHoy() <= 0) { toast('Ya compartiste tus regalos de hoy. Vuelve mañana 🎟'); return; }
+  if (regalosRestantesHoy() <= 0) { toast('Ya repartiste tus invitaciones de hoy. Vuelve mañana 🍽'); return; }
   const code = codificarRegalo(id);
   const url = `${location.origin}${location.pathname}?regalo=${code}`;
   const nombre = CARTAS[id].name;
-  const texto = `¡Te regalo mi carta de ${nombre} en Pambamesa! 🎁`;
+  const texto = `¡Te invito a probar mi ${nombre} en Pambamesa! 🍽`;
   registrarRegaloHecho();
   renderFeria();
   if (navigator.share) {
@@ -745,13 +745,13 @@ function intentarCanjearRegalo() {
   if (!id || !CARTAS[id] || !nonce) return;
   const marca = `${id}:${nonce}`;
   if (!state.regalosCanjeados) state.regalosCanjeados = [];
-  if (state.regalosCanjeados.includes(marca)) { setTimeout(() => toast('Ya abriste este regalo en este cuaderno.'), 500); return; }
+  if (state.regalosCanjeados.includes(marca)) { setTimeout(() => toast('Ya probaste este plato en esta cocina.'), 500); return; }
   state.regalosCanjeados.push(marca);
   const isNew = discoverCard(id);
   addStock(id, 1);
   revisarDesbloqueoRegiones();
   save();
-  setTimeout(() => showRevealQueue([{ id, tool: false, isNew }], { finalLabel: '¡Qué lindo detalle!', giftFrom: true }), 500);
+  setTimeout(() => showRevealQueue([{ id, tool: false, isNew }], { finalLabel: '¡Buen provecho!', giftFrom: true }), 500);
 }
 
 function renderFeria() {
@@ -761,15 +761,15 @@ function renderFeria() {
   abrirBtn.disabled = state.sobres <= 0;
   const rest = Math.max(0, state.proximoSobreGratisEn - Date.now());
   $('#feria-timer').textContent = state.sobres >= SOBRE_MAX_STASH
-    ? 'Tu bolsa de sobres está llena.'
-    : rest <= 0 ? '¡Ya tienes un sobre nuevo!' : `Próximo sobre gratis en ${formatDuracion(rest)}`;
+    ? 'Tu despensa no acepta más cajas por ahora.'
+    : rest <= 0 ? '¡Llegó una caja nueva del mercado!' : `Próxima caja gratis en ${formatDuracion(rest)}`;
 
   renderMercado();
 
   $('#regalos-restantes').textContent = regalosRestantesHoy();
   const grid = $('#regalos-grid'); grid.innerHTML = '';
   const disponibles = state.discovered.filter(id => CARTAS[id]);
-  if (!disponibles.length) grid.appendChild(el('span', 'regalos-empty', 'Descubre una carta primero para poder compartirla.'));
+  if (!disponibles.length) grid.appendChild(el('span', 'regalos-empty', 'Descubre un plato primero para poder invitarlo.'));
   else disponibles.forEach(id => grid.appendChild(regaloCard(id)));
 }
 
@@ -796,12 +796,12 @@ function comprarSemilla(id, costo) {
   renderSucres();
 }
 function comprarSobreConSucres() {
-  if (state.sobres >= SOBRE_MAX_STASH) { toast('Tu bolsa de sobres está llena.'); return; }
-  if ((state.sucres || 0) < MERCADO_COSTO_SOBRE) { toast('Te faltan sucres para un sobre.'); return; }
+  if (state.sobres >= SOBRE_MAX_STASH) { toast('Tu despensa no acepta más cajas por ahora.'); return; }
+  if ((state.sucres || 0) < MERCADO_COSTO_SOBRE) { toast('Te faltan sucres para una caja.'); return; }
   state.sucres -= MERCADO_COSTO_SOBRE;
   state.sobres += 1;
   save(); sfx('win'); buzz([20, 30, 20]);
-  toast('¡Sobre nuevo en tu bolsa!');
+  toast('¡Caja nueva en tu despensa!');
   renderFeria(); renderSucres();
 }
 function escucharPregon() {
@@ -883,7 +883,7 @@ function abrirSobreInicial() {
   save();
   /* iniciarSobreDeRegion ya llama a showRevealQueue; le cambiamos el cierre
      para que aterrice en el taller en vez de solo mostrar el banner */
-  revealFinalLabel = 'A la mesa ✦';
+  revealFinalLabel = 'A cocinar ✦';
   revealFinalCb = () => show('taller');
 }
 
