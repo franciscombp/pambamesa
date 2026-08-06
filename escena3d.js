@@ -1367,3 +1367,5 @@ function loop() {
 }
 
 window.Escena3D = Escena3D;
+/* sonda de depuración: deja mirar la escena desde la consola */
+Escena3D.__debug = () => ({ scene, slotRoots, animCocina, repisaRoots, canastaRoots });

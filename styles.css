@@ -240,8 +240,12 @@ svg { display: block; width: 100%; height: 100%; }
 /* con el mesón 3D el cajón vive dentro de la escena */
 .mesa3d .despensa-accesos, .mesa3d #en-preparacion { display: none !important; }
 
+/* el combo es un aviso, no un botón: va en el flujo y nunca intercepta
+   el toque de las fichas de estación que tiene debajo */
 .combo-indicador {
-  position: absolute; top: calc(var(--hud-h) + var(--sp-6)); right: var(--sp-3); z-index: 6;
+  align-self: flex-end;
+  margin: var(--sp-1) var(--sp-3) 0 0;
+  pointer-events: none;
   animation: combo-pop var(--dur) var(--ease-pop) both;
 }
 @keyframes combo-pop { from { transform: scale(.5); opacity: 0; } }
@@ -570,14 +574,16 @@ button:focus:not(:focus-visible) { outline: none; }
 
 .estacion-fichas {
   flex-shrink: 0;
-  display: flex; gap: var(--sp-2); justify-content: center;
-  overflow-x: auto; padding: 0 var(--sp-1) var(--sp-1);
+  display: flex; gap: .35rem; justify-content: center;
+  overflow-x: auto; padding: 0 var(--sp-2) var(--sp-1);
+  scroll-snap-type: x proximity;
 }
+.estacion-fichas > * { scroll-snap-align: center; }
 .estacion-fichas::-webkit-scrollbar { height: 0; }
 .estacion-ficha {
   flex-shrink: 0;
   display: flex; flex-direction: column; align-items: center; gap: .1rem;
-  width: 62px; padding: var(--sp-1) var(--sp-1) .3rem;
+  width: 54px; padding: .3rem .2rem .28rem;
   background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
   border: 2px solid var(--hairline);
   border-bottom: 4px solid var(--madera-400);
@@ -594,7 +600,7 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 .estacion-ic {
   display: flex; align-items: center; justify-content: center;
-  width: 1.9rem; aspect-ratio: 1;
+  width: 1.65rem; aspect-ratio: 1;
 }
 .estacion-ic > svg { width: 100%; height: auto; aspect-ratio: 1; }
 .estacion-txt { font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700; color: var(--text); }
