@@ -27,16 +27,21 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* ---------- geografía de la escena ---------- */
 const COUNTER_Y = 1.0;                    /* cara del mesón */
-const EST_Z = -0.25;                      /* nivel 1: la estación */
-const REPISA_Z = 0.95;                    /* nivel 2: la repisa */
-const CANASTA_Z = 2.05;                   /* nivel 3: la canasta */
+const EST_Z = -0.45;                      /* nivel 1: la estación */
+const REPISA_Z = 1.15;                    /* nivel 2: la repisa */
+const CANASTA_Z = 2.55;                   /* nivel 3: la canasta */
 const REPISA_Y = 0.62;
 const CANASTA_Y = 0.16;
 const SLOT_X = [-0.5, 0.5];
 const ITEM_SIZE = 0.62;
-const FILA_X = [-1.55, -0.775, 0, 0.775, 1.55];   /* 5 sitios por fila */
-const PER_PAGE = 5;
-const TACHO = { x: 2.3, y: 0.5, z: 1.55, r: 0.62 };
+/* los sitios por fila se adaptan: en un móvil vertical caben 4 y el
+   mundo se estrecha, así la cámara no tiene que alejarse tanto (que
+   era lo que dejaba media pantalla de piso vacío) */
+let FILA_X = [-1.55, -0.775, 0, 0.775, 1.55];
+let PER_PAGE = 5;
+const FILA_ANCHA = [-1.55, -0.775, 0, 0.775, 1.55];
+const FILA_ANGOSTA = [-1.2, -0.4, 0.4, 1.2];
+const TACHO = { x: 1.95, y: 0.5, z: 1.95, r: 0.6 };
 const DRAG_Y = 1.75;
 
 let renderer, scene, camera, clock, raf = null, active = false;
@@ -584,9 +589,9 @@ function estrellitas(x, y, z, n = 16) {
 function construirCocina() {
   const tiles = texturaTalavera();
   tiles.wrapS = tiles.wrapT = THREE.RepeatWrapping;
-  tiles.repeat.set(4, 3);
-  const pared = new THREE.Mesh(new THREE.PlaneGeometry(11, 7.5), new THREE.MeshLambertMaterial({ map: tiles }));
-  pared.position.set(0, 3.2, -2.1);
+  tiles.repeat.set(6, 4.5);
+  const pared = new THREE.Mesh(new THREE.PlaneGeometry(16, 11), new THREE.MeshLambertMaterial({ map: tiles }));
+  pared.position.set(0, 4.6, -2.3);
   scene.add(pared);
 
   const repisaAlta = new THREE.Mesh(new THREE.BoxGeometry(3, .1, .45), matT('--madera-500', '#93491c'));
@@ -602,17 +607,17 @@ function construirCocina() {
     });
 
   const woodTex = texturaMadera(token('--madera-300', '#d07c3f'), token('--madera-500', '#93491c'));
-  const meson = new THREE.Mesh(new THREE.BoxGeometry(9, .26, 2.3), new THREE.MeshLambertMaterial({ map: woodTex }));
+  const meson = new THREE.Mesh(new THREE.BoxGeometry(12, .26, 2.4), new THREE.MeshLambertMaterial({ map: woodTex }));
   meson.position.set(0, COUNTER_Y - .13, EST_Z - .05);
   scene.add(meson);
-  const frenteMeson = new THREE.Mesh(new THREE.BoxGeometry(9, .8, .1), matT('--talavera-500', '#1b5faa'));
+  const frenteMeson = new THREE.Mesh(new THREE.BoxGeometry(12, .8, .1), matT('--talavera-500', '#1b5faa'));
   frenteMeson.position.set(0, COUNTER_Y - .62, EST_Z + 1.05);
   scene.add(frenteMeson);
 
   /* nivel 2: el estante de las preparaciones */
-  const estante = new THREE.Mesh(new THREE.BoxGeometry(4.6, .14, 1.05), new THREE.MeshLambertMaterial({ map: woodTex }));
+  const estante = new THREE.Mesh(new THREE.BoxGeometry(4.4, .14, 1.05), new THREE.MeshLambertMaterial({ map: woodTex }));
   estante.position.set(0, REPISA_Y - .07, REPISA_Z);
-  const estanteBorde = new THREE.Mesh(new THREE.BoxGeometry(4.6, .17, .08), matT('--madera-600', '#723713'));
+  const estanteBorde = new THREE.Mesh(new THREE.BoxGeometry(4.4, .17, .08), matT('--madera-600', '#723713'));
   estanteBorde.position.set(0, REPISA_Y + .05, REPISA_Z + .5);
   scene.add(estante, estanteBorde);
   [-2.15, 2.15].forEach(x => {
@@ -662,10 +667,10 @@ function construirCocina() {
     }
   }, 128);
   pisoTex.wrapS = pisoTex.wrapT = THREE.RepeatWrapping;
-  pisoTex.repeat.set(8, 6);
-  const pisoCocina = new THREE.Mesh(new THREE.PlaneGeometry(16, 12), new THREE.MeshLambertMaterial({ map: pisoTex }));
+  pisoTex.repeat.set(11, 9);
+  const pisoCocina = new THREE.Mesh(new THREE.PlaneGeometry(22, 18), new THREE.MeshLambertMaterial({ map: pisoTex }));
   pisoCocina.rotation.x = -Math.PI / 2;
-  pisoCocina.position.set(0, -.02, 3);
+  pisoCocina.position.set(0, -.02, 4);
   scene.add(pisoCocina);
 
   const marcaTex = canvasTexture((ctx, S) => {
@@ -728,7 +733,7 @@ function posSlot(i) { return new THREE.Vector3(SLOT_X[i], COUNTER_Y + alturaEsta
 /* ---------- filas: repisa y canasta ---------- */
 
 function posFila(i, nivel) {
-  const x = FILA_X[i % PER_PAGE] * .82;
+  const x = FILA_X[i % PER_PAGE] * (PER_PAGE === 4 ? 1 : .82);
   return nivel === 'repisa'
     ? new THREE.Vector3(x, REPISA_Y, REPISA_Z)
     : new THREE.Vector3(x, CANASTA_Y, CANASTA_Z);
@@ -943,6 +948,48 @@ function volver(d) {
   tween(d.root, 'position', d.origen, .22, easeOut, () => scene.remove(d.root));
 }
 
+/* ---------- Encuadre automático ----------
+   La caja de juego (los tres niveles + el basurero) tiene que caber
+   siempre, en cualquier pantalla. En vez de fijar el campo de visión
+   —que en un móvil vertical dejaba media pared vacía— se acerca o
+   aleja la cámara hasta que la caja llena el cuadro con un margen. */
+const FOCO = new THREE.Vector3(0, .58, 1.12);
+const DIR = new THREE.Vector3(0, .76, .65).normalize();
+const CAJA = new THREE.Box3();
+function ajustarMundo(aspect) {
+  const angosta = aspect < .66;
+  const per = angosta ? 4 : 5;
+  const cambio = per !== PER_PAGE;
+  PER_PAGE = per;
+  FILA_X = angosta ? FILA_ANGOSTA : FILA_ANCHA;
+  const bx = angosta ? 1.82 : 2.55;
+  CAJA.min.set(-bx, .05, -1.1);
+  CAJA.max.set(bx + .45, 1.55, 3.15);
+  return cambio;
+}
+const _esq = new THREE.Vector3();
+function extremoNDC() {
+  let max = 0;
+  for (let i = 0; i < 8; i++) {
+    _esq.set(i & 1 ? CAJA.max.x : CAJA.min.x, i & 2 ? CAJA.max.y : CAJA.min.y, i & 4 ? CAJA.max.z : CAJA.min.z);
+    _esq.project(camera);
+    max = Math.max(max, Math.abs(_esq.x), Math.abs(_esq.y));
+  }
+  return max;
+}
+function encuadrar() {
+  let dist = 5;
+  for (let i = 0; i < 34; i++) {
+    camera.position.copy(FOCO).addScaledVector(DIR, dist);
+    camera.lookAt(FOCO);
+    camera.updateMatrixWorld();
+    const m = extremoNDC();
+    if (m > 1.0) dist *= 1.04;
+    else if (m < .94) dist *= .98;
+    else break;
+  }
+}
+
 /* ============================================================
    API
    ============================================================ */
@@ -956,9 +1003,8 @@ const Escena3D = {
     container.appendChild(renderer.domElement);
 
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(42, 8 / 7, .1, 40);
-    camera.position.set(0, 3.75, 4.55);
-    camera.lookAt(0, .62, .8);
+    camera = new THREE.PerspectiveCamera(44, 8 / 7, .1, 60);
+    ajustarMundo(8 / 7);
     clock = new THREE.Clock();
 
     construirCocina();
@@ -975,14 +1021,17 @@ const Escena3D = {
     ui.repisaPrev = flecha('prev', '‹', () => { pagRepisa--; poblarFila(datos.repisa, 'repisa'); });
     ui.repisaNext = flecha('next', '›', () => { pagRepisa++; poblarFila(datos.repisa, 'repisa'); });
 
-    const HFOV = 52;
     const resize = () => {
       const w = container.clientWidth, h = container.clientHeight;
       if (!w || !h) return;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
-      camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(HFOV / 2)) / camera.aspect));
       camera.updateProjectionMatrix();
+      if (ajustarMundo(camera.aspect)) {
+        poblarFila(datos.canasta, 'canasta');
+        poblarFila(datos.repisa, 'repisa');
+      }
+      encuadrar();
       const aPx = (x, y, z) => {
         const v = new THREE.Vector3(x, y, z).project(camera);
         return { x: (v.x + 1) / 2 * w, y: (1 - v.y) / 2 * h };
@@ -995,6 +1044,7 @@ const Escena3D = {
     };
     new ResizeObserver(resize).observe(container);
     resize();
+    window.addEventListener('orientationchange', () => setTimeout(resize, 120));
 
     const cv = renderer.domElement;
     cv.addEventListener('pointerdown', onDown);

@@ -65,10 +65,18 @@ taquería de barrio: azulejo de **talavera**, **rosa mexicano**, amarillo
 **cempasúchil**, verde **nopal**, rojo **guajillo**, madera pintada y
 blanco de **peltre**. Nada de cremas de cuaderno.
 
-Todas las pantallas comparten un mismo mundo — guirnalda de papel
-picado colgada arriba, zócalo de talavera, repisa de madera y pared de
-cal con textura de mantel de hule — para que la cocina 3D no se sienta
-pegada aparte del resto de la interfaz.
+Cada pantalla trae **su propio fondo**, para que nunca se vea una
+escena encima de otra:
+
+- **Cocina**: el fondo *es* el mesón 3D, a sangre de borde a borde. No
+  lleva decoración CSS — el HUD y la barra flotan encima con un velo.
+- **Recetario**: pared de cal con rayado de libreta.
+- **Despensa**: tablones de alacena.
+- **Portada**: el puesto completo, con papel picado y zócalo de
+  talavera.
+
+El elemento `.mundo-puesto` es el que pinta ese decorado; la Cocina
+simplemente no lo incluye.
 
 La escena 3D **no** tiene colores propios: `escena3d.js` lee los tokens
 con `getComputedStyle` sobre `:root`, así que cambiar la paleta del

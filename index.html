@@ -35,7 +35,8 @@
   </header>
 
   <!-- ================= Portada ================= -->
-  <main id="screen-cover" class="screen active">
+  <main id="screen-cover" class="screen screen--portada active">
+    <span class="mundo-puesto" aria-hidden="true"></span>
     <div class="cover">
       <span class="cover-sun" aria-hidden="true"></span>
       <span class="cover-star" aria-hidden="true">✦</span>
@@ -55,30 +56,33 @@
     </div>
   </main>
 
-  <!-- ================= Cocina: el mesón ================= -->
-  <main id="screen-taller" class="screen">
-    <div class="hoja hoja--cocina">
+  <!-- ================= Cocina: el mesón (a pantalla completa) ================= -->
+  <main id="screen-taller" class="screen screen--cocina">
+    <!-- el mesón 3D ocupa toda la pantalla: es el fondo, no un cuadro -->
+    <div id="cocina3d" class="cocina3d hidden"></div>
+
+    <!-- capa de mandos, flotando sobre la escena -->
+    <div class="cocina-ui">
       <div id="estacion-fichas" class="estacion-fichas"></div>
-      <div class="mesa-zona">
-        <span id="combo-indicador" class="pill pill--rosa combo-indicador hidden"></span>
-        <!-- el mesón 3D; sin WebGL queda el fogón 2D de abajo -->
-        <div id="cocina3d" class="cocina3d hidden"></div>
-        <div id="fogon" class="fogon">
-          <button type="button" id="slot-a" class="carta-slot" aria-label="Primer ingrediente"></button>
-          <span class="fusion-plus" aria-hidden="true">+</span>
-          <button type="button" id="slot-b" class="carta-slot" aria-label="Segundo ingrediente"></button>
-        </div>
-        <div id="mesa-etiquetas" class="mesa-etiquetas hidden"></div>
-        <div id="taller-action" class="taller-action"></div>
+      <span id="combo-indicador" class="pill pill--rosa combo-indicador hidden"></span>
+      <div id="mesa-etiquetas" class="mesa-etiquetas hidden"></div>
+      <div id="taller-action" class="taller-action"></div>
+    </div>
+
+    <!-- respaldo 2D para navegadores sin WebGL -->
+    <div class="hoja hoja--cocina">
+      <div id="fogon" class="fogon">
+        <button type="button" id="slot-a" class="carta-slot" aria-label="Primer ingrediente"></button>
+        <span class="fusion-plus" aria-hidden="true">+</span>
+        <button type="button" id="slot-b" class="carta-slot" aria-label="Segundo ingrediente"></button>
       </div>
-
       <div id="en-preparacion" class="panel panel--sunken en-preparacion hidden"></div>
-
     </div>
   </main>
 
   <!-- ================= Recetario ================= -->
-  <main id="screen-coleccion" class="screen">
+  <main id="screen-coleccion" class="screen screen--recetario">
+    <span class="mundo-puesto" aria-hidden="true"></span>
     <div class="hoja">
       <header class="hoja-head">
         <div class="sign">
@@ -91,7 +95,8 @@
   </main>
 
   <!-- ================= Despensa ================= -->
-  <main id="screen-feria" class="screen">
+  <main id="screen-feria" class="screen screen--despensa">
+    <span class="mundo-puesto" aria-hidden="true"></span>
     <div class="hoja">
       <header class="hoja-head">
         <div class="sign">

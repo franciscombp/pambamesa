@@ -32,33 +32,35 @@ svg { display: block; width: 100%; height: 100%; }
   margin: 0 auto;
   height: 100vh; height: 100dvh;
   overflow: hidden;
-  /* el puesto: zócalo de talavera arriba, repisa de madera y pared
-     de cal blanca abajo — el mismo mundo en todas las pantallas */
+  /* neutro a propósito: el fondo lo pone cada pantalla, para que la
+     cocina 3D no parezca un cuadro colgado sobre otra escena */
+  background: var(--pizarra-700);
+  box-shadow: var(--e-4);
+}
+
+/* --- el mundo del puesto: zócalo de talavera, repisa y cal ---
+   lo comparten las pantallas de papel (recetario, despensa, portada);
+   la cocina no lo lleva porque su fondo ES la escena 3D. */
+.mundo-puesto {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background:
-    /* cuadros de mantel de hule sobre la cal (el zócalo de arriba
-       los tapa con el azulejo opaco del ::before) */
     var(--patron-mantel),
     linear-gradient(180deg,
       transparent 0, transparent 128px,
       var(--madera-500) 128px, var(--madera-300) 133px, var(--madera-600) 140px,
       var(--peltre-200) 140px, var(--peltre-200) 100%);
-  box-shadow: var(--e-4);
 }
-/* el azulejo pintado del zócalo */
-#stage::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 128px; z-index: 0;
+.mundo-puesto::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 128px;
   background: var(--patron-talavera);
   background-size: var(--patron-talavera-size);
   box-shadow: inset 0 -6px 12px -6px rgba(43,33,41,.35);
-  pointer-events: none;
 }
-/* la guirnalda de papel picado, colgada del borde superior */
-#stage::after {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 30px; z-index: 3;
+.mundo-puesto::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 30px;
   background: var(--papel-picado) repeat-x top left;
   background-size: 112px 30px;
   filter: drop-shadow(0 3px 3px rgba(20,12,18,.35));
-  pointer-events: none;
 }
 
 .screen { display: none; position: relative; z-index: var(--z-scene); height: 100%; }
@@ -137,14 +139,19 @@ svg { display: block; width: 100%; height: 100%; }
 }
 
 .mesa-zona { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.cocina3d {
-  position: relative; flex: 1; min-height: 280px;
-  border-radius: var(--r-xl); overflow: hidden;
-  border: var(--ring);
-  background: linear-gradient(180deg, var(--talavera-200), var(--peltre-300));
-  box-shadow: var(--e-3);
-}
+/* la escena ocupa TODO: es el fondo de la pantalla, no un cuadro */
+.cocina3d { position: absolute; inset: 0; z-index: 0; }
 .cocina3d canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
+
+/* los mandos flotan sobre la escena */
+.cocina-ui {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  display: flex; flex-direction: column;
+  padding-top: calc(var(--hud-h) + var(--sp-1));
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-2));
+}
+.cocina-ui > * { pointer-events: auto; }
+.mesa3d .hoja--cocina { display: none; }
 
 /* flechas del cajón: se posicionan desde JS sobre la fila de casillas */
 .cajon-flecha {
@@ -166,9 +173,9 @@ svg { display: block; width: 100%; height: 100%; }
 
 /* etiquetas de lo que está sobre la tabla */
 .mesa-etiquetas {
-  position: absolute; left: 0; right: 0; top: var(--sp-2);
   display: flex; justify-content: center; gap: var(--sp-2);
-  pointer-events: none; z-index: 4;
+  margin-top: var(--sp-2);
+  pointer-events: none;
 }
 .mesa-etiqueta { animation: etiqueta-pop var(--dur) var(--ease-pop) both; }
 @keyframes etiqueta-pop { from { opacity: 0; transform: translateY(-6px) scale(.9); } }
@@ -176,8 +183,9 @@ svg { display: block; width: 100%; height: 100%; }
 
 /* la pista flota sobre la escena: no gasta alto de pantalla */
 .taller-action {
-  position: absolute; left: var(--sp-3); right: var(--sp-3); bottom: var(--sp-3); z-index: 4;
+  margin-top: auto;
   display: flex; align-items: center; justify-content: center; gap: var(--sp-2); flex-wrap: wrap;
+  padding: 0 var(--sp-3);
   pointer-events: none;
 }
 .taller-action > .btn { pointer-events: auto; }
@@ -233,7 +241,7 @@ svg { display: block; width: 100%; height: 100%; }
 .mesa3d .despensa-accesos, .mesa3d #en-preparacion { display: none !important; }
 
 .combo-indicador {
-  position: absolute; top: calc(var(--sp-2) * -1); right: var(--sp-4); z-index: 6;
+  position: absolute; top: calc(var(--hud-h) + var(--sp-6)); right: var(--sp-3); z-index: 6;
   animation: combo-pop var(--dur) var(--ease-pop) both;
 }
 @keyframes combo-pop { from { transform: scale(.5); opacity: 0; } }
@@ -709,3 +717,40 @@ button:focus:not(:focus-visible) { outline: none; }
   content: ''; flex: 1; height: 0;
   border-bottom: 2px dotted var(--hairline);
 }
+
+/* ============================================================
+   UN FONDO PROPIO POR PANTALLA
+   Cada pantalla trae el suyo, así nunca se ve "una escena sobre
+   otra escena": en la Cocina el fondo ES el mesón 3D.
+   ============================================================ */
+
+.screen > .hoja, .screen > .cover { position: relative; z-index: 1; }
+
+/* el recetario es papel: la pared de cal se tiñe de libreta */
+.screen--recetario .mundo-puesto {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 29px, rgba(27,95,170,.07) 29px 30px),
+    linear-gradient(180deg,
+      transparent 0, transparent 128px,
+      var(--madera-500) 128px, var(--madera-300) 133px, var(--madera-600) 140px,
+      #fffdf7 140px, var(--peltre-200) 100%);
+}
+/* la despensa es alacena: tablones de madera bajo la repisa */
+.screen--despensa .mundo-puesto {
+  background:
+    repeating-linear-gradient(180deg, rgba(114,55,19,.16) 0 2px, transparent 2px 54px),
+    linear-gradient(180deg,
+      transparent 0, transparent 128px,
+      var(--madera-600) 128px, var(--madera-300) 133px, var(--madera-600) 140px,
+      var(--madera-200) 140px, var(--madera-300) 100%);
+}
+.screen--despensa .seccion-nota { color: var(--madera-700); }
+.screen--despensa .sign { border-color: var(--madera-600); }
+
+/* el HUD se apoya en un velo suave para leerse sobre la escena 3D */
+.hud::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, rgba(20,12,18,.5), transparent);
+  opacity: 0; transition: opacity var(--dur) var(--ease-out);
+}
+.mesa3d.en-cocina .hud::before { opacity: 1; }

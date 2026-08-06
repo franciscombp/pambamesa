@@ -939,6 +939,7 @@ function show(screen) {
   if (screen === 'coleccion') renderColeccion();
   if (screen === 'feria') renderFeria();
   renderProgress();
+  $('#stage').classList.toggle('en-cocina', screen === 'taller');
   if (escenaOn) Escena3D.setActive(screen === 'taller');
   clearInterval(feriaTimerId);
   if (screen === 'feria') feriaTimerId = setInterval(renderFeria, 30000);
