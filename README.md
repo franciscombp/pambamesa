@@ -26,6 +26,23 @@ Jugable en: https://franciscombp.github.io/pambamesa/
 - **Despensa**: cocinar da sucres; con ellos repones ingredientes o
   abres cajas del mercado cuando la cocina se queda corta.
 
+## El minijuego: la fanesca
+
+En `fanesca/` vive un minijuego aparte —
+https://franciscombp.github.io/pambamesa/fanesca/ — con otra gracia:
+en vez de combinar cartas, se **prepara con los dedos**. Desgranas
+una mazorca 3D grano por grano, desvainas habas, revientas fréjol,
+cortas el zapallo y tiendes el bacalao, un nivel por ingrediente.
+
+El truco es el mismo en todos: lo lento es ir de uno en uno, lo
+rápido es arrastrar desde una orilla y que la fila se vaya sola. Y
+en cada ingrediente hay un bicho escondido — si lo aplastas o se te
+cuela a la batea, se arruina la olla entera y toca empezar de nuevo.
+
+Reusa este juego sin duplicar nada: el mismo `design-system.css`,
+los mismos `icons.js` y el mismo `vendor/` de Three.js, un directorio
+más arriba. Los detalles, en [`fanesca/README.md`](fanesca/README.md).
+
 ## Arquitectura (heredada de Huecas, adaptada)
 
 | Archivo | Rol |

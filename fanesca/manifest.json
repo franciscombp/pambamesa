@@ -1,0 +1,15 @@
+{
+  "name": "La fanesca — Pambamesa",
+  "short_name": "La fanesca",
+  "description": "Desgrana el choclo, desvaina las habas y corta el zapallo con los dedos: el minijuego de preparación de Pambamesa.",
+  "lang": "es",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#9cdae4",
+  "theme_color": "#9cdae4",
+  "icons": [
+    { "src": "../icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
