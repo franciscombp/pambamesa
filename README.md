@@ -39,6 +39,13 @@ rápido es arrastrar desde una orilla y que la fila se vaya sola. Y
 en cada ingrediente hay un bicho escondido — si lo aplastas o se te
 cuela a la batea, se arruina la olla entera y toca empezar de nuevo.
 
+Y cuenta de dónde sale el plato mientras lo preparas: la uchucuta del
+Mushuk Nina, por qué la Pascua cae en la misma fecha del equinoccio,
+por qué un bacalao del Atlántico Norte terminó en una sopa de páramo,
+y la frase de Dolores Cacuango sobre los granos de quinua — que
+aparece justo cuando el pulgar acaba de demostrarla desgranando una
+hilera entera de un tirón.
+
 Reusa este juego sin duplicar nada: el mismo `design-system.css`,
 los mismos `icons.js` y el mismo `vendor/` de Three.js, un directorio
 más arriba. Los detalles, en [`fanesca/README.md`](fanesca/README.md).

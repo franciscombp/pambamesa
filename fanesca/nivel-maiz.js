@@ -15,6 +15,12 @@
    arrastrar el dedo a lo largo de esa hilera la desgrana entera
    en cascada, que es exactamente cómo se desgrana de verdad.
 
+   La mazorca va DE PIE, sostenida en la mano, porque así se
+   desgrana de verdad: el choclo en el puño y el pulgar bajando por
+   una hilera. El teléfono en vertical es la mano; la pantalla es la
+   mazorca. Girar es pasar el dedo de lado, como si la hicieras rodar
+   entre los dedos.
+
    Y debajo de algún grano hay un gusanito. Si lo tocas, lo
    aplastas y se arruina la olla. Si lo dejas caminar hasta la
    batea, se mezcla con los granos buenos y también se arruina.
@@ -23,21 +29,22 @@
    ============================================================ */
 
 import { nuevoGusano, ARRUINADO } from './bichos.js';
+import { CACUANGO } from './historia.js';
 
 let THREE, raiz, api;
 
 /* ---------- la rejilla ---------- */
 const A = 16;              /* hileras alrededor de la tusa */
 const P = 12;              /* granos a lo largo de cada hilera */
-const R = 0.40;            /* radio de la mazorca */
-const PASO = 0.186;        /* separación entre granos a lo largo */
-const CENTRO = [0, 0.44, 0.15];  /* dónde se apoya, relativo al mesón */
+const R = 0.46;            /* radio de la mazorca */
+const PASO = 0.208;        /* separación entre granos a lo largo */
+const CENTRO = [0, 1.96, 0.12];  /* el choclo en alto, relativo al mesón */
 const FRENTE = -0.42;      /* ángulo que mira a la cámara (rad) */
 
 const GUSANOS = 2;         /* cuántos bichos esconde la mazorca */
 const RESISTENCIA = 3;     /* toques para arrancar un grano trabado */
 const CASCADA_MS = 0.042;  /* qué tan rápido corre la cremallera */
-const GUSANO_VEL = 0.62;   /* posiciones por segundo que avanza el bicho */
+const GUSANO_VEL = 0.52;   /* posiciones por segundo que BAJA el bicho */
 /* El bicho sale justo del hueco que acabas de abrir, y muchas veces la
    cascada lo destapa con el dedo todavía encima. Sin este respiro,
    destapar un gusanito sería perder sin poder reaccionar. */
@@ -47,7 +54,7 @@ const GRACIA = 1.0;
 const perfil = (u) => 0.80 + 0.20 * Math.sin(Math.PI * u);
 const uDe = (p) => (p + 0.5) / P;
 
-let mazorca = null;        /* grupo tumbado (eje local Y → mundo X) */
+let mazorca = null;        /* el choclo de pie: su eje es +Y */
 let giro = null;           /* grupo que rota sobre el eje de la mazorca */
 let tusa = null;
 let granosGrupo = null, gusanosGrupo = null;
@@ -58,12 +65,14 @@ let hechos = 0;
 const TOTAL = A * P;
 
 let modo = null;           /* 'peinar' | 'girar' | 'cargar' */
-let giro0 = 0, dy0 = 0, dxPrev = 0, dirActual = 1;
+let giro0 = 0, dx0 = 0, dyPrev = 0, dirActual = 1;
 let cargado = null;        /* gusano en la mano */
 let giroObjetivo = null;   /* a dónde lleva la cámara al bicho */
 let girando = 0;           /* botones de girar mantenidos */
 let tAuto = 0.6;           /* cada cuánto se revisa el giro automático */
 let ultimoPop = 0, avisoCentro = 0, terminado = false;
+let corridaActual = 0, dichoCacuango = false, citaPendiente = false;  /* la cita, una sola vez */
+const CORRIDA_PARA_LA_CITA = 7;
 
 /* ---------- materiales ---------- */
 let matGrano = [], matGranoPunta = null, matTusa = null;
@@ -90,25 +99,33 @@ function nuevoGrano(a, p, geo) {
   const punta = (p === 0 || p === P - 1);
   const g = new THREE.Group();
   /* apenas asomados: el grano se sienta EN la tusa, no flota sobre ella */
-  g.position.set(Math.sin(th) * (r + 0.025), h, Math.cos(th) * (r + 0.025));
+  g.position.set(Math.sin(th) * (r + 0.03), h, Math.cos(th) * (r + 0.03));
   g.rotation.y = th;
   g.userData = { tipo: 'grano', a, p, golpes: 0 };
   const m = new THREE.Mesh(geo, punta ? matGranoPunta : matGrano[(a * 7 + p * 3) % matGrano.length]);
   /* un pelo más anchos que el paso de la rejilla: así se aprietan
      entre sí como en la mazorca de verdad y no se ve la tusa */
-  m.scale.set(0.093, punta ? 0.092 : 0.108, punta ? 0.078 : 0.092);
+  m.scale.set(0.108, punta ? 0.112 : 0.131, punta ? 0.09 : 0.106);
   g.add(m);
   return g;
 }
+
+const ALTO_GRANOS = () => (P - 1) / 2 * PASO;
+const Y_MANO = () => -ALTO_GRANOS() - 0.46;     /* dónde agarra el puño */
 
 function construirTusa() {
   const pts = [];
   const N = 26;
   const largo = P * PASO + PASO * 0.9;
+  /* el tallo pelado de abajo: la mazorca necesita de dónde ser
+     agarrada sin que el puño tape granos que aún se pueden sacar */
+  pts.push(new THREE.Vector2(0.004, -largo / 2 - 0.78));
+  pts.push(new THREE.Vector2(0.115, -largo / 2 - 0.74));
+  pts.push(new THREE.Vector2(0.135, -largo / 2 - 0.2));
   for (let i = 0; i <= N; i++) {
     const u = i / N;
     let r = R * perfil(u) * 0.90;
-    if (u < 0.07) r *= u / 0.07;
+    if (u < 0.07) r = 0.135 + (r - 0.135) * (u / 0.07);
     if (u > 0.93) r *= (1 - u) / 0.07;
     pts.push(new THREE.Vector2(Math.max(0.004, r), (u - 0.5) * largo));
   }
@@ -190,6 +207,55 @@ function autoGirar() {
   giroObjetivo = acercarAngulo(giro.rotation.y, giroParaHilera(mejor));
 }
 
+/* La mano. No hace nada mecánicamente, y por eso mismo importa: sin
+   ella la mazorca flota y el gesto no se entiende. Con ella, el
+   teléfono en vertical ES la mano y la pantalla es el choclo.
+   Agarra el TALLO, nunca los granos: si tapara granos habría
+   posiciones imposibles de alcanzar por más que gires. */
+function manoQueSostiene() {
+  const piel = new THREE.MeshLambertMaterial({ color: '#c98d5f' });
+  const pielOsc = new THREE.MeshLambertMaterial({ color: '#b07248' });
+  const mano = new THREE.Group();
+  mano.position.set(CENTRO[0], api.MESA_Y + CENTRO[1] + Y_MANO(), CENTRO[2]);
+
+  /* el dorso, detrás del tallo */
+  const dorso = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), piel);
+  dorso.scale.set(0.92, 1.15, 0.6);
+  dorso.position.set(0.02, -0.06, -0.05);
+  mano.add(dorso);
+
+  /* cuatro dedos cruzando por delante, escalonados como un puño */
+  [0.2, 0.04, -0.12, -0.28].forEach((dy, i) => {
+    const dedo = new THREE.Mesh(new THREE.CapsuleGeometry(0.078, 0.34, 6, 12), i % 2 ? pielOsc : piel);
+    dedo.rotation.z = Math.PI / 2;
+    dedo.rotation.y = 0.16 - i * 0.03;
+    dedo.position.set(-0.02, dy, 0.2 - Math.abs(i - 1.2) * 0.02);
+    mano.add(dedo);
+    /* la yema, asomando al otro lado */
+    const yema = new THREE.Mesh(new THREE.SphereGeometry(0.078, 10, 8), piel);
+    yema.position.set(0.19, dy, 0.2);
+    mano.add(yema);
+  });
+
+  /* el pulgar, que es el que de verdad desgrana */
+  const pulgar = new THREE.Mesh(new THREE.CapsuleGeometry(0.088, 0.26, 6, 12), piel);
+  pulgar.rotation.set(0.35, 0, 0.62);
+  pulgar.position.set(-0.24, 0.24, 0.16);
+  mano.add(pulgar);
+
+  /* la muñeca se va por el borde de abajo, como tu propio brazo */
+  const muneca = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.3, 0.9, 16), pielOsc);
+  muneca.rotation.x = 0.22;
+  muneca.position.set(0.02, -0.72, 0.02);
+  mano.add(muneca);
+
+  /* una mano de verdad es casi tan ancha como el choclo: si se ve
+     chiquita, deja de leerse como mano y parece un adorno */
+  mano.scale.setScalar(1.45);
+  mano.traverse(o => { o.userData.ignorar = true; });
+  return mano;
+}
+
 /* ---------- reglas ---------- */
 
 const existe = (a, p) => p >= 0 && p < P && !!granos[a][p];
@@ -221,7 +287,17 @@ function sacarGrano(a, p, conCascada, dir) {
 
   api.progreso(hechos, TOTAL);
 
-  if (conCascada && dir) cascadas.push({ a, p: p + dir, dir, t: api.reloj + CASCADA_MS });
+  if (conCascada && dir) {
+    cascadas.push({ a, p: p + dir, dir, t: api.reloj + CASCADA_MS });
+    /* La cita llega justo cuando el jugador acaba de comprobarlo con
+       los dedos: se soltó uno de la orilla y se fue la hilera entera.
+       Dicha antes sería una lección; dicha aquí es un reconocimiento. */
+    corridaActual++;
+    if (!dichoCacuango && corridaActual >= CORRIDA_PARA_LA_CITA) {
+      dichoCacuango = true;
+      citaPendiente = true;   /* se dice cuando la hilera TERMINE de caer */
+    }
+  } else corridaActual = 0;
   revisarFinal();
   return true;
 }
@@ -293,6 +369,8 @@ function intentarGrano(raizGrano, esArrastre) {
 
 export default {
   id: 'maiz',
+  /* de frente y en vertical: el encuadre del teléfono en la mano */
+  camara: { pos: [0, 2.98, 3.4], mira: [0, 2.38, 0.12] },
   controles: [
     { id: 'izq', txt: '⟲', tip: 'girar' },
     { id: 'der', txt: '⟳', tip: 'girar' },
@@ -304,24 +382,12 @@ export default {
     granos = []; gusanos = []; cascadas = []; hechos = 0;
     modo = null; cargado = null; giroObjetivo = null; girando = 0;
     terminado = false; ultimoPop = api.reloj; avisoCentro = 0;
-
-    /* la tabla donde se apoya la mazorca, con topes para que no ruede */
-    const tabla = new THREE.Mesh(
-      new THREE.BoxGeometry(3.0, 0.1, 1.45),
-      new THREE.MeshLambertMaterial({ color: '#ecc287' })
-    );
-    tabla.position.set(CENTRO[0], api.MESA_Y + 0.05, CENTRO[2]);
-    raiz.add(tabla);
-    const matTope = new THREE.MeshLambertMaterial({ color: '#c89357' });
-    [-0.56, 0.56].forEach(dz => {
-      const tope = new THREE.Mesh(new THREE.BoxGeometry(3.04, 0.07, 0.1), matTope);
-      tope.position.set(CENTRO[0], api.MESA_Y + 0.13, CENTRO[2] + dz);
-      raiz.add(tope);
-    });
+    corridaActual = 0; dichoCacuango = false; citaPendiente = false;
 
     mazorca = new THREE.Group();
     mazorca.position.set(CENTRO[0], api.MESA_Y + CENTRO[1], CENTRO[2]);
-    mazorca.rotation.z = -Math.PI / 2;    /* la acuesta: eje local Y → eje X del mundo */
+    /* de pie, apenas inclinada hacia quien la sostiene */
+    mazorca.rotation.x = 0.1;
     raiz.add(mazorca);
 
     giro = new THREE.Group();
@@ -357,6 +423,8 @@ export default {
     }
     giro.add(barbas);
 
+    raiz.add(manoQueSostiene());
+
     /* los bichos: nunca en las puntas (ahí sería regalado encontrarlos) */
     const usados = new Set();
     for (let i = 0; i < GUSANOS; i++) {
@@ -389,7 +457,7 @@ export default {
   alArrastrarInicio(info) {
     if (terminado) return;
     const r = info.raiz;
-    dxPrev = 0;
+    dyPrev = 0;
     if (r && r.userData.tipo === 'gusano') {
       const w = gusanos.find(x => x.obj === r);
       if (w && w.estado === 'fuera') {
@@ -412,14 +480,15 @@ export default {
     }
     modo = 'girar';
     giro0 = giro.rotation.y;
-    dy0 = info.dy;
+    dx0 = info.dx;
     giroObjetivo = null;
   },
 
   alArrastrar(info) {
     if (terminado) return;
     if (modo === 'girar') {
-      giro.rotation.y = giro0 + (info.dy - dy0) * 0.013;
+      /* de pie, la mazorca rueda con el dedo de lado */
+      giro.rotation.y = giro0 - (info.dx - dx0) * 0.013;
       return;
     }
     if (modo === 'cargar' && cargado) {
@@ -435,9 +504,11 @@ export default {
       return;
     }
     if (modo === 'peinar') {
-      const d = info.dx - dxPrev;
-      dxPrev = info.dx;
-      if (Math.abs(d) > 0.6) dirActual = d > 0 ? 1 : -1;
+      /* la hilera va de abajo (p=0) a arriba (p=P-1): en pantalla,
+         bajar el dedo es ir hacia p menor */
+      const d = info.dy - dyPrev;
+      dyPrev = info.dy;
+      if (Math.abs(d) > 0.6) dirActual = d > 0 ? -1 : 1;
       const r = granoBajoElDedo();
       if (!r) return;
       if (r.userData.tipo === 'gusano') { aplastado(gusanoDe(r)); return; }
@@ -506,15 +577,25 @@ export default {
     /* los bichos caminan hacia la batea */
     for (const w of gusanos) {
       if (w.estado === 'fuera') {
-        w.p += GUSANO_VEL * dt;
+        w.p -= GUSANO_VEL * dt;      /* se descuelga hacia la batea */
         colocarGusano(w);
-        if (w.p >= P - 0.35) {
+        if (w.p <= -0.35) {
           w.estado = 'ido';
           api.arruinar(ARRUINADO.enLaBatea('gusanito'));
           return;
         }
       }
       if (w.estado === 'fuera' || w.estado === 'cargado') w.bicho.animar(t);
+    }
+
+    /* La cita espera a que la cremallera termine y el dedo se levante:
+       dicha en mitad del gesto nadie la lee, y el gesto es justamente
+       la prueba de lo que dice. */
+    if (citaPendiente && !cascadas.length && !modo) {
+      citaPendiente = false;
+      api.voz(CACUANGO, 9500);
+      api.abrirCapitulo('unidad');
+      api.sfx('bien');
     }
 
     /* la mazorca rueda sola cuando ya no queda nada al frente */

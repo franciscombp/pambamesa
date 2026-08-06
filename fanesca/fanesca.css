@@ -192,7 +192,12 @@ svg { display: block; width: 100%; height: 100%; }
   height: var(--prep-hud-h);
   display: flex; align-items: center; gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-3) 0;
+  /* la barra es casi toda aire: si capturara el dedo, se comería los
+     toques sobre lo alto del ingrediente, que con el choclo de pie
+     llega hasta arriba. Solo los controles reciben el dedo. */
+  pointer-events: none;
 }
+.hud-salir, .hud-tiempo { pointer-events: auto; }
 .hud-salir {
   flex-shrink: 0;
   width: 2.3rem; height: 2.3rem;
@@ -300,3 +305,159 @@ svg { display: block; width: 100%; height: 100%; }
   .portada-quote { font-size: var(--t-xs); }
   .portada-title { font-size: var(--t-2xl); }
 }
+
+/* ============================================================
+   EL CUADERNO — lo que el plato cuenta
+   ============================================================ */
+.cuaderno-acceso {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-2);
+  margin: var(--sp-3) auto 0;
+  padding: .34rem .9rem;
+  font-size: var(--t-lg);
+  background: linear-gradient(180deg, var(--cream-100), var(--cream-300));
+  border: 2.5px solid var(--wood-500); border-bottom-width: 4px;
+  border-radius: var(--r-pill);
+  box-shadow: var(--gloss), var(--e-1);
+}
+.cuaderno-acceso:active { transform: translateY(1.5px); border-bottom-width: 2.5px; }
+.cuaderno-acceso-txt {
+  font-family: var(--font-display); font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--text-muted);
+}
+/* el punto que avisa "hay algo nuevo que leer" */
+.cuaderno-nuevo {
+  position: absolute; top: -3px; right: -3px;
+  width: .7rem; height: .7rem; border-radius: 50%;
+  background: var(--tomato-500);
+  border: 2px solid var(--cream-100);
+  animation: nuevo-late 1.6s ease-in-out infinite;
+}
+@keyframes nuevo-late { 50% { transform: scale(1.35); } }
+
+.cuaderno-entradilla {
+  /* cae justo sobre la franja de azulejo y madera del fondo: sin
+     superficie propia, ahí no se lee */
+  font-size: var(--t-sm); line-height: var(--lead); color: var(--text);
+  font-style: italic; text-align: center;
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3);
+  background: rgba(255,253,246,.92);
+  border: 2px solid var(--hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-1);
+}
+.capitulo {
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-4);
+  background: linear-gradient(180deg, var(--surface-raised), var(--surface));
+  border: var(--ring); border-radius: var(--r-lg);
+  box-shadow: var(--e-2);
+}
+.capitulo.cerrado { filter: grayscale(.9) opacity(.62); }
+.capitulo-head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.capitulo-head .plate { width: 46px; flex-shrink: 0; }
+.capitulo-titulo {
+  font-family: var(--font-display); font-size: var(--t-lg); font-weight: 800;
+  line-height: 1.15; color: var(--text);
+}
+.capitulo p { font-size: var(--t-sm); line-height: var(--lead); color: var(--text); }
+.capitulo p + p { margin-top: var(--sp-3); }
+.capitulo-cerrojo { font-size: var(--t-sm); color: var(--text-muted); font-style: italic; }
+
+/* los granos, repartidos por orilla */
+.granos-mapa { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-3); }
+.grano-chip {
+  display: inline-flex; align-items: center; gap: .28rem;
+  padding: .16rem .6rem;
+  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700;
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
+}
+.grano-chip::before { content: ''; width: .45rem; height: .45rem; border-radius: 50%; }
+.grano-chip.aca  { color: var(--leaf-600); background: rgba(108,191,90,.14); border-color: rgba(108,191,90,.4); }
+.grano-chip.aca::before  { background: var(--leaf-500); }
+.grano-chip.alla { color: var(--berry-700); background: rgba(217,79,114,.12); border-color: rgba(217,79,114,.36); }
+.grano-chip.alla::before { background: var(--berry-500); }
+.granos-leyenda { display: flex; gap: var(--sp-4); margin-top: var(--sp-3); font-size: var(--t-2xs); }
+
+/* la cita, tratada como cita */
+.cita {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: rgba(242,179,31,.12);
+  border-left: 4px solid var(--gold-400);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+}
+.cita p {
+  font-size: var(--t-md); line-height: var(--lead); font-style: italic; color: var(--text);
+}
+.cita footer {
+  margin-top: var(--sp-2);
+  font-family: var(--font-display); font-size: var(--t-xs); font-weight: 700;
+  color: var(--accent-ink);
+}
+.cita footer span { display: block; font-family: var(--font-text); font-weight: 400; color: var(--text-muted); font-style: normal; }
+
+.cuaderno-fuentes { margin-bottom: var(--sp-4); }
+.cuaderno-fuentes ul { list-style: none; margin-top: var(--sp-2); }
+.cuaderno-fuentes li { font-size: var(--t-xs); line-height: 1.5; margin-bottom: .3rem; }
+.cuaderno-fuentes a { color: var(--accent-ink); }
+
+/* ---------- la voz sobre la escena ---------- */
+.voz {
+  position: absolute; left: 50%; top: 38%;
+  transform: translate(-50%, -6px); z-index: 5;
+  width: min(340px, 88%);
+  padding: var(--sp-4);
+  text-align: center;
+  background: rgba(74, 44, 42, .93);
+  border: 2px solid var(--gold-400);
+  border-radius: var(--r-lg);
+  box-shadow: var(--e-4);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+}
+.voz.visible { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; cursor: pointer; }
+.voz-texto {
+  font-family: var(--font-text); font-size: var(--t-md); font-style: italic; line-height: var(--lead);
+  color: var(--ink-on-dark);
+}
+.voz-quien {
+  margin-top: var(--sp-2);
+  font-family: var(--font-display); font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: var(--track-caps); text-transform: uppercase;
+  color: var(--gold-300);
+}
+
+/* ---------- la tarjeta que se gana al terminar ---------- */
+.tarjeta {
+  width: 100%; text-align: left;
+  margin-top: var(--sp-2);
+  padding: var(--sp-3);
+  background: rgba(74,44,42,.05);
+  border: 2px dashed var(--hairline);
+  border-radius: var(--r-md);
+}
+.tarjeta .label { margin-bottom: var(--sp-1); }
+.tarjeta-titulo {
+  font-family: var(--font-display); font-size: var(--t-md); font-weight: 800;
+  line-height: 1.2; color: var(--text); margin-bottom: var(--sp-1);
+}
+.tarjeta-texto { font-size: var(--t-sm); line-height: var(--lead); color: var(--text-muted); }
+.tarjeta-cita {
+  margin-top: var(--sp-3); padding: var(--sp-2) var(--sp-3);
+  background: rgba(242,179,31,.14);
+  border-left: 3px solid var(--gold-400);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+.tarjeta-cita p { font-size: var(--t-sm); font-style: italic; line-height: var(--lead); color: var(--text); }
+.tarjeta-cita footer {
+  margin-top: var(--sp-1);
+  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700; color: var(--accent-ink);
+}
+.brief-nota {
+  font-size: var(--t-xs); line-height: var(--lead); font-style: italic;
+  color: var(--text-muted);
+}
+.final-cierre { font-size: var(--t-sm); line-height: var(--lead); color: var(--text-muted); }

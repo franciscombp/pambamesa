@@ -10,6 +10,7 @@
 
 import Motor, { MESA_Y, BATEA, COMPOSTA } from './motor3d.js';
 import { NIVELES, porId, cucharasDe, tiempoBonito } from './niveles.js';
+import { HISTORIA, TARJETAS, CIERRE } from './historia.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -19,7 +20,7 @@ const SAVE_KEY = 'pambamesa_fanesca_v1';
 /* ---------- estado ---------- */
 
 function nuevoEstado() {
-  return { mejores: {}, vistoPortada: false, intentos: 0, arruinadas: 0 };
+  return { mejores: {}, vistoPortada: false, intentos: 0, arruinadas: 0, leidos: [], cuadernoVisto: true };
 }
 let estado = nuevoEstado();
 function guardar() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(estado)); } catch (e) {} }
@@ -99,7 +100,8 @@ function icono(id) { return (typeof iconOf === 'function') ? iconOf(id) : ''; }
 function mostrar(pantalla) {
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + pantalla));
   Motor.setActive(pantalla === 'juego');
-  if (pantalla === 'mesa') renderMesa();
+  if (pantalla === 'mesa') { renderMesa(); marcaCuaderno(); }
+  if (pantalla === 'cuaderno') { renderCuaderno(); estado.cuadernoVisto = true; guardar(); }
 }
 
 /* ---------- la mesa de prep ---------- */
@@ -149,6 +151,64 @@ function renderMesa() {
   });
 }
 
+/* ---------- el cuaderno ---------- */
+
+/* Un capítulo se abre cuando lo desbloqueó un ingrediente. La
+   historia no se regala de entrada: se gana con las manos, igual
+   que en la cocina. */
+const capituloAbierto = (id) => (estado.leidos || []).includes(id);
+
+function abrirCapitulo(id) {
+  if (!id || capituloAbierto(id)) return false;
+  estado.leidos = [...(estado.leidos || []), id];
+  estado.cuadernoVisto = false;
+  guardar();
+  return true;
+}
+
+function renderCuaderno() {
+  $('#cuaderno-entradilla').textContent = HISTORIA.entradilla;
+  const cont = $('#cuaderno-capitulos');
+  cont.innerHTML = '';
+
+  HISTORIA.capitulos.forEach(cap => {
+    const art = document.createElement('article');
+    art.className = 'capitulo' + (capituloAbierto(cap.id) ? '' : ' cerrado');
+    const cabeza = `<div class="capitulo-head">
+        <span class="plate">${icono(cap.icono)}</span>
+        <h3 class="capitulo-titulo">${cap.titulo}</h3>
+      </div>`;
+    if (!capituloAbierto(cap.id)) {
+      art.innerHTML = cabeza + '<p class="capitulo-cerrojo">Todavía no. Prepara ingredientes y esta página se abre sola.</p>';
+      cont.appendChild(art);
+      return;
+    }
+    let html = cabeza + cap.cuerpo.map(p => `<p>${p}</p>`).join('');
+    if (cap.granos) {
+      html += `<div class="granos-mapa">${cap.granos.map(g =>
+        `<span class="grano-chip ${g.de}">${g.n}</span>`).join('')}</div>
+        <div class="granos-leyenda">
+          <span class="grano-chip aca">de este lado del mar</span>
+          <span class="grano-chip alla">del otro</span>
+        </div>`;
+    }
+    if (cap.cita) {
+      html += `<blockquote class="cita"><p>«${cap.cita.texto}»</p>
+        <footer>${cap.cita.quien}<span>${cap.cita.datos}</span></footer></blockquote>`;
+    }
+    art.innerHTML = html;
+    cont.appendChild(art);
+  });
+
+  $('#cuaderno-fuentes-lista').innerHTML = HISTORIA.fuentes
+    .map(f => `<li><a href="${f.u}" target="_blank" rel="noopener">${f.t}</a></li>`).join('');
+}
+
+function marcaCuaderno() {
+  const hayNuevo = !estado.cuadernoVisto && (estado.leidos || []).length > 0;
+  $('#cuaderno-nuevo').classList.toggle('hidden', !hayNuevo);
+}
+
 /* ---------- el brief antes de cada nivel ---------- */
 
 let nivelPendiente = null;
@@ -162,6 +222,7 @@ function abrirBrief(id) {
   $('#brief-nombre').textContent = n.nombre;
   $('#brief-gesto').innerHTML = n.gesto;
   $('#brief-bicho').innerHTML = `⚠️ Ojo con <b>${n.bicho}</b>: si lo aplastas o se te cuela a la batea, se arruina todo y empiezas de nuevo.`;
+  $('#brief-nota').textContent = n.nota || '';
   $('#brief-mejor').textContent = mejor
     ? `Tu mejor tiempo: ${tiempoBonito(mejor.ms)} · ${mejor.cucharas} cuchara${mejor.cucharas > 1 ? 's' : ''}`
     : `3 cucharas si bajas de ${n.cucharas[0]}s`;
@@ -204,6 +265,20 @@ function pista(msg, ms = 3200) {
   if (ms) pistaId = setTimeout(() => p.classList.remove('visible'), ms);
 }
 
+let vozId = null;
+/* Una cita no es un toast: se queda el tiempo suficiente para leerla
+   y no interrumpe el juego, porque llega justo cuando el jugador
+   acaba de HACER lo que la cita dice. */
+function voz(cita, ms = 9000) {
+  const v = $('#voz');
+  if (!cita) { v.classList.remove('visible'); return; }
+  $('#voz-texto').textContent = '«' + cita.texto + '»';
+  $('#voz-quien').textContent = cita.quien;
+  v.classList.add('visible');
+  clearTimeout(vozId);
+  vozId = setTimeout(() => v.classList.remove('visible'), ms);
+}
+
 let alertaId = null;
 function alerta(msg) {
   const a = $('#hud-alerta');
@@ -228,6 +303,9 @@ const api = {
   arruinar(motivo) { if (corriendo) arruinarNivel(motivo); },
   aviso: alerta,
   pista,
+  voz,
+  /* un nivel puede abrir una página del cuaderno desde adentro */
+  abrirCapitulo,
   toast,
   sfx, buzz,
   chispas: (...a) => Motor.chispas(...a),
@@ -315,6 +393,21 @@ function terminarNivel() {
     $('#listo-mejor').textContent = esRecord
       ? (previo ? '¡Nuevo récord! antes: ' + tiempoBonito(previo.ms) : 'Primera vez que lo preparas')
       : 'Tu mejor sigue siendo ' + tiempoBonito(previo.ms);
+    const tarjeta = TARJETAS[n.id];
+    const caja = $('#listo-tarjeta');
+    if (tarjeta) {
+      caja.classList.remove('hidden');
+      $('#tarjeta-titulo').textContent = tarjeta.titulo;
+      $('#tarjeta-texto').textContent = tarjeta.texto;
+      const cita = $('#tarjeta-cita');
+      if (tarjeta.cita) {
+        cita.classList.remove('hidden');
+        $('#tarjeta-cita-texto').textContent = '«' + tarjeta.cita.texto + '»';
+        $('#tarjeta-cita-quien').textContent = tarjeta.cita.quien;
+      } else cita.classList.add('hidden');
+      [].concat(tarjeta.abre || []).forEach(abrirCapitulo);
+    } else caja.classList.add('hidden');
+
     const quedan = NIVELES.some(x => !estaListo(x.id));
     $('#listo-seguir').textContent = quedan ? 'Siguiente ingrediente' : 'Servir la fanesca';
     $('#modal-listo').classList.add('open');
@@ -344,7 +437,7 @@ function salirDelNivel() {
   Motor.descargar();
   Motor.setActive(false);
   nivelActual = null; modActual = null;
-  alerta(null); pista(null);
+  alerta(null); pista(null); voz(null);
   mostrar('mesa');
 }
 
@@ -365,6 +458,11 @@ function bindEventos() {
   });
   $('#brief-cancelar').addEventListener('click', cerrarModales);
   $('#modal-brief').addEventListener('click', (e) => { if (e.target === $('#modal-brief')) cerrarModales(); });
+
+  $('#voz').addEventListener('click', () => voz(null));
+  $('#btn-cuaderno').addEventListener('click', () => { sfx('tab'); mostrar('cuaderno'); });
+  $('#cuaderno-volver').addEventListener('click', () => { sfx('tab'); mostrar('mesa'); });
+  $('#final-cuaderno').addEventListener('click', () => { cerrarModales(); mostrar('cuaderno'); });
 
   $('#btn-salir').addEventListener('click', () => { sfx('tab'); salirDelNivel(); });
 
@@ -397,6 +495,7 @@ function bindEventos() {
     if (e.key === 'Escape') {
       if ($$('.modal.open').length) { cerrarModales(); return; }
       if ($('#screen-juego').classList.contains('active')) salirDelNivel();
+      else if ($('#screen-cuaderno').classList.contains('active')) mostrar('mesa');
     }
   });
 
@@ -410,7 +509,9 @@ function bindEventos() {
 function mostrarFinal() {
   const total = NIVELES.reduce((a, n) => a + (estado.mejores[n.id] ? estado.mejores[n.id].ms : 0), 0);
   const cuch = NIVELES.reduce((a, n) => a + (estado.mejores[n.id] ? estado.mejores[n.id].cucharas : 0), 0);
+  $('#final-cierre').textContent = CIERRE;
   $('#final-total').textContent = `${cuch} de ${NIVELES.length * 3} cucharas · ${tiempoBonito(total)} en total`;
+  HISTORIA.capitulos.forEach(c => abrirCapitulo(c.id));
   $('#modal-final').classList.add('open');
   sfx('fiesta');
 }

@@ -65,6 +65,8 @@ let particulas = [];
 let vuelos = [];
 let sacudida = { t: 0, fuerza: 0 };
 let camBase = new THREE.Vector3();
+let camMira = new THREE.Vector3();
+const CAM_POR_DEFECTO = { pos: [0, 3.02, 4.05], mira: [0, 1.12, 0.46] };
 let destelloEl = null;
 let bateaGrupo = null, compostaGrupo = null;
 
@@ -499,8 +501,9 @@ export const Motor = {
 
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(44, 1, 0.1, 40);
-    camera.position.set(0, 3.02, 4.05);
-    camera.lookAt(0, 1.12, 0.46);
+    camera.position.set(...CAM_POR_DEFECTO.pos);
+    camMira.set(...CAM_POR_DEFECTO.mira);
+    camera.lookAt(camMira);
     camBase.copy(camera.position);
     clock = new THREE.Clock();
 
@@ -531,9 +534,22 @@ export const Motor = {
     return true;
   },
 
+  /* Cada ingrediente se mira distinto. El zapallo se corta sobre el
+     mesón y pide una cámara de mesa; el choclo se sostiene en la mano
+     y pide una cámara de frente, vertical, como el teléfono. Por eso
+     el encuadre es del nivel, no del motor. */
+  encuadre(pos, mira) {
+    if (!camera) return;
+    camera.position.set(...(pos || CAM_POR_DEFECTO.pos));
+    camMira.set(...(mira || CAM_POR_DEFECTO.mira));
+    camera.lookAt(camMira);
+    camBase.copy(camera.position);
+  },
+
   /* monta un nivel: limpia lo anterior y le entrega el contexto */
   cargar(mod, api) {
     this.descargar();
+    this.encuadre(mod.camara && mod.camara.pos, mod.camara && mod.camara.mira);
     nivel = mod;
     const ctx = {
       THREE, raiz, api,
@@ -636,7 +652,7 @@ function bucle() {
         camBase.z
       );
     }
-    camera.lookAt(0, 1.12, 0.46);
+    camera.lookAt(camMira);
   }
 
   if (nivel && nivel.actualizar) { try { nivel.actualizar(dt, t); } catch (e) { console.error(e); } }
