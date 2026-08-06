@@ -263,12 +263,12 @@ function nombreDe(id) { return isUtensilio(id) ? UTENSILIOS.find(u => u.id === i
 function renderMesaEtiquetas() {
   const wrap = $('#mesa-etiquetas'); wrap.innerHTML = '';
   if (escenaOn && Escena3D.hayMezclaRara()) {
-    wrap.appendChild(el('span', 'mesa-etiqueta mess', '¡mezcla rara! bótala 🗑'));
+    wrap.appendChild(el('span', 'pill pill--dark mesa-etiqueta mess', '¡mezcla rara! bótala 🗑'));
     return;
   }
   slots.forEach((id) => {
     if (!id) return;
-    wrap.appendChild(el('span', 'mesa-etiqueta', nombreDe(id)));
+    wrap.appendChild(el('span', 'pill pill--dark mesa-etiqueta', nombreDe(id)));
   });
 }
 
@@ -339,12 +339,12 @@ function renderTallerAction() {
   }
   if (slots[0] && slots[1]) {
     const combinar = document.createElement('button');
-    combinar.type = 'button'; combinar.className = 'btn-leather combinar-btn';
+    combinar.type = 'button'; combinar.className = 'btn combinar-btn';
     combinar.textContent = 'Combinar ✦';
     combinar.addEventListener('click', combinarMesa);
     zone.appendChild(combinar);
     const limpiar = document.createElement('button');
-    limpiar.type = 'button'; limpiar.className = 'btn-ghost small';
+    limpiar.type = 'button'; limpiar.className = 'btn btn--cream btn--sm';
     limpiar.textContent = 'limpiar la estación';
     limpiar.addEventListener('click', clearSlots);
     zone.appendChild(limpiar);
@@ -355,13 +355,13 @@ function renderTallerAction() {
     if (rapidas.length) {
       rapidas.forEach(accion => {
         const btn = document.createElement('button');
-        btn.type = 'button'; btn.className = 'btn-leather combinar-btn quick-action-btn';
+        btn.type = 'button'; btn.className = 'btn btn--leaf combinar-btn';
         btn.textContent = `${VERBO_LABEL[accion.rec.verbo] || accion.rec.verbo} ✦`;
         btn.addEventListener('click', () => ejecutarAccionRapida(accion));
         zone.appendChild(btn);
       });
       const limpiar = document.createElement('button');
-      limpiar.type = 'button'; limpiar.className = 'btn-ghost small';
+      limpiar.type = 'button'; limpiar.className = 'btn btn--cream btn--sm';
       limpiar.textContent = 'quitar';
       limpiar.addEventListener('click', clearSlots);
       zone.appendChild(limpiar);
@@ -673,15 +673,15 @@ function renderColeccion() {
     const head = document.createElement('header');
     head.className = 'region-head';
     head.style.setProperty('--region-acento', r.acento);
-    head.innerHTML = `<h3>${r.nombre}</h3><p class="region-tagline hand">${r.tagline}</p>` +
-      (abierta ? `<p class="region-progress">${gotRegion} / ${idsRegion.length}</p>` : '');
+    head.innerHTML = `<div class="region-nombre"><h3>${r.nombre}</h3><p class="region-tagline">${r.tagline}</p></div>` +
+      (abierta ? `<span class="region-progress">${gotRegion}/${idsRegion.length}</span>` : '<span class="region-progress region-progress--lock">🔒</span>');
     section.appendChild(head);
 
     if (r.proximamente) {
-      section.appendChild(el('p', 'region-locked', '🗺 Muy pronto en tu cuaderno de viaje…'));
+      section.appendChild(el('p', 'region-locked', '🗺 Muy pronto en tu cocina…'));
     } else if (!abierta) {
       const faltan = (r.desbloqueo_recetas || []).map(id => CARTAS[id] && CARTAS[id].name).filter(Boolean).join(', ');
-      section.appendChild(el('p', 'region-locked', `🔒 Completa ${faltan} para abrir esta región.`));
+      section.appendChild(el('p', 'region-locked', `Cocina ${faltan} para abrir esta región.`));
     } else {
       const grid = document.createElement('div'); grid.className = 'album-grid';
       idsRegion.forEach(id => grid.appendChild(albumCard(id, CARTAS[id].rarity)));
@@ -689,6 +689,7 @@ function renderColeccion() {
     }
     body.appendChild(section);
   });
+  body.appendChild(el('p', 'coleccion-footnote', 'Toca un plato cubierto: la cocina ya te dejó una pista.'));
   renderProgress();
 }
 function albumCard(id, rar) {
@@ -712,8 +713,10 @@ function renderSucres() { $$('.hud-sucres-count').forEach(n => n.textContent = s
 
 function showDetalle(id) {
   const c = CARTAS[id];
-  $('#detalle-art').innerHTML = cardInner(id, { showName: false });
-  $('#detalle-art').className = 'detalle-art rarity-' + c.rarity;
+  /* en el detalle no hace falta el marco de carta: el plato basta
+     (la rareza ya la dice el rótulo de arriba) */
+  $('#detalle-art').innerHTML = iconOf(id);
+  $('#detalle-art').className = 'plate detalle-art rarity-' + c.rarity;
   $('#detalle-nombre').textContent = c.name;
   $('#detalle-rareza').textContent = RARITY_LABEL[c.rarity] + (c.city ? ` · ${c.city}` : '') + ` · tienes ×${stockOf(id)}`;
   $('#detalle-lore').textContent = c.lore || '';

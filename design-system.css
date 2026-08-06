@@ -1,0 +1,422 @@
+/* ============================================================
+   PAMBAMESA — design-system.css
+   El lenguaje visual del juego, en dos capas:
+
+   1. TOKENS      — la única fuente de verdad: color, elevación,
+                    radios, espaciado, tipografía, movimiento, capas.
+   2. COMPONENTES — piezas reusables construidas SOLO con tokens:
+                    .btn, .panel, .sign, .plate, .badge, .pill,
+                    .meter, .tabbar, .hud, .sheet, .scroll…
+
+   styles.css encima solo compone pantallas con estas piezas.
+   Regla de oro: ningún color/sombra/radio suelto fuera de aquí.
+   ============================================================ */
+
+:root {
+  /* ==========================================================
+     1. TOKENS
+     ========================================================== */
+
+  /* --- Paleta base (rampas del mundo: cocina de caricatura) --- */
+  /* azulejo: la pared */
+  --tile-200: #bfeaf1;
+  --tile-300: #9cdae4;
+  --tile-400: #7cc3d1;
+  --tile-600: #4e94a3;
+
+  /* madera: mesón, letreros, barra inferior */
+  --wood-200: #eec89a;
+  --wood-300: #e0ab6f;
+  --wood-400: #d59a55;
+  --wood-500: #b97e3c;
+  --wood-600: #96622b;
+  --wood-700: #6f4720;
+
+  /* fresa: cajones, paneles de acción */
+  --berry-300: #f08aa2;
+  --berry-400: #e2647e;
+  --berry-500: #d94f72;
+  --berry-600: #b23a5b;
+  --berry-700: #8c2a45;
+
+  /* tomate: llamadas a la acción */
+  --tomato-400: #f25563;
+  --tomato-500: #e63946;
+  --tomato-600: #b02836;
+
+  /* oro: moneda, premios, platillos estrella */
+  --gold-300: #ffd24d;
+  --gold-400: #f2b31f;
+  --gold-600: #c58a10;
+  --gold-800: #6b4a08;
+
+  /* hoja: preparaciones, confirmaciones */
+  --leaf-400: #83d370;
+  --leaf-500: #6cbf5a;
+  --leaf-600: #4f9440;
+
+  /* acero: utensilios */
+  --steel-400: #7d8ba1;
+  --steel-600: #5d6b82;
+
+  /* porcelana y crema: superficie de lectura */
+  --cream-100: #fffdf6;
+  --cream-200: #fdf3dd;
+  --cream-300: #f7e7c6;
+  --cream-400: #ecd9b4;
+
+  /* tinta */
+  --ink-900: #4a2c2a;
+  --ink-600: #8a6a58;
+  --ink-on-dark: #fff8ec;
+
+  /* --- Roles semánticos (lo que usan los componentes) --- */
+  --surface:        var(--cream-200);
+  --surface-raised: var(--cream-100);
+  --surface-sunken: var(--cream-300);
+  --text:           var(--ink-900);
+  --text-muted:     var(--ink-600);
+  --text-invert:    var(--ink-on-dark);
+  --accent:         var(--berry-500);
+  --accent-ink:     var(--berry-700);
+  --hairline:       rgba(74, 44, 42, .16);
+  --hairline-strong:rgba(74, 44, 42, .3);
+
+  /* rareza (mismo lenguaje en cartas, chips y bordes) */
+  --rarity-semilla:   var(--wood-500);
+  --rarity-semilla-d: var(--wood-600);
+  --rarity-hallazgo:   var(--leaf-500);
+  --rarity-hallazgo-d: var(--leaf-600);
+  --rarity-receta:   var(--gold-400);
+  --rarity-receta-d: var(--gold-600);
+  --rarity-tool:   var(--steel-400);
+  --rarity-tool-d: var(--steel-600);
+
+  /* --- Espaciado (escala 4pt) --- */
+  --sp-1: .25rem;  --sp-2: .5rem;   --sp-3: .75rem;  --sp-4: 1rem;
+  --sp-5: 1.25rem; --sp-6: 1.5rem;  --sp-8: 2rem;    --sp-10: 2.5rem;
+
+  /* --- Radios --- */
+  --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 24px; --r-pill: 999px;
+
+  /* --- Elevación: sombra suave + "grosor" de juguete --- */
+  --e-1: 0 2px 6px -2px rgba(74,44,42,.35);
+  --e-2: 0 6px 14px -6px rgba(74,44,42,.45);
+  --e-3: 0 14px 30px -12px rgba(74,44,42,.55);
+  --e-4: 0 24px 54px -18px rgba(30,16,14,.7);
+  --gloss: inset 0 2px 0 rgba(255,255,255,.35);   /* brillo superior */
+  --inset: inset 0 2px 6px rgba(74,44,42,.28);    /* hundido */
+  --ring: 3px solid var(--cream-100);             /* contorno blanco de juego */
+
+  /* --- Tipografía --- */
+  --font-display: 'Baloo 2', 'Comic Sans MS', cursive;  /* títulos y botones */
+  --font-text:    'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --t-2xs: .62rem; --t-xs: .72rem; --t-sm: .84rem; --t-md: .95rem;
+  --t-lg: 1.1rem;  --t-xl: 1.35rem; --t-2xl: 1.7rem; --t-3xl: 2.2rem;
+  --lead-tight: 1.15; --lead: 1.5;
+  --track-caps: .16em;   /* letra espaciada de rótulos en mayúscula */
+
+  /* --- Movimiento --- */
+  --dur-fast: .12s; --dur: .22s; --dur-slow: .4s;
+  --ease-out: cubic-bezier(.2, .85, .3, 1);
+  --ease-pop: cubic-bezier(.3, 1.6, .4, 1);
+
+  /* --- Capas --- */
+  --z-scene: 1; --z-hud: 50; --z-nav: 55; --z-banner: 80; --z-modal: 90; --z-toast: 95;
+
+  /* --- Medidas del marco --- */
+  --frame: 480px;
+  --hud-h: 54px;
+  --nav-h: 66px;
+}
+
+/* ============================================================
+   2. COMPONENTES
+   ============================================================ */
+
+/* ---------- Botón ----------
+   Un solo componente con variantes por color. La "cara" y el
+   "canto" se pasan por custom props: cambiar de variante es
+   cambiar dos tokens, no reescribir sombras. */
+.btn {
+  --btn-face: var(--tomato-500);
+  --btn-face-hi: var(--tomato-400);
+  --btn-edge: var(--tomato-600);
+  --btn-ink: #fff;
+  --btn-lip: 5px;
+
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  padding: .72rem 1.5rem;
+  font-family: var(--font-display); font-size: var(--t-lg); font-weight: 700; line-height: 1;
+  color: var(--btn-ink);
+  background: linear-gradient(180deg, var(--btn-face-hi), var(--btn-face));
+  border: 2.5px solid var(--btn-edge);
+  border-bottom-width: var(--btn-lip);
+  border-radius: var(--r-md);
+  box-shadow: var(--gloss), var(--e-2);
+  text-shadow: 0 1.5px 0 rgba(0,0,0,.22);
+  transition: transform var(--dur-fast) var(--ease-out),
+              border-bottom-width var(--dur-fast) var(--ease-out),
+              filter var(--dur-fast) var(--ease-out);
+}
+.btn:active { transform: translateY(calc(var(--btn-lip) - 2.5px)); border-bottom-width: 2.5px; box-shadow: var(--inset); }
+.btn:disabled { filter: grayscale(.7) brightness(.94); cursor: default; }
+.btn:disabled:active { transform: none; border-bottom-width: var(--btn-lip); box-shadow: var(--gloss), var(--e-2); }
+
+.btn--berry { --btn-face: var(--berry-500); --btn-face-hi: var(--berry-400); --btn-edge: var(--berry-700); }
+.btn--leaf  { --btn-face: var(--leaf-500);  --btn-face-hi: var(--leaf-400);  --btn-edge: var(--leaf-600); }
+.btn--gold  { --btn-face: var(--gold-400);  --btn-face-hi: var(--gold-300);  --btn-edge: var(--gold-600); --btn-ink: var(--gold-800); text-shadow: 0 1.5px 0 rgba(255,255,255,.35); }
+.btn--cream { --btn-face: var(--cream-200); --btn-face-hi: var(--cream-100); --btn-edge: var(--wood-400); --btn-ink: var(--ink-900); text-shadow: none; }
+.btn--wood  { --btn-face: var(--wood-400);  --btn-face-hi: var(--wood-300);  --btn-edge: var(--wood-600); }
+
+.btn--sm    { padding: .42rem .9rem; font-size: var(--t-sm); --btn-lip: 4px; border-radius: var(--r-sm); }
+.btn--lg    { padding: .85rem 1.6rem; font-size: var(--t-xl); --btn-lip: 6px; }
+.btn--block { display: flex; width: 100%; }
+
+/* ---------- Panel: la superficie de contenido ---------- */
+.panel {
+  --panel-face: var(--surface-raised);
+  --panel-face-2: var(--surface);
+  position: relative;
+  background: linear-gradient(180deg, var(--panel-face), var(--panel-face-2));
+  border: var(--ring);
+  border-radius: var(--r-xl);
+  box-shadow: var(--e-2);
+  padding: var(--sp-4);
+}
+.panel--berry { --panel-face: var(--berry-400); --panel-face-2: var(--berry-500); color: var(--text-invert); }
+.panel--wood  { --panel-face: var(--wood-300);  --panel-face-2: var(--wood-500);  color: var(--text-invert); }
+.panel--sunken {
+  background: rgba(74,44,42,.07);
+  border: 2px dashed var(--hairline);
+  box-shadow: none;
+}
+.panel--flat { box-shadow: var(--e-1); border-width: 2px; }
+
+/* ---------- Rótulo de madera: encabeza cada pantalla ---------- */
+.sign {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  padding: var(--sp-2) var(--sp-6) var(--sp-3);
+  background: linear-gradient(180deg, var(--wood-300), var(--wood-500));
+  border: var(--ring);
+  border-radius: var(--r-lg);
+  box-shadow: var(--gloss), var(--e-3);
+  text-align: center;
+}
+/* tornillos de latón en las esquinas */
+.sign::before, .sign::after {
+  content: ''; position: absolute; top: .45rem; width: .5rem; height: .5rem;
+  background: radial-gradient(circle at 35% 32%, var(--gold-300), var(--gold-600));
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.sign::before { left: .5rem; }
+.sign::after  { right: .5rem; }
+.sign-title {
+  font-family: var(--font-display); font-size: var(--t-2xl); font-weight: 800; line-height: 1.05;
+  color: var(--ink-on-dark);
+  text-shadow: 0 2px 0 var(--wood-700), 0 3px 6px rgba(0,0,0,.3);
+}
+.sign-sub {
+  font-family: var(--font-text); font-size: var(--t-sm); font-weight: 600;
+  color: #fbe6c8;
+  text-shadow: 0 1px 0 rgba(0,0,0,.28);
+}
+
+/* ---------- Rótulo pequeño (secciones dentro de una pantalla) ---------- */
+.label {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  font-family: var(--font-display); font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: var(--track-caps); text-transform: uppercase;
+  color: var(--text-muted);
+}
+.label::before, .label::after { content: '✦'; font-size: .6em; color: var(--gold-400); letter-spacing: 0; }
+
+/* ---------- Plato de porcelana: el marco de todo icono ---------- */
+.plate {
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 50% 40%, #fff 0%, #fff 52%, var(--cream-400) 88%);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(74,44,42,.05), inset 0 -3px 8px rgba(74,44,42,.09);
+}
+/* el margen del plato se da con el ancho del icono, NO con padding en %:
+   un padding porcentual se mide contra el contenedor padre y puede
+   comerse el plato entero. height:auto + aspect-ratio evita el 0px. */
+.plate > svg { width: 72%; height: auto; aspect-ratio: 1; filter: drop-shadow(0 2px 2px rgba(74,44,42,.25)); }
+
+/* ---------- Badge: contador redondo ---------- */
+.badge {
+  --badge-face: var(--tomato-500);
+  --badge-edge: var(--tomato-600);
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.35rem; height: 1.35rem; padding: 0 .28rem;
+  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; line-height: 1;
+  color: #fff;
+  background: linear-gradient(180deg, var(--badge-face), var(--badge-edge));
+  border: 2px solid var(--cream-100);
+  border-radius: var(--r-pill);
+  box-shadow: var(--e-1);
+}
+.badge--steel { --badge-face: var(--steel-400); --badge-edge: var(--steel-600); }
+.badge--gold  { --badge-face: var(--gold-300);  --badge-edge: var(--gold-600); color: var(--gold-800); }
+.badge--leaf  { --badge-face: var(--leaf-500);  --badge-edge: var(--leaf-600); }
+
+/* ---------- Pill: dato compacto sobre cualquier fondo ---------- */
+.pill {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .16rem .7rem;
+  font-family: var(--font-display); font-size: var(--t-sm); font-weight: 700; line-height: 1.3;
+  color: var(--text);
+  background: var(--cream-100);
+  border: 2px solid var(--hairline);
+  border-radius: var(--r-pill);
+  box-shadow: var(--e-1);
+  white-space: nowrap;
+}
+.pill--dark  { color: var(--text-invert); background: rgba(74,44,42,.78); border-color: rgba(255,255,255,.4); }
+.pill--gold  { color: var(--gold-800); background: linear-gradient(180deg, var(--gold-300), var(--gold-400)); border-color: var(--gold-600); }
+.pill--berry { color: #fff; background: linear-gradient(180deg, var(--berry-400), var(--berry-600)); border-color: var(--berry-700); }
+
+/* ---------- Moneda ---------- */
+.icono-sucre {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.15em; height: 1.15em; border-radius: 50%;
+  background: conic-gradient(from 210deg, var(--gold-300), var(--gold-600), var(--gold-300));
+  color: var(--gold-800); font-family: var(--font-display); font-weight: 800; font-size: .74em;
+  font-style: normal; line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 2px rgba(0,0,0,.3);
+  vertical-align: -0.15em;
+}
+
+/* ---------- Meter: barra de progreso ---------- */
+.meter {
+  flex: 1; height: 12px; border-radius: var(--r-pill); overflow: hidden;
+  background: var(--cream-100);
+  border: 2px solid var(--hairline);
+  box-shadow: var(--inset);
+}
+.meter-fill {
+  display: block; height: 100%; border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--tomato-500), var(--gold-400));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+/* ---------- Scroll interno: el contenido nunca pasa bajo la barra ---------- */
+.scroll {
+  flex: 1; min-height: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-inline: var(--sp-4);
+  padding-bottom: var(--sp-6);
+  /* desvanecido superior: el contenido se "mete" bajo el rótulo */
+  mask-image: linear-gradient(180deg, transparent 0, #000 14px);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14px);
+}
+.scroll::-webkit-scrollbar { width: 0; }
+
+/* ---------- Hoja: la estructura común de toda pantalla ---------- */
+.hoja {
+  display: flex; flex-direction: column;
+  height: 100vh; height: 100dvh;
+  padding-top: calc(var(--hud-h) + var(--sp-2));
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-2));
+}
+.hoja-head { flex-shrink: 0; padding: 0 var(--sp-4) var(--sp-3); }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%) translateY(14px);
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-4)); z-index: var(--z-toast);
+  max-width: min(360px, 86vw);
+  font-family: var(--font-display); font-size: var(--t-md); font-weight: 600; text-align: center;
+  color: var(--text-invert);
+  background: rgba(74, 44, 42, .96);
+  border: 2px solid rgba(255,255,255,.35);
+  border-radius: var(--r-md); padding: .5rem 1rem;
+  box-shadow: var(--e-3);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- Modal + hoja emergente ---------- */
+.modal {
+  position: fixed; inset: 0; z-index: var(--z-modal);
+  display: none; align-items: center; justify-content: center;
+  padding: var(--sp-5);
+  background: rgba(40, 22, 16, .62);
+  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+}
+.modal.open { display: flex; animation: modal-in var(--dur) var(--ease-out) both; }
+@keyframes modal-in { from { opacity: 0; } }
+
+.sheet {
+  width: 100%; max-width: 340px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  background: linear-gradient(180deg, var(--cream-100), var(--cream-200));
+  border: var(--ring);
+  border-radius: var(--r-xl);
+  box-shadow: var(--e-4);
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  animation: sheet-in var(--dur-slow) var(--ease-pop) both;
+}
+@keyframes sheet-in { from { opacity: 0; transform: translateY(20px) scale(.95); } }
+.sheet-title { font-family: var(--font-display); font-size: var(--t-xl); font-weight: 800; color: var(--text); line-height: var(--lead-tight); }
+.sheet-eyebrow { font-family: var(--font-display); font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--accent); }
+.sheet-body { font-size: var(--t-md); line-height: var(--lead); color: var(--text-muted); }
+
+/* ---------- Barra de navegación ---------- */
+.tabbar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: var(--frame);
+  z-index: var(--z-nav); display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: linear-gradient(180deg, var(--wood-400), var(--wood-600));
+  border-top: var(--ring);
+  box-shadow: 0 -8px 20px -10px rgba(40,22,16,.7);
+}
+.tab-btn {
+  position: relative; flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem;
+  height: var(--nav-h);
+  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: rgba(255,248,236,.72);
+  text-shadow: 0 1px 0 rgba(0,0,0,.25);
+  transition: color var(--dur) var(--ease-out);
+}
+.tab-btn.active { color: #fff; }
+.tab-ic {
+  width: 1.7rem; height: 1.7rem; padding: .2rem;
+  background: radial-gradient(circle at 50% 42%, #fff, var(--cream-300) 85%);
+  border: 2px solid rgba(74,44,42,.22);
+  border-radius: 50%;
+  box-shadow: var(--e-1);
+  filter: saturate(.35) opacity(.75);
+  transition: filter var(--dur) var(--ease-out), transform var(--dur) var(--ease-pop), border-color var(--dur) var(--ease-out);
+}
+.tab-btn.active .tab-ic {
+  filter: none; transform: translateY(-3px) scale(1.14);
+  border-color: var(--gold-400);
+  box-shadow: var(--e-2), 0 0 0 3px rgba(242,179,31,.35);
+}
+
+/* ---------- HUD ---------- */
+.hud {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: var(--frame); height: var(--hud-h);
+  padding: var(--sp-2) var(--sp-4) 0;
+  z-index: var(--z-hud);
+  display: flex; align-items: center; gap: var(--sp-2);
+}
+
+/* ---------- Utilidades mínimas ---------- */
+.hidden { display: none !important; }
+.stack  { display: flex; flex-direction: column; gap: var(--sp-3); }
+.row    { display: flex; align-items: center; gap: var(--sp-2); }
+.center { text-align: center; }
+.muted  { color: var(--text-muted); }

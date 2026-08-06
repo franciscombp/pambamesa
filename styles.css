@@ -1,515 +1,322 @@
 /* ============================================================
-   PAMBAMESA — tu cocinita
-   styles.css — Little Alchemy × TCG en una cocina de caricatura:
-   azulejos celestes, mesada de madera, cajones rosados, botones
-   rojos regordetes y estrellitas doradas. El mesón central es 3D
-   (escena3d.js); todo lo demás — cartas, cajón, recetario — es UI
-   2D con este mismo lenguaje.
+   PAMBAMESA — styles.css
+   Composición de pantallas SOBRE el sistema de diseño.
+   Aquí no se inventan colores ni sombras: todo sale de los
+   tokens de design-system.css. Si algo se repite en dos
+   pantallas, su lugar es el sistema, no este archivo.
    ============================================================ */
-
-:root {
-  /* la cocina */
-  --azulejo:   #9cdae4;
-  --azulejo-2: #7cc3d1;
-  --crema:     #fdf3dd;
-  --crema-2:   #f7e7c6;
-  --madera:    #d59a55;
-  --madera-2:  #b97e3c;
-  --madera-d:  #8f5e2a;
-
-  /* el rosa del cajón y el rojo de los botones */
-  --rosa:   #e2647e;
-  --rosa-2: #d94f72;
-  --rosa-d: #b23a5b;
-  --rojo:   #e63946;
-  --rojo-2: #f25563;
-  --rojo-d: #b02836;
-  --oro:    #f2b31f;
-  --oro-2:  #ffd24d;
-  --oro-d:  #c58a10;
-  --verde:  #6cbf5a;
-  --verde-d: #4f9440;
-
-  /* tinta */
-  --ink:      #4a2c2a;
-  --ink-soft: #8a6a58;
-  --line:      rgba(74,44,42,.25);
-  --line-soft: rgba(74,44,42,.12);
-
-  /* rareza (el color del marco de cada carta) */
-  --semilla:   #ef8f3c;
-  --semilla-d: #c76b1e;
-  --hallazgo:   var(--verde);
-  --hallazgo-d: var(--verde-d);
-  --receta:   var(--oro);
-  --receta-d: var(--oro-d);
-  --tool:     #7d8ba1;
-  --tool-d:   #5d6b82;
-
-  --display: 'Baloo 2', 'Comic Sans MS', cursive;
-  --sans:    'Nunito', 'Segoe UI', system-ui, sans-serif;
-  --hand:    var(--display);
-  --frame: 480px;
-  --hud-h: 56px;
-  --nav-h: 64px;
-}
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; font-size: 17px; }
 html, body { height: 100%; }
 
 body {
-  font-family: var(--sans);
-  color: var(--ink);
-  line-height: 1.5;
-  /* más allá del marco: el piso de baldosas en penumbra suave */
+  font-family: var(--font-text);
+  color: var(--text);
+  line-height: var(--lead);
   background: radial-gradient(120% 90% at 50% 0%, #5b7f92 0%, #3e5666 60%, #2c3d49 100%);
   min-height: 100vh;
+  overflow: hidden;               /* el scroll vive dentro de cada pantalla */
 }
 
 button { font: inherit; color: inherit; cursor: pointer; background: none; border: none; -webkit-tap-highlight-color: transparent; }
 svg { display: block; width: 100%; height: 100%; }
-.hand { font-family: var(--display); font-weight: 600; }
-.hidden { display: none !important; }
 
 /* ============================================================
-   LA COCINITA (marco de juego)
+   EL MUNDO — el marco donde vive el juego
    ============================================================ */
 
 #stage {
   position: relative;
-  width: 100%;
-  max-width: var(--frame);
+  width: 100%; max-width: var(--frame);
   margin: 0 auto;
-  min-height: 100vh; min-height: 100dvh;
-  background:
-    /* azulejos arriba, pared crema abajo */
-    linear-gradient(180deg, var(--azulejo) 0%, var(--azulejo) 130px, var(--azulejo-2) 146px, var(--crema) 146px, var(--crema-2) 100%);
-  box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 40px 90px -30px rgba(0,0,0,.65);
+  height: 100vh; height: 100dvh;
   overflow: hidden;
-}
-/* la línea de juntas de los azulejos */
-#stage::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 146px; z-index: 0;
+  /* pared: azulejo arriba, muro crema abajo — el mismo mundo en
+     todas las pantallas, para que la cocina 3D no se sienta aparte */
   background:
-    repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 2px, transparent 2px 48px),
-    repeating-linear-gradient(180deg, rgba(255,255,255,.35) 0 2px, transparent 2px 48px);
+    linear-gradient(180deg,
+      var(--tile-300) 0, var(--tile-300) 132px,
+      var(--tile-400) 132px, var(--tile-400) 140px,
+      var(--wood-300) 140px, var(--wood-400) 148px,
+      var(--cream-300) 148px, var(--cream-200) 100%);
+  box-shadow: var(--e-4);
+}
+/* juntas del azulejo */
+#stage::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 132px; z-index: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.4) 0 2px, transparent 2px 46px),
+    repeating-linear-gradient(180deg, rgba(255,255,255,.4) 0 2px, transparent 2px 46px);
   pointer-events: none;
 }
 
-.screen { position: relative; display: none; min-height: 100vh; min-height: 100dvh; padding-bottom: 1rem; }
-.screen.active { display: block; animation: plato-entra .4s cubic-bezier(.25,1.2,.35,1) both; }
-@keyframes plato-entra {
-  from { opacity: 0; transform: translateY(16px) scale(.98); }
+.screen { display: none; position: relative; z-index: var(--z-scene); height: 100%; }
+.screen.active { display: block; animation: pantalla-entra var(--dur-slow) var(--ease-pop) both; }
+@keyframes pantalla-entra {
+  from { opacity: 0; transform: translateY(14px) scale(.985); }
   to   { opacity: 1; transform: none; }
 }
-#screen-cover.screen { padding-bottom: 0; }
 
 /* ============================================================
-   BOTONES — regordetes, de juguete
+   HUD
    ============================================================ */
 
-.btn-leather {
-  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
-  padding: .8rem 1.7rem;
-  font-family: var(--display); font-size: 1.08rem; font-weight: 700; color: #fff;
-  background: linear-gradient(180deg, var(--rojo-2), var(--rojo));
-  border: 2.5px solid var(--rojo-d);
-  border-bottom-width: 5px;
-  border-radius: 16px;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,.3), 0 6px 14px -6px rgba(176,40,54,.55);
-  text-shadow: 0 1.5px 0 rgba(0,0,0,.25);
-  transition: transform .1s ease, border-bottom-width .1s ease, box-shadow .1s ease;
-}
-.btn-leather:active { transform: translateY(3px); border-bottom-width: 2.5px; box-shadow: inset 0 2px 0 rgba(255,255,255,.2); }
-.btn-leather.wide { width: 100%; padding: .9rem 1rem; font-size: 1.18rem; }
-.btn-leather:disabled { filter: grayscale(.75) brightness(.92); cursor: default; }
-
-.btn-ghost {
-  display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
-  padding: .65rem 1.3rem; font-family: var(--display); font-size: .98rem; font-weight: 600; color: var(--ink);
-  background: linear-gradient(180deg, #fffdf6, var(--crema));
-  border: 2px solid var(--line);
-  border-bottom-width: 4px;
-  border-radius: 14px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
-  transition: transform .1s ease, border-bottom-width .1s ease;
-}
-.btn-ghost:active { transform: translateY(2px); border-bottom-width: 2px; }
-.btn-ghost:disabled { opacity: .5; cursor: default; }
-.btn-ghost.wide { width: 100%; }
-.btn-ghost.small { padding: .42rem .9rem; font-size: .86rem; border-radius: 11px; }
+.hud-count { font-size: var(--t-sm); }
+.hud-sucres { font-size: var(--t-md); }
 
 /* ============================================================
-   HUD — progreso y sucres
+   PORTADA
    ============================================================ */
 
-.hud {
-  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-  width: 100%; max-width: var(--frame); height: var(--hud-h);
-  padding: .55rem 1.1rem 0;
-  z-index: 50;
-  display: flex; align-items: center; gap: .6rem;
-}
-.hud-progress { flex: 1; display: flex; align-items: center; gap: .6rem; }
-.hud-sucres {
-  flex-shrink: 0; display: flex; align-items: center; gap: .3rem;
-  font-family: var(--display); font-weight: 700; font-size: .96rem; color: var(--ink); white-space: nowrap;
-  background: #fffdf6; border: 2px solid var(--line); border-radius: 999px;
-  padding: .14rem .65rem .14rem .45rem;
-  box-shadow: 0 3px 8px -3px rgba(74,44,42,.35);
-}
-.hud-sucres-ic { font-size: 1rem; }
-
-/* la moneda: dorada, con la "S" de sucre */
-.icono-sucre {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 1.15em; height: 1.15em; border-radius: 50%;
-  background: conic-gradient(from 210deg, var(--oro-2), var(--oro-d), var(--oro-2));
-  color: #6b4a08; font-weight: 800; font-size: .74em; line-height: 1; font-family: var(--display); font-style: normal;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 2px rgba(0,0,0,.3);
-  vertical-align: -0.15em;
-}
-.hud-count {
-  font-family: var(--display); font-weight: 700; font-size: .96rem; color: var(--ink); white-space: nowrap;
-  background: #fffdf6; border: 2px solid var(--line); border-radius: 999px;
-  padding: .14rem .65rem;
-  box-shadow: 0 3px 8px -3px rgba(74,44,42,.35);
-}
-.hud-bar {
-  flex: 1; height: 10px; border-radius: 999px; overflow: hidden;
-  background: #fffdf6; border: 2px solid var(--line);
-  box-shadow: inset 0 1px 3px rgba(74,44,42,.2);
-}
-.hud-bar-fill {
-  display: block; height: 100%; border-radius: 999px;
-  background: linear-gradient(90deg, var(--rojo), var(--oro));
-  transition: width .4s ease;
-}
-
-/* ============================================================
-   PORTADA — buenos días, cocinita
-   ============================================================ */
-
-.cover-scene { min-height: 100vh; min-height: 100dvh; display: flex; align-items: stretch; justify-content: center; padding: 0; }
-.cover-book {
-  position: relative; width: 100%; min-height: 100vh; min-height: 100dvh;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-  padding: 3rem 1.8rem 2.4rem;
+.cover {
+  position: relative; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8) var(--sp-6) var(--sp-6);
+  text-align: center;
   overflow: hidden;
-  background: linear-gradient(180deg, var(--azulejo) 0%, #b8e6ee 45%, var(--crema) 100%);
-  color: var(--ink);
 }
-/* juntas de azulejo también en la portada */
-.cover-book::before {
-  content: ''; position: absolute; inset: 0 0 55% 0;
-  background:
-    repeating-linear-gradient(90deg, rgba(255,255,255,.4) 0 2px, transparent 2px 48px),
-    repeating-linear-gradient(180deg, rgba(255,255,255,.4) 0 2px, transparent 2px 48px);
-  pointer-events: none;
+.cover > * { position: relative; z-index: 1; }
+/* el sol que entra por la ventana */
+.cover-sun {
+  position: absolute; top: -18%; left: 50%; transform: translateX(-50%);
+  width: 160%; aspect-ratio: 1; z-index: 0;
+  background: radial-gradient(46% 46% at 50% 22%, rgba(255,238,190,.6), rgba(255,238,190,.16) 46%, transparent 66%);
+  animation: sol-entra 1.4s var(--ease-out) both;
 }
-/* el sol de la mañana entrando por la ventana */
-.cover-spotlight {
-  position: absolute; top: -14%; left: 50%; transform: translateX(-50%);
-  width: 150%; aspect-ratio: 1;
-  background: radial-gradient(48% 48% at 50% 20%, rgba(255,236,170,.55), rgba(255,236,170,.16) 45%, transparent 65%);
-  pointer-events: none;
-  animation: foco-enciende 1.4s ease-out both;
-}
-@keyframes foco-enciende { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sol-entra { from { opacity: 0; } to { opacity: 1; } }
 
 .cover-star {
-  position: relative; z-index: 1;
-  font-size: 2.1rem; color: var(--oro);
-  text-shadow: 0 2px 0 rgba(197,138,16,.5), 0 0 22px rgba(255,210,77,.8);
-  margin-bottom: .3rem;
-  animation: estrella-gira 5s ease-in-out infinite;
+  font-size: var(--t-2xl); color: var(--gold-400);
+  text-shadow: 0 2px 0 var(--gold-600), 0 0 20px rgba(255,210,77,.85);
+  animation: estrella-late 5s ease-in-out infinite;
 }
-@keyframes estrella-gira { 50% { transform: rotate(18deg) scale(1.12); } }
-.cover-over { position: relative; z-index: 1; font-family: var(--display); font-size: .82rem; letter-spacing: .3em; text-transform: uppercase; color: #3e7482; font-weight: 700; }
-.cover-book h1 {
-  position: relative; z-index: 1;
-  font-family: var(--display); font-size: 3.4rem; font-weight: 800; letter-spacing: .01em; color: #fff;
-  text-shadow: 0 3px 0 var(--rosa-d), 0 6px 0 rgba(74,44,42,.25), 0 10px 24px rgba(74,44,42,.35);
-  margin-top: .05rem;
-}
-.cover-sub {
-  position: relative; z-index: 1;
-  font-family: var(--display); font-size: 1.3rem; font-weight: 700; color: var(--rosa-d);
-  margin: .15rem 0 1.3rem;
-}
+@keyframes estrella-late { 50% { transform: rotate(16deg) scale(1.14); } }
 
-.cover-peek { position: relative; z-index: 1; display: flex; justify-content: center; gap: 1.2rem; margin-bottom: 1.3rem; }
-.cover-peek span {
-  width: 64px; height: 64px; padding: 9px;
-  background: radial-gradient(circle at 50% 40%, #fff, #efe8da 82%);
-  border: 3px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 8px 16px -6px rgba(74,44,42,.4);
+.cover-over {
+  font-family: var(--font-display); font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: .3em; text-transform: uppercase; color: var(--tile-600);
 }
-.cover-peek span:nth-child(2) { transform: translateY(-8px); }
+.cover-title {
+  font-family: var(--font-display); font-size: var(--t-3xl); font-weight: 800; line-height: 1;
+  color: #fff;
+  text-shadow: 0 3px 0 var(--berry-600), 0 6px 0 rgba(74,44,42,.22), 0 10px 22px rgba(74,44,42,.35);
+}
+.cover-sub { font-family: var(--font-display); font-size: var(--t-xl); font-weight: 700; color: var(--berry-600); }
 
-.cover-quote {
-  position: relative; z-index: 1;
-  max-width: 36ch; font-size: .95rem; line-height: 1.6; color: var(--ink);
-  background: rgba(255,253,246,.8);
-  border: 2px dashed var(--line);
-  border-radius: 18px;
-  padding: .9rem 1rem; margin-bottom: 1.5rem;
+.cover-peek { display: flex; justify-content: center; gap: var(--sp-4); margin: var(--sp-1) 0 var(--sp-2); }
+.cover-peek .plate {
+  width: 68px; border: var(--ring); box-shadow: var(--e-3);
 }
-.cover-book .btn-leather { position: relative; z-index: 1; max-width: 320px; }
+.cover-peek .plate:nth-child(2) { transform: translateY(-10px) scale(1.06); }
+
+.cover-quote { max-width: 34ch; }
+.cover-quote p { font-size: var(--t-md); line-height: var(--lead); }
+.cover-quote p + p { margin-top: var(--sp-2); font-size: var(--t-sm); }
+.cover .btn { max-width: 320px; margin-top: var(--sp-2); }
 
 /* ============================================================
-   COCINA — el mesón (3D) y sus mandos
+   COCINA — el mesón
    ============================================================ */
 
-.taller-wrap {
-  max-width: 520px; margin: 0 auto;
-  padding: calc(var(--hud-h) + .5rem) .8rem calc(var(--nav-h) + env(safe-area-inset-bottom) + .7rem);
-  display: flex; flex-direction: column; gap: .6rem;
-  min-height: 100vh; min-height: 100dvh;
-  height: 100vh; height: 100dvh;
+.hoja--cocina {
+  padding-inline: var(--sp-3);
+  padding-top: calc(var(--hud-h) + var(--sp-1));
+  gap: var(--sp-2);
 }
 
-.estacion-titulo { text-align: center; margin-bottom: -.2rem; }
-.estacion-kicker {
-  display: inline-flex; align-items: center; gap: .6rem;
-  font-family: var(--display); font-size: .78rem; letter-spacing: .28em; text-transform: uppercase; font-weight: 700;
-  color: #3e7482;
-}
-.estacion-kicker::before, .estacion-kicker::after {
-  content: '✦'; font-size: .7rem; color: var(--oro); letter-spacing: 0;
-}
-
-/* el marco del mesón 3D (incluye el cajón y el basurero adentro);
-   con la escena activa ocupa TODO el alto libre de la pantalla */
-.mesa-zona { position: relative; flex-shrink: 0; }
-.mesa3d .mesa-zona { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mesa-zona { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .cocina3d {
-  position: relative;
-  width: 100%; aspect-ratio: 8 / 7;
-  border-radius: 20px; overflow: hidden;
-  border: 3px solid #fff;
-  background: linear-gradient(180deg, var(--azulejo), var(--crema-2));
-  box-shadow: 0 14px 30px -14px rgba(74,44,42,.55);
+  position: relative; flex: 1; min-height: 280px;
+  border-radius: var(--r-xl); overflow: hidden;
+  border: var(--ring);
+  background: linear-gradient(180deg, var(--tile-300), var(--cream-300));
+  box-shadow: var(--e-3);
 }
-.mesa3d .cocina3d { flex: 1; min-height: 300px; aspect-ratio: auto; }
 .cocina3d canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
-.cocina3d.shake { animation: mesa-shake .4s ease; }
 
-/* flechas para pasar de página en el cajón */
+/* flechas del cajón: se posicionan desde JS sobre la fila de casillas */
 .cajon-flecha {
-  position: absolute; bottom: 13%; z-index: 5;
-  width: 2.2rem; height: 2.2rem;
+  position: absolute; z-index: 5;
+  width: 2.3rem; height: 2.3rem;
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--display); font-size: 1.4rem; font-weight: 800; line-height: 1; color: var(--rosa-d);
-  background: #fffdf6;
-  border: 2.5px solid var(--rosa-d);
+  font-family: var(--font-display); font-size: var(--t-xl); font-weight: 800; line-height: 1;
+  color: var(--berry-700);
+  background: linear-gradient(180deg, var(--cream-100), var(--cream-200));
+  border: 2.5px solid var(--berry-600);
+  border-bottom-width: 4px;
   border-radius: 50%;
-  box-shadow: 0 4px 10px -3px rgba(74,44,42,.5);
-  transition: transform .1s ease;
+  box-shadow: var(--e-2);
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 .cajon-flecha:active { transform: scale(.9); }
-.cajon-flecha { bottom: 37%; }
-.cajon-flecha.prev { left: .45rem; }
-.cajon-flecha.next { right: .45rem; }
+.cajon-flecha.prev { left: var(--sp-2); }
+.cajon-flecha.next { right: var(--sp-2); }
 
-/* etiquetas de lo que hay sobre la tabla */
+/* etiquetas de lo que está sobre la tabla */
 .mesa-etiquetas {
-  position: absolute; left: 0; right: 0; top: .55rem;
-  display: flex; justify-content: center; gap: .6rem;
+  position: absolute; left: 0; right: 0; top: var(--sp-2);
+  display: flex; justify-content: center; gap: var(--sp-2);
+  pointer-events: none; z-index: 4;
+}
+.mesa-etiqueta { animation: etiqueta-pop var(--dur) var(--ease-pop) both; }
+@keyframes etiqueta-pop { from { opacity: 0; transform: translateY(-6px) scale(.9); } }
+.mesa-etiqueta.mess { background: linear-gradient(180deg, var(--wood-500), var(--wood-700)); color: var(--text-invert); border-color: var(--gold-400); }
+
+/* la pista flota sobre la escena: no gasta alto de pantalla */
+.taller-action {
+  position: absolute; left: var(--sp-3); right: var(--sp-3); bottom: var(--sp-3); z-index: 4;
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-2); flex-wrap: wrap;
   pointer-events: none;
 }
-.mesa-etiqueta {
-  font-family: var(--display); font-size: .86rem; font-weight: 700; color: #fff;
-  background: rgba(74,44,42,.72);
-  border: 2px solid rgba(255,255,255,.5);
-  border-radius: 999px; padding: .1rem .75rem;
-  box-shadow: 0 3px 8px rgba(0,0,0,.3);
+.taller-action > .btn { pointer-events: auto; }
+.taller-hint {
+  font-family: var(--font-display); font-size: var(--t-sm); font-weight: 600; text-align: center;
+  color: var(--text-invert);
+  background: rgba(74,44,42,.75);
+  border: 2px solid rgba(255,255,255,.35);
+  border-radius: var(--r-pill); padding: .2rem .9rem;
+  box-shadow: var(--e-1);
 }
-.mesa-etiqueta.mess { background: rgba(110,60,30,.85); border-color: var(--oro-2); }
 
-/* con el mesón 3D, el cajón vive dentro de la escena: los botones
-   de despensa y la tira "en preparación" ya no hacen falta aquí */
-.mesa3d .despensa-accesos, .mesa3d #en-preparacion { display: none !important; }
-
-/* fogón 2D: solo aparece si el navegador no puede con WebGL */
+/* --- fogón 2D: respaldo para navegadores sin WebGL --- */
 .fogon {
   position: relative;
-  display: flex; align-items: center; justify-content: center; gap: .9rem;
-  padding: 1.6rem .8rem;
-  background: linear-gradient(180deg, var(--madera), var(--madera-2));
-  border: 3px solid #fff;
-  border-radius: 20px;
-  box-shadow: 0 14px 30px -14px rgba(74,44,42,.55);
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-3);
+  padding: var(--sp-6) var(--sp-3);
+  background: linear-gradient(180deg, var(--wood-400), var(--wood-500));
+  border: var(--ring); border-radius: var(--r-xl);
+  box-shadow: var(--e-3);
 }
-.fogon.shake, .mesa-zona:has(.shake) { animation: none; }
+.fogon.shake { animation: mesa-shake var(--dur-slow) ease; }
 @keyframes mesa-shake { 25% { transform: translateX(-7px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
-.fusion-plus { font-size: 1.9rem; color: #fff; opacity: .85; }
+.fusion-plus { font-size: var(--t-2xl); color: #fff; opacity: .9; }
+.carta-slot {
+  width: clamp(102px, 29vw, 130px); aspect-ratio: 5 / 7;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-1);
+  background: rgba(0,0,0,.18);
+  border: 3px dashed rgba(255,255,255,.7);
+  border-radius: var(--r-md);
+}
+.carta-slot .slot-plus { font-size: var(--t-2xl); color: #fff; }
+.carta-slot .slot-txt { font-size: var(--t-xs); color: #fff; text-align: center; padding: 0 var(--sp-1); }
+.carta-slot.filled { border: none; background: none; }
+.ingrediente-mesa {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-1);
+  animation: ingrediente-cae var(--dur) var(--ease-pop) both;
+}
+@keyframes ingrediente-cae { from { opacity: 0; transform: translateY(-16px) scale(.7); } }
+.ing-icono { width: 4.8rem; }
+.ing-sombra {
+  display: block; width: 58%; height: 10px; margin-top: -.3rem; border-radius: 50%;
+  background: radial-gradient(50% 100% at 50% 50%, rgba(74,44,42,.45), transparent 75%);
+}
+.ing-nombre { font-family: var(--font-display); font-weight: 700; font-size: var(--t-sm); color: var(--text-invert); background: rgba(74,44,42,.7); border-radius: var(--r-pill); padding: 0 .6rem; }
+
+/* accesos a la despensa (solo modo 2D) */
+.despensa-accesos { display: flex; gap: var(--sp-3); }
+.acceso-btn { flex: 1; flex-direction: column; gap: var(--sp-1); padding: var(--sp-3) var(--sp-2); font-size: var(--t-sm); }
+.acceso-ic { font-size: var(--t-2xl); filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+
+/* con el mesón 3D el cajón vive dentro de la escena */
+.mesa3d .despensa-accesos, .mesa3d #en-preparacion { display: none !important; }
+
 .combo-indicador {
-  position: absolute; top: -.6rem; right: 1rem; z-index: 5;
-  font-family: var(--display); font-size: .92rem; font-weight: 700; color: #fff;
-  background: linear-gradient(180deg, var(--rojo-2), var(--rojo-d));
-  border: 2px solid #fff;
-  border-radius: 999px; padding: .16rem .6rem;
-  box-shadow: 0 4px 10px rgba(176,40,54,.5);
-  animation: combo-pop .3s cubic-bezier(.3, 1.6, .4, 1) both;
+  position: absolute; top: calc(var(--sp-2) * -1); right: var(--sp-4); z-index: 6;
+  animation: combo-pop var(--dur) var(--ease-pop) both;
 }
 @keyframes combo-pop { from { transform: scale(.5); opacity: 0; } }
 
-.carta-slot {
-  width: clamp(108px, 30vw, 136px); aspect-ratio: 5 / 7;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem;
-  background: rgba(255,255,255,.25);
-  border: 3px dashed rgba(255,255,255,.75);
-  border-radius: 16px;
-  transition: border-color .15s ease, background .15s ease;
-}
-.carta-slot .slot-plus { font-size: 1.9rem; color: #fff; }
-.carta-slot .slot-txt { font-size: .8rem; color: #fff; text-align: center; padding: 0 .3rem; }
+/* ============================================================
+   CHIPS — ingredientes en fila (preparación, mercado, despensa)
+   ============================================================ */
 
-.carta-slot.filled { border: none; background: none; padding: 0; }
-.ingrediente-mesa {
-  display: flex; flex-direction: column; align-items: center; gap: .3rem;
-  animation: ingrediente-plantado .3s cubic-bezier(.3, 1.6, .4, 1) both;
-}
-.ing-icono {
-  width: 4.9rem; height: 4.9rem; padding: .6rem;
-  background: radial-gradient(circle at 50% 40%, #fff, #efe8da 82%);
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 3px rgba(74,44,42,.06), 0 8px 14px -6px rgba(74,44,42,.5);
-}
-.ing-sombra {
-  display: block; width: 58%; height: 10px; margin-top: -.4rem; border-radius: 50%;
-  background: radial-gradient(50% 100% at 50% 50%, rgba(74,44,42,.4), transparent 75%);
-}
-.ing-nombre {
-  font-size: .95rem; color: #fff;
-  background: rgba(74,44,42,.65); border-radius: 999px; padding: .05rem .65rem;
-}
-@keyframes ingrediente-plantado { from { opacity: 0; transform: translateY(-16px) scale(.7); } to { opacity: 1; transform: none; } }
-
-.taller-action { min-height: 3.4rem; display: flex; align-items: center; justify-content: center; gap: .6rem; flex-wrap: wrap; }
-/* con el mesón 3D, la pista flota sobre la escena en vez de gastar alto */
-.mesa3d #taller-action {
-  position: absolute; left: .7rem; right: .7rem; bottom: .6rem; z-index: 4;
-  min-height: 0; pointer-events: none;
-}
-.mesa3d #taller-action .taller-hint {
-  font-size: .92rem; color: #fff;
-  background: rgba(74,44,42,.72);
-  border: 2px solid rgba(255,255,255,.4);
-  border-radius: 999px; padding: .22rem .95rem;
-  box-shadow: 0 3px 8px rgba(0,0,0,.3);
-}
-.combinar-btn { font-size: 1.15rem; padding: .8rem 2rem; }
-.quick-action-btn {
-  background: linear-gradient(180deg, #83d370, var(--verde));
-  border-color: var(--verde-d);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,.35), 0 6px 14px -6px rgba(79,148,64,.55);
-}
-.taller-hint { font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--ink-soft); text-align: center; }
-
-/* accesos: dos puertitas de mueble bajo el mesón */
-.despensa-accesos { flex: 1; display: flex; align-items: flex-start; justify-content: center; gap: .8rem; padding-top: .2rem; }
-.acceso-btn {
-  display: flex; flex-direction: column; align-items: center; gap: .3rem;
-  padding: .9rem .6rem;
-  background: linear-gradient(180deg, var(--rosa), var(--rosa-2));
-  border: 2.5px solid var(--rosa-d);
-  border-bottom-width: 5px;
-  border-radius: 16px;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,.3), 0 6px 14px -6px rgba(178,58,91,.5);
-  transition: transform .1s ease, border-bottom-width .1s ease;
-  flex: 1; max-width: 140px;
-}
-.acceso-btn:active { transform: translateY(3px); border-bottom-width: 2.5px; }
-.acceso-ic { font-size: 1.9rem; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
-.acceso-txt { font-family: var(--display); font-size: .84rem; font-weight: 700; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.25); }
-
-/* el pase: lo que ya está en preparación */
-.en-preparacion {
-  background: rgba(255,253,246,.85); border: 2px dashed var(--line);
-  border-radius: 16px; padding: .65rem .8rem .5rem;
-}
+.en-preparacion { padding: var(--sp-3); }
 .en-preparacion-label {
-  display: block; font-family: var(--display); font-size: .72rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--verde-d); margin-bottom: .45rem;
+  display: block; font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700;
+  letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--leaf-600);
+  margin-bottom: var(--sp-2);
 }
-.en-preparacion-row { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .1rem; -webkit-overflow-scrolling: touch; }
-.en-preparacion-row::-webkit-scrollbar { height: 0; }
+.en-preparacion-row, .mercado-grid {
+  display: flex; gap: var(--sp-2); overflow-x: auto; -webkit-overflow-scrolling: touch;
+  padding: var(--sp-1) 2px var(--sp-2);
+}
+.en-preparacion-row::-webkit-scrollbar, .mercado-grid::-webkit-scrollbar { height: 0; }
 
 .carta-mini {
-  position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem;
-  width: 68px; padding: .4rem .3rem .35rem;
-  background: #fffdf6;
-  border: 2px solid var(--line-soft);
-  border-radius: 12px;
-  border-bottom: 4px solid var(--tool);
-  box-shadow: 0 4px 8px -4px rgba(74,44,42,.35);
-  transition: transform .12s ease, opacity .12s ease;
+  --chip-edge: var(--rarity-tool);
+  position: relative; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-1);
+  width: 72px; padding: var(--sp-2) var(--sp-1);
+  background: linear-gradient(180deg, var(--cream-100), var(--cream-200));
+  border: 2px solid var(--hairline);
+  border-bottom: 4px solid var(--chip-edge);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-1);
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 .carta-mini:active { transform: scale(.94); }
-.carta-mini.rarity-semilla  { border-bottom-color: var(--semilla); }
-.carta-mini.rarity-hallazgo { border-bottom-color: var(--hallazgo); }
-.carta-mini.rarity-receta   { border-bottom-color: var(--receta); }
-.carta-mini.agotado { opacity: .45; filter: grayscale(.6); }
+.carta-mini.rarity-semilla  { --chip-edge: var(--rarity-semilla); }
+.carta-mini.rarity-hallazgo { --chip-edge: var(--rarity-hallazgo); }
+.carta-mini.rarity-receta   { --chip-edge: var(--rarity-receta); }
+.carta-mini.agotado { opacity: .45; filter: grayscale(.65); }
 .mini-icon {
-  width: 2.3rem; height: 2.3rem; padding: .2rem;
-  background: radial-gradient(circle at 50% 42%, #fff, #efe8da 85%);
+  display: flex; align-items: center; justify-content: center;
+  width: 2.5rem; aspect-ratio: 1; padding: .22rem;
+  background: radial-gradient(circle at 50% 40%, #fff 0%, #fff 52%, var(--cream-400) 88%);
   border-radius: 50%;
   box-shadow: inset 0 0 0 2px rgba(74,44,42,.05);
 }
-.mini-name { font-size: .64rem; font-weight: 700; line-height: 1.1; color: var(--ink); text-align: center; }
+.mini-icon > svg { width: 100%; height: auto; aspect-ratio: 1; }
+.mini-name { font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700; line-height: 1.1; color: var(--text); text-align: center; }
 .mini-cant {
-  position: absolute; top: -.4rem; right: -.35rem; min-width: 1.2rem; height: 1.2rem;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--display); font-size: .66rem; font-weight: 700; color: #fff;
-  background: linear-gradient(180deg, var(--rojo-2), var(--rojo-d));
-  border: 1.5px solid #fff;
-  border-radius: 999px; padding: 0 .25rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  position: absolute; top: -.4rem; right: -.35rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.35rem; height: 1.35rem; padding: 0 .28rem;
+  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; line-height: 1; color: #fff;
+  background: linear-gradient(180deg, var(--tomato-500), var(--tomato-600));
+  border: 2px solid var(--cream-100); border-radius: var(--r-pill);
+  box-shadow: var(--e-1);
 }
-.mini-durab { font-size: .55rem; letter-spacing: .04em; color: var(--ink-soft); line-height: 1; }
+.mini-durab { font-size: .55rem; letter-spacing: .04em; color: var(--steel-600); line-height: 1; }
+.mini-costo {
+  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; color: var(--gold-800);
+  background: linear-gradient(180deg, var(--gold-300), var(--gold-400));
+  border-radius: var(--r-pill); padding: 0 .4rem;
+}
 
 /* ============================================================
-   LA CARTA (componente TCG compartido)
+   LA CARTA — el coleccionable
    ============================================================ */
 
 .carta {
+  --carta-edge: var(--rarity-tool-d);
   position: relative; overflow: hidden;
-  width: clamp(108px, 30vw, 136px); aspect-ratio: 5 / 7;
+  width: clamp(102px, 29vw, 130px); aspect-ratio: 5 / 7;
   display: flex; flex-direction: column;
-  border-radius: 16px;
-  border: 3px solid var(--tool-d);
-  background: linear-gradient(180deg, #fffdf6 0%, var(--crema) 100%);
-  box-shadow: 0 2px 0 rgba(74,44,42,.15), 0 10px 20px -10px rgba(74,44,42,.45);
+  background: linear-gradient(180deg, var(--cream-100) 0%, var(--cream-200) 100%);
+  border: 3px solid var(--carta-edge);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-2);
 }
-.carta.rarity-semilla  { border-color: var(--semilla); }
-.carta.rarity-hallazgo { border-color: var(--hallazgo); }
-.carta.rarity-receta   { border-color: var(--receta); box-shadow: 0 2px 0 rgba(74,44,42,.15), 0 10px 20px -10px rgba(74,44,42,.45), 0 0 16px -2px rgba(242,179,31,.5); }
+.carta.rarity-semilla  { --carta-edge: var(--rarity-semilla); }
+.carta.rarity-hallazgo { --carta-edge: var(--rarity-hallazgo); }
+.carta.rarity-receta   { --carta-edge: var(--rarity-receta); box-shadow: var(--e-2), 0 0 14px -2px rgba(242,179,31,.6); }
 
-/* el plato de porcelana bajo la comida */
 .carta-art {
   flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
   padding: 11%;
-  background: radial-gradient(66% 66% at 50% 46%, #ffffff 0%, #fff 55%, rgba(216,205,185,.4) 74%, transparent 80%);
+  background: radial-gradient(66% 66% at 50% 46%, #fff 0%, #fff 54%, rgba(236,217,180,.5) 74%, transparent 80%);
 }
 .carta-art svg, .carta-art > span { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(74,44,42,.22)); }
-.carta-plate {
-  flex-shrink: 0; text-align: center; padding: .3rem .3rem .4rem;
-  border-top: 2px dashed var(--line-soft);
-}
-.rarity-semilla .carta-plate  { background: linear-gradient(180deg, transparent, rgba(239,143,60,.16)); }
+.carta-plate { flex-shrink: 0; text-align: center; padding: var(--sp-1) var(--sp-1) .35rem; border-top: 2px dashed var(--hairline); }
+.carta-nombre { display: block; font-family: var(--font-display); font-size: var(--t-sm); font-weight: 700; line-height: var(--lead-tight); color: var(--text); }
+.carta-rareza { display: block; font-size: .55rem; font-weight: 800; letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--carta-edge); margin-top: .1rem; }
+.rarity-semilla  .carta-plate { background: linear-gradient(180deg, transparent, rgba(185,126,60,.16)); }
 .rarity-hallazgo .carta-plate { background: linear-gradient(180deg, transparent, rgba(108,191,90,.16)); }
-.rarity-receta .carta-plate   { background: linear-gradient(180deg, transparent, rgba(242,179,31,.22)); }
-.carta-nombre { display: block; font-family: var(--display); font-size: .84rem; font-weight: 700; line-height: 1.12; color: var(--ink); }
-.carta-rareza { display: block; font-size: .56rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); margin-top: .1rem; }
-.rarity-semilla .carta-rareza  { color: var(--semilla-d); }
-.rarity-hallazgo .carta-rareza { color: var(--hallazgo-d); }
-.rarity-receta .carta-rareza   { color: var(--receta-d); }
+.rarity-receta   .carta-plate { background: linear-gradient(180deg, transparent, rgba(242,179,31,.22)); }
 
-/* barniz dorado de los platillos estrella */
 .carta-foil {
   position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(115deg, transparent 35%, rgba(255,236,180,.6) 48%, rgba(255,255,255,.85) 52%, transparent 65%);
@@ -519,367 +326,212 @@ svg { display: block; width: 100%; height: 100%; }
 }
 @keyframes foil-sweep { 0%, 30% { background-position: 130% 0; } 65%, 100% { background-position: -60% 0; } }
 
-/* carta al revés: aún por descubrir — rayas de caramelo rosa */
+/* el reverso: plato tapado, rayas de caramelo */
 .carta.back {
-  background:
-    repeating-linear-gradient(45deg, var(--rosa) 0 12px, var(--rosa-2) 12px 24px);
+  background: repeating-linear-gradient(45deg, var(--berry-400) 0 12px, var(--berry-500) 12px 24px);
 }
-.carta.back.rarity-semilla  { border-color: var(--semilla); }
-.carta.back.rarity-hallazgo { border-color: var(--hallazgo); }
-.carta.back.rarity-receta   { border-color: var(--receta); }
-.carta.back.rarity-tool     { border-color: var(--tool); }
+.carta.back.rarity-semilla  { --carta-edge: var(--rarity-semilla); }
+.carta.back.rarity-hallazgo { --carta-edge: var(--rarity-hallazgo); }
+.carta.back.rarity-receta   { --carta-edge: var(--rarity-receta); }
 .carta-textura { position: absolute; inset: 0; }
 .carta-textura::after {
-  content: '✦'; position: absolute; left: 50%; bottom: 10%; transform: translateX(-50%);
-  font-size: 1rem; color: var(--oro-2);
-  text-shadow: 0 1px 2px rgba(0,0,0,.3);
+  content: '✦'; position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%);
+  font-size: var(--t-lg); color: var(--gold-300); text-shadow: 0 1px 2px rgba(0,0,0,.3);
 }
 .carta-interrogante {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-family: var(--display); font-weight: 800; font-size: 2.7rem; color: #fff;
-  text-shadow: 0 3px 0 var(--rosa-d), 0 6px 10px rgba(0,0,0,.25);
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 2.6rem; color: #fff;
+  text-shadow: 0 3px 0 var(--berry-700), 0 6px 10px rgba(0,0,0,.25);
+}
+.carta-cant {
+  position: absolute; top: var(--sp-1); right: var(--sp-1); z-index: 2;
+  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; color: #fff;
+  background: rgba(74,44,42,.8); border: 2px solid var(--cream-100);
+  border-radius: var(--r-pill); padding: 0 .38rem;
 }
 
 /* ============================================================
-   RECETARIO (Colección)
+   RECETARIO
    ============================================================ */
 
-.coleccion-wrap { max-width: 520px; margin: 0 auto; padding: calc(var(--hud-h) + 1rem) 1.3rem calc(var(--nav-h) + env(safe-area-inset-bottom) + 1.6rem); }
-.coleccion-head { text-align: center; margin-bottom: 1rem; }
-.coleccion-head h2 {
-  font-family: var(--display); font-size: 2.1rem; font-weight: 800; color: #fff;
-  text-shadow: 0 2.5px 0 var(--rosa-d), 0 5px 10px rgba(74,44,42,.3);
-}
-.coleccion-progress { font-size: .98rem; color: var(--ink); margin-top: .1rem; }
-.coleccion-progress .progress-count { font-family: var(--display); font-weight: 700; }
-
-/* cada región es un menú, con su acento de color */
-.region-seccion { margin-bottom: 2rem; }
+.region-seccion { margin-bottom: var(--sp-6); }
 .region-head {
-  position: relative; padding: .55rem .9rem; margin-bottom: .9rem;
-  background: rgba(255,253,246,.85);
-  border-radius: 14px;
-  border-left: 6px solid var(--region-acento, var(--oro));
-  box-shadow: 0 4px 10px -6px rgba(74,44,42,.35);
+  --region-acento: var(--gold-400);
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-3);
+  background: linear-gradient(180deg, var(--cream-100), var(--cream-200));
+  border: 2px solid var(--hairline);
+  border-left: 7px solid var(--region-acento);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-1);
 }
-.region-head h3 { font-family: var(--display); font-size: 1.4rem; font-weight: 800; color: var(--ink); line-height: 1.1; }
-.region-tagline { font-size: .95rem; color: var(--ink-soft); margin-top: 0; }
+.region-nombre { min-width: 0; }
+.region-head h3 { font-family: var(--font-display); font-size: var(--t-xl); font-weight: 800; line-height: 1; color: var(--text); }
+.region-tagline { font-size: var(--t-xs); color: var(--text-muted); line-height: 1.3; }
+.region-progress--lock { background: var(--hairline-strong); }
 .region-progress {
-  position: absolute; top: .55rem; right: .7rem; font-family: var(--display); font-size: .84rem; font-weight: 700;
-  color: #fff;
-  background: var(--region-acento, var(--ink-soft)); border-radius: 999px; padding: .12rem .6rem;
+  margin-left: auto; flex-shrink: 0;
+  font-family: var(--font-display); font-size: var(--t-xs); font-weight: 800; color: #fff;
+  background: var(--region-acento); border: 2px solid var(--cream-100);
+  border-radius: var(--r-pill); padding: .1rem .55rem;
+  box-shadow: var(--e-1);
 }
 .region-locked {
-  font-size: .94rem; color: var(--ink-soft); font-style: italic;
-  padding: .9rem 1rem; text-align: center;
-  background: rgba(255,253,246,.7); border: 2px dashed var(--line); border-radius: 14px;
+  display: block; font-size: var(--t-sm); color: var(--text-muted); text-align: center;
+  padding: var(--sp-4) var(--sp-3);
+  background: rgba(74,44,42,.06);
+  border: 2px dashed var(--hairline);
+  border-radius: var(--r-md);
 }
-.album-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; }
-.album-grid .carta { width: 100%; }
-.carta-cant {
-  position: absolute; top: .3rem; right: .3rem; z-index: 2;
-  font-family: var(--display); font-size: .7rem; font-weight: 700; color: #fff;
-  background: rgba(74,44,42,.75); border: 1.5px solid #fff; border-radius: 999px; padding: .02rem .4rem;
-}
-
-.coleccion-footnote { text-align: center; font-size: .88rem; font-style: italic; color: var(--ink-soft); margin-top: 1rem; }
+.album-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.album-grid .carta { width: 100%; transition: transform var(--dur-fast) var(--ease-out); }
+.album-grid .carta:active { transform: scale(.95); }
+.coleccion-footnote { font-size: var(--t-sm); color: var(--text-muted); text-align: center; padding: var(--sp-2) 0 var(--sp-4); }
 
 /* ============================================================
-   NAVEGACIÓN — la barra de madera de abajo
+   DESPENSA
    ============================================================ */
 
-.tabs {
-  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 100%; max-width: var(--frame);
-  z-index: 55; display: flex;
-  padding-bottom: env(safe-area-inset-bottom);
-  background: linear-gradient(180deg, var(--madera), var(--madera-2));
-  border-top: 3px solid #fff;
-  box-shadow: 0 -10px 24px -12px rgba(74,44,42,.6);
+.caja-box {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
 }
-.tab-btn {
-  position: relative; flex: 1;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .18rem;
-  height: var(--nav-h);
-  font-family: var(--display); font-size: .76rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-  color: rgba(255,248,235,.75);
-  text-shadow: 0 1px 0 rgba(0,0,0,.2);
-  transition: color .15s ease;
+.caja-visual {
+  width: 92px; aspect-ratio: 5 / 7;
+  display: grid; place-items: center;
+  background: linear-gradient(160deg, var(--wood-200), var(--wood-400) 60%, var(--wood-500));
+  border: var(--ring); border-radius: var(--r-md);
+  box-shadow: var(--gloss), var(--e-3);
+  animation: caja-flota 3.2s ease-in-out infinite;
 }
-.tab-btn::before {
-  content: ''; position: absolute; top: -3px; left: 18%; right: 18%; height: 4px;
-  border-radius: 0 0 5px 5px; background: var(--oro-2); opacity: 0;
-  box-shadow: 0 2px 8px rgba(255,210,77,.8);
-  transition: opacity .18s ease;
-}
-.tab-btn.active { color: #fff; }
-.tab-btn.active::before { opacity: 1; }
-.tab-ic {
-  width: 1.5rem; height: 1.5rem; padding: .14rem;
-  background: rgba(255,253,246,.9); border-radius: 50%;
-  box-shadow: 0 2px 4px -2px rgba(0,0,0,.4);
-  filter: saturate(.4) opacity(.8);
-  transition: filter .18s ease, transform .18s ease;
-}
-.tab-btn.active .tab-ic { filter: none; transform: scale(1.12); }
-.tab-btn:active { transform: scale(.96); }
-
-/* ============================================================
-   LA DESPENSA — cajas del mercado y regalos
-   ============================================================ */
-
-.feria-wrap { max-width: 460px; margin: 0 auto; padding: calc(var(--hud-h) + 1rem) 1.3rem calc(var(--nav-h) + env(safe-area-inset-bottom) + 1.6rem); }
-.feria-head { text-align: center; margin-bottom: 1rem; }
-.feria-head h2 {
-  font-family: var(--display); font-size: 2.1rem; font-weight: 800; color: #fff;
-  text-shadow: 0 2.5px 0 var(--rosa-d), 0 5px 10px rgba(74,44,42,.3);
-}
-.feria-sub { font-size: 1rem; color: var(--ink); margin-top: 0; }
-
-.sobre-box {
-  display: flex; flex-direction: column; align-items: center; gap: .7rem;
-  padding: 1.5rem 1.2rem 1.3rem;
-  background: linear-gradient(180deg, var(--rosa), var(--rosa-2));
-  border: 3px solid #fff;
-  border-radius: 20px;
-  box-shadow: 0 14px 30px -14px rgba(178,58,91,.6);
-  margin-bottom: 1.5rem;
-}
-/* la caja del mercado: de cartón, con sello dorado */
-.sobre-visual {
-  width: 110px; aspect-ratio: 5 / 7;
-  display: flex; align-items: center; justify-content: center;
-  background:
-    linear-gradient(160deg, #e0b276 0%, #c99356 55%, #b07c40 100%);
-  border: 3px solid #fff;
-  border-radius: 14px;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,.35), 0 10px 20px -8px rgba(74,44,42,.5);
-  animation: sobre-float 3.2s ease-in-out infinite;
-}
-@keyframes sobre-float { 50% { transform: translateY(-5px) rotate(-1.5deg); } }
-.sobre-sello {
-  width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem; color: #6b4a08;
-  background: conic-gradient(from 210deg, var(--oro-2), var(--oro-d), var(--oro-2));
+@keyframes caja-flota { 50% { transform: translateY(-5px) rotate(-2deg); } }
+.caja-sello {
+  width: 40px; height: 40px; display: grid; place-items: center;
+  font-size: var(--t-lg); color: var(--gold-800);
+  background: conic-gradient(from 210deg, var(--gold-300), var(--gold-600), var(--gold-300));
   border-radius: 50%;
-  box-shadow: 0 3px 8px rgba(0,0,0,.35);
+  box-shadow: var(--e-2);
 }
-.sobre-stash { font-size: 1.05rem; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.2); }
-.sobre-count { font-family: var(--display); font-weight: 800; font-size: 1.3rem; color: var(--oro-2); }
-.sobre-timer { font-size: .9rem; color: rgba(255,248,235,.9); text-align: center; }
+.caja-stash { font-family: var(--font-display); font-size: var(--t-md); font-weight: 700; }
+.sobre-count { font-size: var(--t-xl); font-weight: 800; color: var(--gold-300); }
+.caja-timer { font-size: var(--t-xs); opacity: .9; text-align: center; }
 
-.mercado-section { text-align: center; margin-bottom: 1.7rem; }
-.mercado-title { font-family: var(--display); font-size: 1.35rem; font-weight: 800; color: var(--ink); margin-bottom: .25rem; }
-.mercado-blurb { font-size: .92rem; color: var(--ink-soft); line-height: 1.55; margin-bottom: .8rem; }
-.mercado-grid { display: flex; gap: .5rem; overflow-x: auto; padding: .3rem .1rem .6rem; -webkit-overflow-scrolling: touch; }
-.mercado-grid::-webkit-scrollbar { height: 0; }
-.mercado-chip .mini-costo {
-  font-size: .62rem; font-weight: 800; color: var(--oro-d);
-  background: rgba(242,179,31,.18); border-radius: 999px; padding: .05rem .4rem; margin-top: .1rem;
+.seccion { margin-bottom: var(--sp-5); }
+.seccion .label { margin: 0 0 var(--sp-2) var(--sp-1); }
+.seccion-panel { display: flex; flex-direction: column; gap: var(--sp-2); }
+.seccion-nota { font-size: var(--t-sm); color: var(--text-muted); text-align: center; line-height: 1.45; }
+.seccion-acciones { display: flex; gap: var(--sp-2); justify-content: center; flex-wrap: wrap; }
+.regalos-num { font-family: var(--font-display); font-weight: 800; color: var(--accent-ink); }
+.regalos-empty, .despensa-vacio {
+  grid-column: 1 / -1; font-size: var(--t-sm); color: var(--text-muted); text-align: center; padding: var(--sp-3);
 }
-.mercado-acciones { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
-.pregon-timer { font-size: .9rem; color: var(--ink-soft); margin-top: .5rem; }
-
-.regalos-section { text-align: center; }
-.regalos-title { font-family: var(--display); font-size: 1.35rem; font-weight: 800; color: var(--ink); margin-bottom: .25rem; }
-.regalos-blurb { font-size: .92rem; color: var(--ink-soft); line-height: 1.55; margin-bottom: .9rem; }
-#regalos-restantes { font-family: var(--display); font-weight: 800; color: var(--ink); }
-.regalos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
-.regalo-mini { width: 100%; transition: transform .15s ease; }
+.regalo-mini { width: 100%; transition: transform var(--dur-fast) var(--ease-out); }
 .regalo-mini:active { transform: scale(.94); }
-.regalos-empty { grid-column: 1 / -1; font-size: .96rem; color: var(--ink-soft); font-style: italic; }
 
 /* ============================================================
-   MODALES
+   MODALES ESPECÍFICOS
    ============================================================ */
 
-.modal {
-  position: fixed; inset: 0; z-index: 90;
-  display: none; align-items: center; justify-content: center;
-  padding: 1.4rem;
-  background: rgba(46, 26, 20, .6);
-  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
-}
-.modal.open { display: flex; animation: modal-in .3s ease both; }
-@keyframes modal-in { from { opacity: 0; } }
+.sheet--wide { max-width: 400px; }
+.despensa-grid { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; width: 100%; max-height: 46vh; overflow-y: auto; }
 
-/* ---------- Revelación: giro 3D + swipe, al estilo sobre TCG ---------- */
-.reveal-wrap { display: flex; flex-direction: column; align-items: center; gap: .9rem; max-width: 320px; width: 100%; }
-.reveal-stage {
-  position: relative;
-  width: 200px; aspect-ratio: 5 / 7;
-  perspective: 1100px;
-  touch-action: none;                 /* el gesto lo maneja JS, no el scroll del navegador */
-  cursor: grab;
+.detalle-art { width: 128px; border: var(--ring); box-shadow: var(--e-2); }
+.detalle-art.rarity-semilla  { box-shadow: var(--e-2), 0 0 0 3px var(--rarity-semilla); }
+.detalle-art.rarity-hallazgo { box-shadow: var(--e-2), 0 0 0 3px var(--rarity-hallazgo); }
+.detalle-art.rarity-receta   { box-shadow: var(--e-2), 0 0 0 3px var(--rarity-receta); }
+.pista-carta { width: 108px; pointer-events: none; }
+.pista-texto { font-family: var(--font-display); font-size: var(--t-lg); font-weight: 600; line-height: 1.35; color: var(--text); }
+.racha-ic { font-size: var(--t-3xl); }
+.racha-recompensa { font-family: var(--font-display); font-size: var(--t-2xl); font-weight: 800; color: var(--gold-600); }
+
+/* --- Revelación de carta --- */
+.reveal-wrap { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); max-width: 320px; width: 100%; }
+.reveal-stage { position: relative; width: 200px; aspect-ratio: 5 / 7; perspective: 1100px; touch-action: none; cursor: grab; }
+.reveal-stage::before {
+  content: ''; position: absolute; left: 50%; top: -60%; transform: translateX(-50%);
+  width: 300%; height: 200%; z-index: 0; pointer-events: none;
+  background: radial-gradient(42% 42% at 50% 32%, rgba(255,238,190,.18), transparent 68%);
 }
 .carta-flip {
   position: relative; z-index: 3; width: 100%; height: 100%;
   transform-style: preserve-3d;
-  transition: transform .5s cubic-bezier(.2, .85, .25, 1);
+  transition: transform .5s var(--ease-out);
   will-change: transform;
 }
-
-/* pila detrás de la carta actual: hay más esperando su turno */
-.reveal-stack-layer {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0;
-  pointer-events: none;
-  transition: transform .3s ease, opacity .3s ease;
-}
+.reveal-stack-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; transition: transform var(--dur) var(--ease-out); }
 #reveal-stack-2 { z-index: 2; transform: translate(7px, 14px) rotate(3deg); }
 #reveal-stack-3 { z-index: 1; transform: translate(-8px, 24px) rotate(-4deg); }
-.reveal-restantes {
-  position: absolute; top: -.7rem; right: -.5rem; z-index: 4;
-  font-family: var(--display); font-size: .8rem; font-weight: 700; color: #6b4a08;
-  background: conic-gradient(from 210deg, var(--oro-2), var(--oro-d), var(--oro-2));
-  border: 2px solid #fff;
-  border-radius: 999px; padding: .16rem .55rem;
-  box-shadow: 0 3px 8px rgba(0,0,0,.35);
-}
-.reveal-restantes.hidden { display: none; }
-.carta-face {
-  position: absolute; inset: 0;
-  backface-visibility: hidden; -webkit-backface-visibility: hidden;
-}
+.reveal-restantes { position: absolute; top: -.7rem; right: -.5rem; z-index: 4; font-size: var(--t-xs); }
+.carta-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .carta-face-front { transform: rotateY(180deg); }
-.carta-face .carta { width: 100%; height: 100%; margin: 0; }
-
-/* halo bajo la carta */
+.carta-face .carta { width: 100%; height: 100%; }
 .reveal-stage::after {
   content: ''; position: absolute; left: 50%; bottom: -14%; width: 70%; height: 18%;
-  transform: translateX(-50%);
-  background: radial-gradient(50% 100% at 50% 50%, rgba(0,0,0,.5), transparent 75%);
-  filter: blur(3px); z-index: -1; opacity: .5; transition: opacity .3s ease;
+  transform: translateX(-50%); z-index: -1;
+  background: radial-gradient(50% 100% at 50% 50%, rgba(0,0,0,.55), transparent 75%);
+  filter: blur(3px); opacity: .5; transition: opacity var(--dur) var(--ease-out);
 }
-.reveal-stage:has(.carta-flip.is-front)::after { opacity: .85; }
-
-.reveal-hint { font-size: 1.1rem; color: var(--oro-2); text-shadow: 0 1px 2px rgba(0,0,0,.4); text-align: center; animation: hint-bob 1.6s ease-in-out infinite; }
-.reveal-hint.hidden { display: none; }
+.reveal-stage:has(.carta-flip.is-front)::after { opacity: .9; }
+.reveal-hint { font-family: var(--font-display); font-size: var(--t-md); font-weight: 600; color: var(--gold-300); text-align: center; animation: hint-bob 1.6s ease-in-out infinite; }
 @keyframes hint-bob { 50% { transform: translateY(-5px); } }
-
 .reveal-banner {
-  min-height: 1.9rem;
-  font-family: var(--display); font-weight: 700; font-size: 1.3rem; text-align: center; color: #fff;
-  text-shadow: 0 2px 3px rgba(0,0,0,.4);
+  min-height: 2rem;
+  font-family: var(--font-display); font-size: var(--t-xl); font-weight: 700; text-align: center;
+  color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.45);
   opacity: 0; transform: translateY(6px);
-  transition: opacity .3s ease, transform .3s ease;
+  transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
 }
 .reveal-banner.visible { opacity: 1; transform: none; }
-.reveal-banner.is-new { color: var(--oro-2); }
+.reveal-banner.is-new { color: var(--gold-300); }
+.carta-face-front .carta.rarity-receta { box-shadow: 0 0 50px -6px rgba(255,210,77,.85), var(--e-3); }
 
-.carta-face-front .carta.rarity-receta { box-shadow: 0 0 50px -6px rgba(255,210,77,.8), 0 10px 22px -12px rgba(0,0,0,.5); }
-
-/* estallido de celebración */
 .reveal-burst { position: fixed; z-index: 119; pointer-events: none; }
-.reveal-burst i {
-  position: absolute; width: 7px; height: 10px; border-radius: 2px;
-  animation: reveal-burst-fly .85s ease-out both;
-}
-@keyframes reveal-burst-fly { to { transform: translate(var(--dx), var(--dy)) rotate(220deg); opacity: 0; } }
+.reveal-burst i { position: absolute; width: 7px; height: 10px; border-radius: 2px; animation: burst-fly .85s ease-out both; }
+@keyframes burst-fly { to { transform: translate(var(--dx), var(--dy)) rotate(220deg); opacity: 0; } }
 
-/* banner grande: para lo que sí importa (abrir un menú nuevo) */
+/* --- Banner de anuncio grande --- */
 .banner {
   position: fixed; left: 50%; transform: translateX(-50%) translateY(-140%);
-  top: calc(env(safe-area-inset-top) + 8px); z-index: 97;
-  width: min(360px, calc(100% - 1.6rem));
-  display: flex; align-items: center; gap: .7rem;
-  background: linear-gradient(180deg, #fffdf6, var(--crema));
-  border: 2.5px solid var(--line); border-left: 6px solid var(--rojo);
-  border-radius: 16px;
-  box-shadow: 0 18px 44px -14px rgba(74,44,42,.55);
-  padding: .7rem .95rem;
-  font-family: var(--display); font-size: 1rem; font-weight: 700; line-height: 1.35; color: var(--ink);
+  top: calc(env(safe-area-inset-top) + var(--sp-2)); z-index: var(--z-banner);
+  width: min(360px, calc(100% - var(--sp-6)));
+  display: flex; align-items: center; gap: var(--sp-3);
+  background: linear-gradient(180deg, var(--cream-100), var(--cream-200));
+  border: var(--ring); border-left: 6px solid var(--tomato-500);
+  border-radius: var(--r-lg);
+  box-shadow: var(--e-4);
+  padding: var(--sp-3);
+  font-family: var(--font-display); font-size: var(--t-md); font-weight: 700; line-height: 1.3; color: var(--text);
   pointer-events: none; opacity: 0;
-  transition: transform .38s cubic-bezier(.2, 1.15, .35, 1), opacity .3s ease;
+  transition: transform var(--dur-slow) var(--ease-pop), opacity var(--dur) var(--ease-out);
 }
 .banner.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-.banner .banner-ic {
-  flex-shrink: 0; width: 2.1rem; height: 2.1rem;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.15rem; color: #6b4a08;
-  background: conic-gradient(from 210deg, var(--oro-2), var(--oro-d), var(--oro-2));
-  border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+.banner-ic {
+  flex-shrink: 0; width: 2.2rem; height: 2.2rem; display: grid; place-items: center;
+  font-size: var(--t-lg); color: var(--gold-800);
+  background: conic-gradient(from 210deg, var(--gold-300), var(--gold-600), var(--gold-300));
+  border-radius: 50%; box-shadow: var(--e-1);
 }
-.banner .banner-txt { min-width: 0; }
-
-.detalle-panel, .pista-panel, .despensa-panel {
-  width: 100%; max-width: 340px; text-align: center;
-  display: flex; flex-direction: column; align-items: center; gap: .6rem;
-  background: linear-gradient(180deg, #fffdf6, var(--crema));
-  border: 3px solid #fff;
-  border-radius: 22px;
-  box-shadow: 0 24px 60px -20px rgba(46,26,20,.7);
-  padding: 1.5rem 1.4rem 1.3rem;
-  animation: panel-in .4s cubic-bezier(.2,1.1,.35,1) both;
-}
-@keyframes panel-in { from { opacity: 0; transform: translateY(18px) scale(.96); } }
-.detalle-art { width: 150px; margin-bottom: .2rem; }
-.detalle-art .carta-art { border-radius: 12px; }
-.detalle-nombre { font-family: var(--display); font-size: 1.55rem; font-weight: 800; color: var(--ink); }
-.detalle-rareza { font-size: .72rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--rosa-d); }
-.detalle-lore { font-size: .95rem; line-height: 1.6; color: var(--ink); font-style: italic; margin: .3rem 0 .5rem; }
-
-.pista-carta { width: 120px; margin-bottom: .2rem; pointer-events: none; }
-.pista-label { font-size: .72rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); }
-.pista-texto { font-family: var(--display); font-weight: 600; font-size: 1.25rem; line-height: 1.35; color: var(--ink); margin-bottom: .4rem; }
-
-/* el cajón de la despensa: se abre bajo pedido */
-.despensa-panel { max-width: 400px; background: linear-gradient(180deg, var(--rosa), var(--rosa-2)); }
-.despensa-titulo { font-family: var(--display); font-size: 1.45rem; font-weight: 800; color: #fff; text-shadow: 0 1.5px 0 rgba(0,0,0,.2); }
-.despensa-grid {
-  display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center;
-  max-height: 50vh; overflow-y: auto; padding: .4rem;
-  background: rgba(255,255,255,.16); border-radius: 14px;
-  width: 100%;
-}
-.despensa-vacio { font-size: .94rem; color: #fff; font-style: italic; padding: 1rem; }
-.despensa-panel .btn-ghost { border-color: var(--rosa-d); }
-
-/* racha diaria */
-.racha-panel { max-width: 300px; }
-.racha-ic { font-size: 2.6rem; }
-.racha-titulo { font-family: var(--display); font-size: 1.4rem; font-weight: 800; color: var(--ink); }
-.racha-sub { font-size: .9rem; color: var(--ink-soft); }
-.racha-recompensa { font-family: var(--display); font-weight: 800; font-size: 1.7rem; color: var(--oro-d); margin: .2rem 0; }
 
 /* ============================================================
-   TOAST
-   ============================================================ */
-
-.toast {
-  position: fixed; left: 50%; transform: translateX(-50%) translateY(16px);
-  bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom)); z-index: 95;
-  max-width: min(360px, 86vw);
-  font-family: var(--display); font-weight: 600; font-size: .95rem; color: #fff; text-align: center;
-  background: rgba(74, 44, 42, .95);
-  border: 2px solid rgba(255,255,255,.35);
-  border-radius: 14px; padding: .55rem 1.05rem;
-  box-shadow: 0 12px 28px -10px rgba(0,0,0,.5);
-  opacity: 0; pointer-events: none;
-  transition: opacity .25s ease, transform .25s ease;
-}
-.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ============================================================
-   ADAPTABLE — celular corto, tablet
+   ADAPTABLE
    ============================================================ */
 
 @media (max-height: 700px) {
   html { font-size: 16px; }
-  .carta-slot, .carta { width: clamp(92px, 26vw, 116px); }
-  .fogon { padding: 1.1rem .6rem; }
-  .cocina3d { aspect-ratio: 16 / 12; }
+  :root { --hud-h: 48px; --nav-h: 58px; }
+  .cover-peek .plate { width: 56px; }
+  .cocina3d { min-height: 240px; }
 }
-
 @media (min-width: 640px) {
-  #stage { min-height: calc(100dvh - 40px); margin: 20px auto; border-radius: 22px; }
-  .tabs { border-radius: 0 0 22px 22px; }
+  #stage { height: calc(100dvh - 40px); margin: 20px auto; border-radius: var(--r-xl); }
+  .tabbar { border-radius: 0 0 var(--r-xl) var(--r-xl); }
 }
 @media (min-width: 768px) {
   :root { --frame: 720px; }
   html { font-size: 18px; }
-  .taller-wrap { max-width: 720px; padding-left: 1.6rem; padding-right: 1.6rem; }
-  .coleccion-wrap { padding-left: 2.4rem; padding-right: 2.4rem; }
+  .scroll, .hoja-head { padding-inline: var(--sp-6); }
   .album-grid { grid-template-columns: repeat(4, 1fr); }
   .carta-slot, .reveal-wrap .carta { width: 150px; }
 }
@@ -888,7 +540,7 @@ svg { display: block; width: 100%; height: 100%; }
   .album-grid { grid-template-columns: repeat(5, 1fr); }
 }
 
-:focus-visible { outline: 3px solid var(--oro); outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 3px solid var(--gold-400); outline-offset: 2px; border-radius: var(--r-sm); }
 button:focus:not(:focus-visible) { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01s !important; transition-duration: .01s !important; }
