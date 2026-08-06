@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-  <title>Pambamesa — cuaderno de viaje de sabores</title>
-  <meta name="description" content="Combina ingredientes para descubrir platos y colecciónalos en tu cuaderno de viaje, al estilo Little Alchemy y un álbum de cartas.">
+  <title>Pambamesa — la cocina de los sabores por descubrir</title>
+  <meta name="description" content="Cocina en tu fogón, junta ingredientes y descubre platos para coleccionar, al estilo Little Alchemy y un álbum de cartas.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Pambamesa">
-  <meta name="theme-color" content="#6b4a35">
+  <meta name="theme-color" content="#e8a596">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -32,43 +32,48 @@
     </div>
   </header>
 
-  <!-- ================= Portada: la tapa del cuaderno ================= -->
+  <!-- ================= Portada: la mesa servida ================= -->
   <main id="screen-cover" class="screen active">
-    <div class="cover-scene">
-      <div class="cover-book">
-        <span class="cover-strap" aria-hidden="true"></span>
-        <p class="cover-over">un cuaderno de viaje</p>
+    <div class="portada">
+      <!-- los platos regados por la mesa, como en una pambamesa de verdad -->
+      <div class="portada-mesa" aria-hidden="true">
+        <span data-icon="bolon"></span><span data-icon="humita"></span>
+        <span data-icon="tigrillo"></span><span data-icon="llapingacho"></span>
+        <span data-icon="encebollado"></span><span data-icon="cafe_pasado"></span>
+        <span data-icon="verde"></span><span data-icon="maiz"></span>
+        <span data-icon="queso"></span><span data-icon="papa"></span>
+        <span data-icon="chicharron"></span><span data-icon="huevo"></span>
+      </div>
+
+      <div class="portada-centro">
+        <p class="portada-over">una mesa servida entre todos</p>
         <h1>Pambamesa</h1>
-        <p class="cover-sub">de sabores por descubrir</p>
-        <div class="cover-peek" aria-hidden="true">
-          <span data-icon="verde"></span><span data-icon="bolon"></span><span data-icon="tigrillo"></span>
-        </div>
-        <p class="cover-quote">Una gran pambamesa se sirve entre todos: cada quien trae lo suyo a la mesa. Abre tu primera canasta —ingredientes y los utensilios de la abuela— y cocínalos en el fogón para descubrir preparaciones y recetas nuevas. Empiezas en la Costa; completa su colección y el cuaderno se abre hacia otras regiones.</p>
-        <button type="button" id="btn-abrir" class="btn-leather wide">Abrir el cuaderno</button>
+        <p class="portada-sub hand">de sabores por descubrir</p>
+        <p class="portada-quote">En una pambamesa cada quien trae lo suyo y se come de todo un poco. Empieza tu canasta en la Costa, prende el fogón, y descubre qué sale de juntar dos cosas que nunca habías juntado.</p>
+        <button type="button" id="btn-abrir" class="btn-leather wide">Poner la mesa</button>
       </div>
     </div>
   </main>
 
-  <!-- ================= Taller: el fogón ================= -->
+  <!-- ================= La cocina: encimera cenital ================= -->
   <main id="screen-taller" class="screen">
-    <div class="taller-wrap">
-      <div id="fogon" class="fogon">
-        <span id="combo-indicador" class="combo-indicador hidden"></span>
-        <button type="button" id="slot-a" class="carta-slot" aria-label="Primer ingrediente"></button>
-        <span class="fusion-plus" aria-hidden="true">+</span>
-        <button type="button" id="slot-b" class="carta-slot" aria-label="Segundo ingrediente"></button>
+    <div class="cocina">
+      <div class="fogon-zona">
+        <div id="hornilla" class="hornilla">
+          <span id="combo-indicador" class="combo-indicador hidden"></span>
+          <div id="olla" class="olla" role="button" tabindex="0" aria-label="La olla: suelta aquí los ingredientes">
+            <div class="olla-vapor" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div id="olla-dentro" class="olla-dentro"></div>
+          </div>
+        </div>
+        <p id="fogon-hint" class="fogon-hint"></p>
+        <div id="taller-action" class="taller-action"></div>
       </div>
-      <div id="taller-action" class="taller-action"></div>
 
-      <div id="en-preparacion" class="en-preparacion hidden"></div>
-
-      <div class="despensa-accesos">
-        <button type="button" id="acceso-canasta" class="acceso-btn">
-          <span class="acceso-ic" aria-hidden="true">🧺</span><span class="acceso-txt">Canasta</span>
-        </button>
-        <button type="button" id="acceso-utensilios" class="acceso-btn">
-          <span class="acceso-ic" aria-hidden="true">🔪</span><span class="acceso-txt">Utensilios</span>
-        </button>
+      <div class="encimera">
+        <div id="repisa-utensilios" class="repisa repisa-utensilios"></div>
+        <div id="repisa-prep" class="repisa repisa-prep"></div>
+        <div id="repisa-ingredientes" class="repisa repisa-ingredientes"></div>
       </div>
     </div>
   </main>
@@ -81,24 +86,25 @@
         <p class="coleccion-progress"><span class="progress-count"></span> cartas descubiertas</p>
       </header>
       <div id="coleccion-body"></div>
-      <p class="coleccion-footnote">Toca una página en blanco: el cuaderno ya tiene escrita su pista.</p>
+      <p class="coleccion-footnote">Toca una página en blanco: el recetario ya tiene escrita su pista.</p>
     </div>
   </main>
 
-  <!-- ================= Feria: sobres y regalos ================= -->
+  <!-- ================= Feria: canastas, mercado y regalos ================= -->
   <main id="screen-feria" class="screen">
     <div class="feria-wrap">
       <header class="feria-head">
         <h2>La feria</h2>
-        <p class="feria-sub hand">sobres para reponer la despensa</p>
+        <p class="feria-sub hand">canastas para reponer la despensa</p>
       </header>
 
-      <div class="sobre-box">
-        <div class="sobre-visual" aria-hidden="true">
-          <span class="sobre-sello">✦</span>
-        </div>
-        <p class="sobre-stash"><span class="sobre-count">0</span> sobre(s) guardados</p>
-        <button type="button" id="feria-abrir-btn" class="btn-leather wide">Abrir un sobre</button>
+      <!-- la canasta se toca directamente: sin botón intermedio -->
+      <div class="canasta-box">
+        <button type="button" id="feria-abrir-btn" class="canasta" aria-label="Abrir una canasta">
+          <span class="canasta-asa" aria-hidden="true"></span>
+          <span class="canasta-cuerpo" aria-hidden="true"></span>
+          <span class="canasta-cuenta sobre-count">0</span>
+        </button>
         <p id="feria-timer" class="sobre-timer"></p>
       </div>
 
@@ -107,7 +113,7 @@
         <p class="mercado-blurb">Cocinar en el fogón te da <strong>sucres</strong> <span class="icono-sucre">S</span>. Cámbialos aquí si te quedaste sin ingredientes.</p>
         <div id="mercado-semillas" class="mercado-grid"></div>
         <div class="mercado-acciones">
-          <button type="button" id="mercado-sobre-btn" class="btn-ghost">Comprar sobre · 20 <span class="icono-sucre">S</span></button>
+          <button type="button" id="mercado-sobre-btn" class="btn-ghost">Comprar canasta · 20 <span class="icono-sucre">S</span></button>
           <button type="button" id="pregon-btn" class="btn-ghost">📣 Escuchar el pregón</button>
         </div>
         <p id="pregon-timer" class="pregon-timer"></p>
@@ -115,15 +121,15 @@
 
       <section class="regalos-section">
         <h3 class="regalos-title">Compartir con alguien</h3>
-        <p class="regalos-blurb">Elige una carta de tu álbum y regálasela a un vecino — a ti no te cuesta nada, y a él le llega una copia de verdad. Te quedan <span id="regalos-restantes">3</span> regalos hoy.</p>
+        <p class="regalos-blurb">Toca una carta de tu álbum para regalársela a un vecino — a ti no te cuesta nada, y a él le llega una copia de verdad. Te quedan <span id="regalos-restantes">3</span> regalos hoy.</p>
         <div id="regalos-grid" class="regalos-grid"></div>
       </section>
     </div>
   </main>
 
-  <!-- Navegación: la cinta lateral del cuaderno -->
+  <!-- Navegación: los separadores del recetario -->
   <nav id="tabs" class="tabs hidden">
-    <button type="button" class="tab-btn" data-tab="taller"><span class="tab-ic" data-icon="mezclar"></span>Taller</button>
+    <button type="button" class="tab-btn" data-tab="taller"><span class="tab-ic" data-icon="olla"></span>Cocina</button>
     <button type="button" class="tab-btn" data-tab="coleccion"><span class="tab-ic" data-icon="cuaderno"></span>Álbum</button>
     <button type="button" class="tab-btn" data-tab="feria"><span class="tab-ic" data-icon="tab_mercado"></span>Feria</button>
   </nav>
@@ -167,18 +173,9 @@
       <div class="carta back rarity-hallazgo pista-carta" aria-hidden="true">
         <div class="carta-textura"></div><span class="carta-interrogante">?</span>
       </div>
-      <p class="pista-label">el cuaderno murmura…</p>
+      <p class="pista-label">el recetario murmura…</p>
       <p id="pista-texto" class="pista-texto"></p>
       <button type="button" id="pista-close" class="btn-ghost wide">Cerrar</button>
-    </div>
-  </div>
-
-  <!-- Modal: la despensa bajo pedido (canasta / refri / utensilios) -->
-  <div id="modal-despensa" class="modal" role="dialog" aria-modal="true">
-    <div class="despensa-panel">
-      <h3 id="despensa-titulo" class="despensa-titulo"></h3>
-      <div id="despensa-grid" class="despensa-grid"></div>
-      <button type="button" id="despensa-close" class="btn-ghost wide">Cerrar</button>
     </div>
   </div>
 
@@ -186,8 +183,8 @@
   <div id="modal-racha" class="modal" role="dialog" aria-modal="true">
     <div class="detalle-panel racha-panel">
       <span class="racha-ic" aria-hidden="true">🔥</span>
-      <h3 class="racha-titulo">Racha de <span id="racha-dias">1</span> día(s)</h3>
-      <p class="racha-sub">Volviste a tu cuaderno de viaje</p>
+      <h3 class="racha-titulo"><span id="racha-dias">1</span> días seguidos</h3>
+      <p class="racha-sub">Volviste a prender el fogón</p>
       <p id="racha-recompensa" class="racha-recompensa"></p>
       <button type="button" id="racha-reclamar-btn" class="btn-leather wide">Reclamar</button>
     </div>

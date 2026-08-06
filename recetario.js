@@ -1,5 +1,5 @@
 /* ============================================================
-   PAMBAMESA — cuaderno de viaje de sabores
+   PAMBAMESA — la cocina de los sabores por descubrir
    recetario.js — CONTENIDO en datos + adapter a cartas de álbum.
 
    GAME_DATA es JSON puro (heredado de Huecas: ingredientes, recetas
@@ -34,7 +34,7 @@ const GAME_DATA = {
     { "id": "sierra", "nombre": "La Sierra", "tagline": "papa, choclo y páramo", "acento": "#c9a06c",
       "desbloqueo_recetas": ["bolon", "bolon_mixto", "tigrillo"],
       "extra_semillas": [{ "id": "queso", "n": 2 }] },
-    { "id": "oriente", "nombre": "El Oriente", "tagline": "muy pronto en tu cuaderno de viaje…", "acento": "#6f9160",
+    { "id": "oriente", "nombre": "El Oriente", "tagline": "muy pronto en tu recetario…", "acento": "#6f9160",
       "proximamente": true }
   ],
 
