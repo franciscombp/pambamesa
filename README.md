@@ -10,21 +10,41 @@ Jugable en: https://franciscombp.github.io/pambamesa/
 
 ## Cómo funciona
 
-- **Ingredientes**: empiezas con unos pocos básicos (plátano verde,
-  queso, huevo, carne de cerdo) y los utensilios de la estación
-  (cuchillo, olla, pilón, sartén). Todos viven en el **cajón** de
-  casillas bajo el mesón 3D.
-- **Cocina**: arrastra cosas del cajón a la tabla de picar y junta
-  una encima de la otra. Si hay una fórmula para esa pareja,
-  descubres una **preparación** (paso intermedio) o un **platillo**
-  (plato terminado) y se emplata en tu recetario. Si no la hay,
-  queda una **mezcla rara** humeante que debes botar al basurero —
-  sin perder ingredientes.
-- **Recetario**: todos los descubrimientos, por región. Lo que aún no
-  descubres se ve como un plato cubierto — con su pista lista,
-  esperando que la resuelvas combinando.
-- **Despensa**: cocinar da sucres; con ellos repones ingredientes o
-  abres cajas del mercado cuando la cocina se queda corta.
+El mesón tiene **tres niveles**, de atrás hacia adelante:
+
+1. **La estación** — la superficie de trabajo, y se cambia: tabla y
+   cuchillo, olla, sartén, pilón o molino. Cambiarla es media
+   mecánica del juego (el mismo verde pelado da *verde cocido* en la
+   olla y *verde frito* en el sartén). Se cambia con las fichas de
+   arriba o deslizando la estación de lado.
+2. **La repisa** — lo que ya preparaste, esperando su turno.
+3. **La canasta** — solo los ingredientes que trajiste de la
+   despensa. Chica a propósito: cocinar es elegir qué llevar, no
+   bucear en una lista de veinte cosas.
+
+- **Cocinar**: arrastra algo a la estación. Si la estación le hace
+  algo, lo hace sola; si no, junta una segunda cosa encima. Cada
+  descubrimiento se emplata en el recetario.
+- **Los errores no castigan**: una pareja sin receta deja una
+  **mezcla rara** que estorba un puesto de la estación hasta que la
+  botes al basurero — pero no gasta ni un ingrediente. El otro
+  puesto sigue libre mientras tanto.
+- **Un ingrediente en la estación equivocada tampoco se pierde**: se
+  queda ahí esperando, y la pista de abajo te dice qué estación sí
+  le sirve.
+- **Recetario**: 16 platillos y 40 preparaciones por región. Lo que
+  aún no descubres se ve como un plato cubierto, con su pista lista.
+- **Despensa**: todo lo que tienes guardado, más el mercado y las
+  cajas. Desde ahí eliges qué va a la canasta.
+
+### Los modelos
+
+Ingredientes, preparaciones y utensilios son **lowpoly de verdad**,
+armados con primitivas a partir de las tablas `FORMAS` y `PREPS` de
+`escena3d.js` — el plátano es un tubo curvo, el queso una cuña, la
+olla un cilindro con asas. Si sueltas un `models/<id>.glb` (por
+ejemplo hecho con Meshy), ese modelo reemplaza al procedural sin
+tocar código.
 
 ## Arquitectura (heredada de Huecas, adaptada)
 

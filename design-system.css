@@ -456,3 +456,32 @@
 .row    { display: flex; align-items: center; gap: var(--sp-2); }
 .center { text-align: center; }
 .muted  { color: var(--text-muted); }
+
+/* ---------- Repisa: panel que parece un estante de madera ----------
+   Lo usa la despensa para que se sienta una alacena de verdad y no
+   una lista. El borde inferior es el canto del estante. */
+.panel--repisa {
+  --panel-face: var(--madera-200);
+  --panel-face-2: var(--madera-300);
+  border: 3px solid var(--madera-600);
+  border-bottom-width: 9px;
+  border-radius: var(--r-md);
+  box-shadow: var(--gloss), var(--e-2);
+}
+.panel--repisa::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -9px; height: 9px;
+  background: linear-gradient(180deg, var(--madera-500), var(--madera-700));
+  border-radius: 0 0 var(--r-md) var(--r-md);
+}
+
+/* ---------- Página: superficie de papel para el recetario ---------- */
+.pagina {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 27px, rgba(27,95,170,.09) 27px 28px),
+    linear-gradient(180deg, #fffefb, var(--peltre-200));
+  border: 3px solid var(--peltre-100);
+  border-left: 6px solid var(--chile-500);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-2);
+  padding: var(--sp-3);
+}
