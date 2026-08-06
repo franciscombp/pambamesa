@@ -52,6 +52,7 @@ let repisaRoots = [], canastaRoots = [];
 let estacionGroup = null, estacionActual = null, estacionMesh = null;
 let tachoGroup = null;
 let mess = null;
+let animCocina = null;          /* { t0, dur, items } mientras se cocina */
 let datos = { canasta: [], repisa: [], slots: [null, null], estacion: null };
 let pagCanasta = 0, pagRepisa = 0;
 let ui = {};
@@ -125,6 +126,11 @@ const FORMAS = {
   mote:    { tipo: 'monton',  color: '#f2e9d2', n: 9, r: .13 },
   chochos: { tipo: 'monton',  color: '#f7f2e0', n: 9, r: .11 },
   tostado: { tipo: 'monton',  color: '#e0b45c', n: 10, r: .1 },
+  tilapia:    { tipo: 'pez',     color: '#8fa9a2' },
+  palmito:    { tipo: 'raiz',    color: '#f6f2e2' },
+  bijao:      { tipo: 'hoja',    color: '#5f9c52' },
+  guayusa:    { tipo: 'mata',    color: '#6ba84f' },
+  chontaduro: { tipo: 'esfera',  color: '#e2732f', r: .27 },
 };
 
 /* Las preparaciones y platillos: casi siempre "algo servido". */
@@ -170,6 +176,18 @@ const PREPS = {
   mote_con_huevo: { forma: 'cuenco', color: '#f5e3b8' },
   chochos_cebolla:{ forma: 'cuenco', color: '#e9e2c8' },
   tostado_dorado: { forma: 'cuenco', color: '#d59a3c' },
+  tilapia_limpia:    { forma: 'trozos', color: '#dfe6ee' },
+  maito_envuelto:    { forma: 'tamal',  color: '#5f9c52' },
+  palmito_picado:    { forma: 'cuenco', color: '#f6f2e2' },
+  mezcla_ayampaco:   { forma: 'cuenco', color: '#eeeacc' },
+  ayampaco_envuelto: { forma: 'tamal',  color: '#6ba85c' },
+  masa_yuca:         { forma: 'masa',   color: '#f2ece0' },
+  chontaduro_cocido: { forma: 'cuenco', color: '#e08a4a', vapor: true },
+  maito:             { forma: 'tamal',  color: '#4f8a45', vapor: true },
+  ayampaco:          { forma: 'tamal',  color: '#5f9c52', vapor: true },
+  chicha_yuca:       { forma: 'jarron', color: '#f2ece0' },
+  guayusa_hervida:   { forma: 'jarron', color: '#7c6a3c', vapor: true },
+  chontaduro_asado:  { forma: 'bola',   color: '#d9682a', vapor: true },
   bolon:          { forma: 'bola',   color: '#c2a86a', vapor: true },
   bolon_mixto:    { forma: 'bola',   color: '#b08d55', vapor: true },
   tigrillo:       { forma: 'cuenco', color: '#e9c877', vapor: true },
@@ -301,7 +319,22 @@ function formaMonton(f) {
   }
   return g;
 }
-const GEN = { platano: formaPlatano, esfera: formaEsfera, huevo: formaHuevo, cuna: formaCuna,
+function formaMata(f) {
+  const g = new THREE.Group();
+  const tallo = new THREE.Mesh(new THREE.CylinderGeometry(.035, .045, .5, 6), mat('#4f7c3a'));
+  tallo.position.y = .25;
+  g.add(tallo);
+  for (let i = 0; i < 5; i++) {
+    const h = new THREE.Mesh(new THREE.SphereGeometry(.17, 7, 5), mat(f.color));
+    h.scale.set(1.5, .16, .7);
+    const a = (i / 5) * Math.PI * 2;
+    h.position.set(Math.cos(a) * .17, .22 + (i % 2) * .16, Math.sin(a) * .13);
+    h.rotation.y = a; h.rotation.z = .25;
+    g.add(h);
+  }
+  return g;
+}
+const GEN = { platano: formaPlatano, mata: formaMata, esfera: formaEsfera, huevo: formaHuevo, cuna: formaCuna,
   lonja: formaLonja, bulbo: formaBulbo, pez: formaPez, camaron: formaCamaron, raiz: formaRaiz,
   papa: formaPapa, mazorca: formaMazorca, hoja: formaHoja, jarra: formaJarra, monton: formaMonton };
 
@@ -371,6 +404,18 @@ function preparacionMesh(id) {
       if (p.vapor) g.userData.vapor = true;
       break;
     }
+    case 'jarron': {
+      const loza = matT('--peltre-100', '#ffffff');
+      const j = new THREE.Mesh(new THREE.CylinderGeometry(.22, .26, .5, 14), loza);
+      j.position.y = .25;
+      const bebida = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, .05, 14), mat(c));
+      bebida.position.y = .48;
+      const asa = new THREE.Mesh(new THREE.TorusGeometry(.1, .03, 6, 10, Math.PI), loza);
+      asa.position.set(.26, .28, 0); asa.rotation.z = -Math.PI / 2;
+      g.add(j, bebida, asa);
+      if (p.vapor) g.userData.vapor = true;
+      break;
+    }
     case 'engrudo': {
       const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.32, 1), mat(c));
       m.scale.set(1.15, .78, 1.05); m.position.y = .23; g.add(m);
@@ -437,8 +482,13 @@ function construirEstacion(id) {
     punta.position.set(.25, .09, .5); punta.rotation.z = -Math.PI / 2; punta.scale.z = .45;
     const cabo = new THREE.Mesh(new THREE.BoxGeometry(.4, .09, .11), maderaM);
     cabo.position.set(-.93, .1, .5);
-    g.add(tabla, canto, mango, hoja, punta, cabo);
+    /* el cuchillo va en su propio grupo: así puede picar solo */
+    const filo = new THREE.Group();
+    filo.add(hoja, punta, cabo);
+    filo.position.set(0, 0, 0);
+    g.add(tabla, canto, mango, filo);
     g.userData.alto = .06;
+    g.userData.anim = { tipo: 'picar', filo };
   } else if (id === 'olla') {
     const hornilla = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, .1, 20), negro);
     const cuerpo = new THREE.Mesh(new THREE.CylinderGeometry(.86, .78, .7, 22), matT('--chile-500', '#ce2029'));
@@ -456,6 +506,7 @@ function construirEstacion(id) {
     });
     g.userData.alto = .73;
     g.userData.fuego = true;
+    g.userData.anim = { tipo: 'hervir', cuerpo, borde };
   } else if (id === 'sarten') {
     const hornilla = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, .1, 20), negro);
     const base = new THREE.Mesh(new THREE.CylinderGeometry(.96, .8, .26, 22), metalOsc);
@@ -464,9 +515,13 @@ function construirEstacion(id) {
     interior.position.y = .32;
     const mango = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, 1.1, 8), maderaM);
     mango.rotation.z = Math.PI / 2.6; mango.position.set(1.5, .42, 0);
-    g.add(hornilla, base, interior, mango);
+    /* la sartén entera se inclina para saltear */
+    const cazo = new THREE.Group();
+    cazo.add(base, interior, mango);
+    g.add(hornilla, cazo);
     g.userData.alto = .34;
     g.userData.fuego = true;
+    g.userData.anim = { tipo: 'saltear', cazo };
   } else if (id === 'pilon') {
     const piedra = matT('--pizarra-500', '#2f2733');
     const pie = new THREE.Mesh(new THREE.CylinderGeometry(.5, .66, .16, 14), piedra);
@@ -479,6 +534,34 @@ function construirEstacion(id) {
     mazo.position.set(.95, .62, .4); mazo.rotation.z = -.5;
     g.add(pie, cuerpo, hueco, mazo);
     g.userData.alto = .74;
+    g.userData.anim = { tipo: 'majar', mazo, mazoY: mazo.position.y };
+  } else if (id === 'parrilla') {
+    const brasero = new THREE.Mesh(new THREE.BoxGeometry(2.1, .34, 1.35), matT('--pizarra-500', '#2f2733'));
+    brasero.position.y = .17;
+    const patas = [[-.9, -.5], [.9, -.5], [-.9, .5], [.9, .5]];
+    patas.forEach(([x, z]) => {
+      const pata = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .34, 6), metalOsc);
+      pata.position.set(x, .17, z);
+      g.add(pata);
+    });
+    /* las brasas, que laten */
+    const brasas = new THREE.Group();
+    for (let i = 0; i < 10; i++) {
+      const br = new THREE.Mesh(new THREE.IcosahedronGeometry(.11, 0), mat('#e2732f'));
+      br.position.set(-.8 + (i % 5) * .4, .34, i < 5 ? -.25 : .25);
+      brasas.add(br);
+    }
+    const rejilla = new THREE.Group();
+    for (let i = 0; i < 7; i++) {
+      const barra = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, 1.3, 6), metal);
+      barra.rotation.x = Math.PI / 2;
+      barra.position.set(-.9 + i * .3, .5, 0);
+      rejilla.add(barra);
+    }
+    g.add(brasero, brasas, rejilla);
+    g.userData.alto = .53;
+    g.userData.fuego = true;
+    g.userData.anim = { tipo: 'asar', brasas, rejilla };
   } else if (id === 'molino') {
     const base = new THREE.Mesh(new THREE.BoxGeometry(1.15, .16, .95), metalOsc);
     base.position.y = .08;
@@ -495,6 +578,7 @@ function construirEstacion(id) {
     g.add(base, cuerpo, tolva, salida, eje, manivela);
     g.userData.alto = 1.28;
     g.userData.manivela = manivela;
+    g.userData.anim = { tipo: 'moler', manivela, cuerpo };
   }
   return g;
 }
@@ -564,6 +648,26 @@ function sombraBlob(size = .7) {
   m.rotation.x = -Math.PI / 2; m.position.y = .012;
   return m;
 }
+/* migajas o gotitas: el detalle que hace que el gesto se sienta */
+let chispaTex = null;
+function chispas(x, y, z, n, tk) {
+  if (!chispaTex) chispaTex = canvasTexture((ctx, S) => {
+    const g = ctx.createRadialGradient(S / 2, S / 2, 1, S / 2, S / 2, S / 2);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+  }, 32);
+  for (let i = 0; i < n; i++) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: chispaTex, transparent: true, color: new THREE.Color(token(tk, '#ffffff')) }));
+    s.position.set(x + (Math.random() - .5) * .5, y, z + (Math.random() - .5) * .4);
+    s.scale.setScalar(.07 + Math.random() * .06);
+    const a = Math.random() * Math.PI * 2;
+    s.userData.vel = new THREE.Vector3(Math.cos(a) * .7, 1.1 + Math.random(), Math.sin(a) * .5);
+    s.userData.born = clock.elapsedTime;
+    scene.add(s); particles.push(s);
+  }
+}
+
 function estrellitas(x, y, z, n = 16) {
   if (!starTex) starTex = canvasTexture((ctx, S) => {
     ctx.fillStyle = token('--maiz-300', '#ffc93c');
@@ -728,6 +832,15 @@ function montarEstacion(id, dir = 0) {
   colocarSlots();
 }
 function alturaEstacion() { return estacionMesh ? (estacionMesh.userData.alto || 0) : 0; }
+function restaurarEstacion() {
+  const a = estacionMesh && estacionMesh.userData.anim;
+  if (!a) return;
+  if (a.filo) { a.filo.position.y = 0; a.filo.rotation.z = 0; }
+  if (a.cazo) { a.cazo.rotation.z = 0; a.cazo.position.y = 0; }
+  if (a.mazo) { a.mazo.position.y = a.mazoY; a.mazo.rotation.z = -.5; }
+  if (a.cuerpo) a.cuerpo.scale.set(1, 1, 1);
+  if (a.rejilla) a.rejilla.position.y = .5;
+}
 function posSlot(i) { return new THREE.Vector3(SLOT_X[i], COUNTER_Y + alturaEstacion(), EST_Z); }
 
 /* ---------- filas: repisa y canasta ---------- */
@@ -1081,17 +1194,25 @@ const Escena3D = {
     actualizarFlechas();
   },
 
+  /* La estación hace su trabajo a la vista: el cuchillo pica, la olla
+     hierve, la sartén saltea, el pilón maja, el molino muele. Solo
+     cuando termina el gesto aparece la carta. */
   combinar(cb) {
     const items = slotRoots.filter(Boolean);
     slotRoots = [null, null];
-    const centro = new THREE.Vector3(0, COUNTER_Y + alturaEstacion() + .2, EST_Z);
-    items.forEach(it => tween(it, 'position', centro, .26));
+    const alto = COUNTER_Y + alturaEstacion();
+    const centro = new THREE.Vector3(0, alto + .12, EST_Z);
+    items.forEach(it => tween(it, 'position', centro, .22));
+    const dur = 1.05;
+    animCocina = { t0: clock.elapsedTime + .2, dur, items, alto };
     setTimeout(() => {
+      animCocina = null;
+      restaurarEstacion();
       items.forEach(it => scene.remove(it));
       colocarSlots();
-      estrellitas(0, COUNTER_Y + alturaEstacion() + .35, EST_Z);
+      estrellitas(0, alto + .4, EST_Z);
       if (cb) cb();
-    }, 290);
+    }, (dur + .2) * 1000);
   },
 
   /* la pareja no combinó: queda un engrudo en UN puesto — estorba,
@@ -1159,10 +1280,60 @@ function loop() {
       p.scale.setScalar(.24 + k * .34);
     });
   }
-  if (estacionMesh && estacionMesh.userData.manivela) {
+  /* la manivela del molino gira sola en reposo */
+  if (estacionMesh && estacionMesh.userData.manivela && !animCocina) {
     const m = estacionMesh.userData.manivela;
     m.position.y = .53 + Math.sin(t * 2) * .18;
     m.position.z = Math.cos(t * 2) * .18;
+  }
+
+  /* el gesto de cocinar, según la estación */
+  if (animCocina) {
+    const k = THREE.MathUtils.clamp((t - animCocina.t0) / animCocina.dur, 0, 1);
+    const a = estacionMesh && estacionMesh.userData.anim;
+    const golpes = Math.sin(k * Math.PI * 6);          /* tres idas y venidas */
+    const sube = Math.max(0, golpes);
+    if (a && k > 0) {
+      if (a.tipo === 'picar') {
+        a.filo.position.y = sube * .42;
+        a.filo.rotation.z = -sube * .5;
+        if (golpes < -.9) chispas(0, animCocina.alto + .05, EST_Z, 1, '--peltre-100');
+      } else if (a.tipo === 'majar') {
+        a.mazo.position.y = a.mazoY + sube * .5;
+        a.mazo.rotation.z = -.5 + sube * .35;
+      } else if (a.tipo === 'saltear') {
+        a.cazo.rotation.z = Math.sin(k * Math.PI * 4) * .28;
+        a.cazo.position.y = Math.abs(Math.sin(k * Math.PI * 4)) * .12;
+      } else if (a.tipo === 'hervir') {
+        const p = 1 + Math.sin(k * Math.PI * 10) * .025;
+        a.cuerpo.scale.set(p, 1, p);
+        if (Math.sin(k * Math.PI * 10) > .9) chispas(0, animCocina.alto + .1, EST_Z, 1, '--peltre-200');
+      } else if (a.tipo === 'asar') {
+        a.brasas.children.forEach((br, i) => {
+          const f = .5 + .5 * Math.sin(k * Math.PI * 14 + i);
+          br.material = br.material;
+          br.scale.setScalar(.85 + f * .35);
+        });
+        a.rejilla.position.y = .5 + Math.sin(k * Math.PI * 8) * .02;
+        if (Math.sin(k * Math.PI * 12) > .93) chispas(0, animCocina.alto + .05, EST_Z, 1, '--maiz-300');
+      } else if (a.tipo === 'moler') {
+        a.manivela.position.y = .53 + Math.sin(k * Math.PI * 12) * .18;
+        a.manivela.position.z = Math.cos(k * Math.PI * 12) * .18;
+        a.cuerpo.scale.set(1 + Math.sin(k * Math.PI * 24) * .012, 1, 1);
+      }
+    }
+    /* lo que se cocina salta, se sacude o se hunde según el gesto */
+    animCocina.items.forEach((it, i) => {
+      if (!it.parent) return;
+      const tipo = a ? a.tipo : '';
+      if (tipo === 'saltear') it.position.y = animCocina.alto + .12 + Math.abs(Math.sin(k * Math.PI * 4)) * .5;
+      else if (tipo === 'hervir') it.position.y = animCocina.alto + .12 - k * .3;
+      else it.position.y = animCocina.alto + .12 + Math.abs(Math.sin(k * Math.PI * 6)) * .06;
+      it.rotation.y += dt * (2 + i);
+      it.rotation.z = Math.sin(k * Math.PI * 6) * .12;
+      const desvanece = Math.max(0, (k - .7) / .3);
+      it.scale.setScalar(1 - desvanece * .85);
+    });
   }
 
   slotRoots.forEach((it, i) => { if (it && (!dragging || dragging.root !== it)) it.rotation.y = Math.sin(t * 1.3 + i * 2) * .1; });

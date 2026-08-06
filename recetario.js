@@ -28,6 +28,7 @@ const GAME_DATA = {
     "majar":     { "utensilio": "pilon" },
     "freir":     { "utensilio": "sarten" },
     "dorar":     { "utensilio": "sarten" },
+    "asar":      { "utensilio": "parrilla" },
     "moler":     { "utensilio": "molino" },
     "rellenar":  { "utensilio": null },
     "revolver":  { "utensilio": null },
@@ -44,8 +45,9 @@ const GAME_DATA = {
     { "id": "sierra", "nombre": "La Sierra", "tagline": "papa, choclo y páramo", "acento": "#e01b6a",
       "desbloqueo_recetas": ["bolon", "tigrillo", "patacon"],
       "extra_semillas": [{ "id": "queso", "n": 2 }] },
-    { "id": "oriente", "nombre": "El Oriente", "tagline": "muy pronto en tu cocina…", "acento": "#6fae2e",
-      "proximamente": true }
+    { "id": "oriente", "nombre": "El Oriente", "tagline": "río, hoja de bijao y brasa", "acento": "#4c7c1f",
+      "desbloqueo_recetas": ["llapingacho", "humita", "locro"],
+      "extra_semillas": [{ "id": "yuca", "n": 3 }, { "id": "huevo", "n": 2 }] }
   ],
 
   "utensilios": [
@@ -53,7 +55,8 @@ const GAME_DATA = {
     { "id": "olla",     "nombre": "Olla",             "region": "costa",  "verbo": "Cocinar" },
     { "id": "sarten",   "nombre": "Sartén",           "region": "costa",  "verbo": "Freír" },
     { "id": "pilon",    "nombre": "Pilón",            "region": "costa",  "verbo": "Majar" },
-    { "id": "molino",   "nombre": "Molino",           "region": "sierra", "verbo": "Moler" }
+    { "id": "molino",   "nombre": "Molino",           "region": "sierra", "verbo": "Moler" },
+    { "id": "parrilla", "nombre": "Parrilla de leña",  "region": "oriente", "verbo": "Asar" }
   ],
 
   "ingredientes": [
@@ -97,7 +100,18 @@ const GAME_DATA = {
     { "id": "chochos", "nombre": "Chochos",       "region": "sierra", "cantidad_inicial": 3,
       "nota": "Desamargados en agua de vertiente por días." },
     { "id": "tostado", "nombre": "Maíz tostado",  "region": "sierra", "cantidad_inicial": 3,
-      "nota": "Cruje entre los dientes. Nunca falta en la mesa." }
+      "nota": "Cruje entre los dientes. Nunca falta en la mesa." },
+
+    { "id": "tilapia",    "nombre": "Tilapia",         "region": "oriente", "cantidad_inicial": 3,
+      "nota": "Del río, todavía coleando. En el Oriente se come el mismo día." },
+    { "id": "palmito",    "nombre": "Palmito",         "region": "oriente", "cantidad_inicial": 3,
+      "nota": "El corazón tierno de la palma. Blanco y dulzón." },
+    { "id": "bijao",      "nombre": "Hoja de bijao",   "region": "oriente", "cantidad_inicial": 4,
+      "nota": "Ancha y flexible. Envuelve, cocina y sirve de plato." },
+    { "id": "guayusa",    "nombre": "Guayusa",         "region": "oriente", "cantidad_inicial": 3,
+      "nota": "La hoja del amanecer. Se toma antes de que salga el sol." },
+    { "id": "chontaduro", "nombre": "Chontaduro",      "region": "oriente", "cantidad_inicial": 3,
+      "nota": "Fruto de palma, naranja y harinoso. Se come con sal." }
   ],
 
   "recetas": [
@@ -457,6 +471,96 @@ const GAME_DATA = {
           "receta_real": "Sofríe con achiote, ajo y comino hasta que la cebolla se transparente. Guárdalo: sirve para todo." }
       ],
       "tarjeta": { "texto_cultural": "La yuca frita acompaña el ceviche, el encebollado y el pescado. Y el refrito de cebolla con tomate y achiote es el verdadero cimiento de la cocina ecuatoriana: casi ningún plato empieza sin él." }
+    },
+
+    /* ===================== EL ORIENTE ===================== */
+    {
+      "id": "maito_r", "plato": "maito", "nombre": "Maito de tilapia",
+      "region": "oriente", "precio_venta": 2800, "ciudad": "Tena", "acento": "#4c7c1f",
+      "intro": "El pescado se envuelve en la hoja y se asa sobre la brasa. La hoja es olla y también plato.",
+      "pasos": [
+        { "orden": 1, "accion": "limpiar", "ingrediente_objetivo": "tilapia",
+          "acertijo": "Del río a la tabla, y de la tabla sin espinas.",
+          "resultado": "tilapia_limpia",
+          "receta_real": "Limpia la tilapia, ábrela y sálala por dentro y por fuera." },
+        { "orden": 2, "accion": "envolver", "ingrediente_objetivo": "tilapia_limpia", "ingrediente_secundario": "bijao",
+          "acertijo": "La hoja ancha se cierra sobre el río.",
+          "resultado": "maito_envuelto",
+          "receta_real": "Envuélvela en hojas de bijao con palmito y cebolla, y amárrala bien." },
+        { "orden": 3, "accion": "asar", "ingrediente_objetivo": "maito_envuelto",
+          "acertijo": "La brasa cocina sin tocar.",
+          "resultado": "maito",
+          "receta_real": "Ásalo sobre la parrilla de leña unos 20 minutos, volteándolo. Se abre en la mesa y la hoja hace de plato." }
+      ],
+      "tarjeta": { "texto_cultural": "El maito es la forma amazónica de cocinar: envolver en hoja de bijao y poner sobre la brasa. La hoja guarda el vapor, perfuma y después sirve de plato. Se come con yuca y ají." }
+    },
+    {
+      "id": "ayampaco_r", "plato": "ayampaco", "nombre": "Ayampaco de palmito",
+      "region": "oriente", "precio_venta": 2400, "ciudad": "Macas", "acento": "#6fae2e",
+      "intro": "Lo mismo que el maito, pero de la huerta: palmito y huevo, envueltos y a la brasa.",
+      "pasos": [
+        { "orden": 1, "accion": "picar", "ingrediente_objetivo": "palmito",
+          "acertijo": "El corazón de la palma se abre en tiras.",
+          "resultado": "palmito_picado",
+          "receta_real": "Corta el palmito en tiras finas y lávalo bien." },
+        { "orden": 2, "accion": "mezclar", "ingrediente_objetivo": "palmito_picado", "ingrediente_secundario": "huevo",
+          "acertijo": "Lo blanco se liga con el sol batido.",
+          "resultado": "mezcla_ayampaco",
+          "receta_real": "Mezcla el palmito con huevo batido, cebolla, sal y hierbita del monte." },
+        { "orden": 3, "accion": "envolver", "ingrediente_objetivo": "mezcla_ayampaco", "ingrediente_secundario": "bijao",
+          "acertijo": "Otra vez la hoja hace de olla.",
+          "resultado": "ayampaco_envuelto",
+          "receta_real": "Reparte la mezcla en hojas de bijao y ciérralas como paquetitos." },
+        { "orden": 4, "accion": "asar", "ingrediente_objetivo": "ayampaco_envuelto",
+          "acertijo": "El humo entra donde el fuego no llega.",
+          "resultado": "ayampaco",
+          "receta_real": "Ásalos sobre la brasa 15 minutos por lado, hasta que la hoja se tueste y huela." }
+      ],
+      "tarjeta": { "texto_cultural": "El ayampaco es shuar y achuar: cualquier cosa —pescado, pollo, palmito, hongos— envuelta en hoja de bijao y asada. En Macas se vende en los mercados, todavía humeando dentro de su hoja." }
+    },
+    {
+      "id": "chicha_r", "plato": "chicha_yuca", "nombre": "Chicha de yuca",
+      "region": "oriente", "precio_venta": 1200, "ciudad": "Puyo", "acento": "#f5a623",
+      "intro": "La bebida de la casa: yuca cocida, majada y dejada reposar.",
+      "pasos": [
+        { "orden": 1, "accion": "majar", "ingrediente_objetivo": "yuca_cocida",
+          "acertijo": "Lo cocido se vuelve masa blanca.",
+          "resultado": "masa_yuca",
+          "receta_real": "Maja la yuca cocida hasta que quede una masa suave y sin grumos." },
+        { "orden": 2, "accion": "mezclar", "ingrediente_objetivo": "masa_yuca", "ingrediente_secundario": "guayusa",
+          "acertijo": "El agua de la hoja despierta la masa.",
+          "resultado": "chicha_yuca",
+          "receta_real": "Disuelve la masa en agua de guayusa tibia y déjala reposar tapada. Se sirve fresca, en pilche." }
+      ],
+      "tarjeta": { "texto_cultural": "La chicha de yuca acompaña todo en la Amazonía y se ofrece siempre al que llega: rechazarla es un desaire. Cada familia la prepara a su manera y la sirve en pilche, media calabaza seca." }
+    },
+    {
+      "id": "guayusa_r", "plato": "guayusa_hervida", "nombre": "Guayusa del amanecer",
+      "region": "oriente", "precio_venta": 700, "ciudad": "Archidona", "acento": "#4c7c1f",
+      "intro": "Se toma a las cuatro de la mañana, cuando todavía está oscuro y la casa se cuenta los sueños.",
+      "pasos": [
+        { "orden": 1, "accion": "cocer", "ingrediente_objetivo": "guayusa",
+          "acertijo": "La hoja tiñe el agua y despierta la casa.",
+          "resultado": "guayusa_hervida",
+          "receta_real": "Hierve las hojas de guayusa unos minutos hasta que el agua tome color de té oscuro. Se toma sin azúcar, en ronda." }
+      ],
+      "tarjeta": { "texto_cultural": "La guayusa upina es un ritual kichwa amazónico: la familia se levanta de madrugada, hierve las hojas y se cuenta los sueños alrededor del fogón mientras espera el amanecer." }
+    },
+    {
+      "id": "chontaduro_r", "plato": "chontaduro_asado", "nombre": "Chontaduro asado",
+      "region": "oriente", "precio_venta": 900, "ciudad": "Lago Agrio", "acento": "#e2732f",
+      "intro": "Primero al agua para ablandarlo, después a la brasa para que sepa a humo.",
+      "pasos": [
+        { "orden": 1, "accion": "cocer", "ingrediente_objetivo": "chontaduro",
+          "acertijo": "Duro como piedra hasta que el agua lo convence.",
+          "resultado": "chontaduro_cocido",
+          "receta_real": "Cocina los chontaduros en agua con sal cerca de una hora, hasta que se puedan pelar." },
+        { "orden": 2, "accion": "asar", "ingrediente_objetivo": "chontaduro_cocido",
+          "acertijo": "La brasa le pone el perfume.",
+          "resultado": "chontaduro_asado",
+          "receta_real": "Pásalos por la brasa hasta que doren. Se comen calientes, con sal gruesa o con miel." }
+      ],
+      "tarjeta": { "texto_cultural": "El chontaduro es el fruto de la palma de chonta, harinoso y anaranjado. Se vende cocido en fundita en cualquier esquina del Oriente, con sal encima, y quien lo prueba una vez lo busca siempre." }
     }
   ],
 
@@ -500,7 +604,14 @@ const GAME_DATA = {
     { "id": "humita_envuelta",    "nombre": "Humita envuelta",     "tipo": "prep" },
     { "id": "mote_con_huevo",     "nombre": "Mote con huevo",      "tipo": "prep" },
     { "id": "chochos_cebolla",    "nombre": "Chochos con cebolla", "tipo": "prep" },
-    { "id": "tostado_dorado",     "nombre": "Tostado",             "tipo": "prep" }
+    { "id": "tostado_dorado",     "nombre": "Tostado",             "tipo": "prep" },
+    { "id": "tilapia_limpia",     "nombre": "Tilapia limpia",      "tipo": "prep" },
+    { "id": "maito_envuelto",     "nombre": "Maito envuelto",      "tipo": "prep" },
+    { "id": "palmito_picado",     "nombre": "Palmito picado",      "tipo": "prep" },
+    { "id": "mezcla_ayampaco",    "nombre": "Mezcla de ayampaco",  "tipo": "prep" },
+    { "id": "ayampaco_envuelto",  "nombre": "Ayampaco envuelto",   "tipo": "prep" },
+    { "id": "masa_yuca",          "nombre": "Masa de yuca",        "tipo": "prep" },
+    { "id": "chontaduro_cocido",  "nombre": "Chontaduro cocido",   "tipo": "prep" }
   ]
 };
 

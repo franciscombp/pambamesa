@@ -672,6 +672,102 @@ ICONS.papas_con_queso = _svg(`${steam(32, 13)}
   <path d="M20 34 q12 -7 23 -1 q-5 6 -12 5 q-8 -1 -11 -4z" fill="#fdf6e0" stroke="${INKL}" stroke-width="1.3"/>
   ${face(31, 40, .8)}`);
 
+
+/* ============ El Oriente ============ */
+
+ICONS.tilapia = _svg(`
+  <ellipse cx="33" cy="52" rx="15" ry="3" fill="#3a2c18" opacity=".16"/>
+  <ellipse cx="34" cy="35" rx="18" ry="11" fill="#8fa9a2"/>
+  <ellipse cx="34" cy="35" rx="18" ry="11" fill="url(#ico-depth)"/>
+  <path d="M16 35 L6 27 Q4 35 6 43 Z" fill="#7d968f"/>
+  <path d="M32 24 Q36 19 42 24" fill="#7d968f"/>
+  <circle cx="43" cy="32" r="2.1" fill="${INK}"/>
+  <circle cx="43.8" cy="31.3" r=".7" fill="#fff"/>
+  <path d="M24 33 q4 3 0 6 M31 32 q4 4 0 7" stroke="#6f8880" stroke-width="1.5" fill="none" stroke-linecap="round"/>`);
+
+ICONS.palmito = _svg(`
+  <ellipse cx="33" cy="52" rx="12" ry="3" fill="#3a2c18" opacity=".16"/>
+  <path d="M26 50 q-2 -26 6 -34 q8 8 6 34z" fill="#f6f2e2"/>
+  <path d="M26 50 q-2 -26 6 -34 q8 8 6 34z" fill="url(#ico-depth)"/>
+  <path d="M30 44 v-24 M34 44 v-24" stroke="#e4dcc4" stroke-width="1.4" stroke-linecap="round"/>
+  ${face(32, 38, .82)}`);
+
+ICONS.bijao = _svg(`
+  <ellipse cx="33" cy="52" rx="14" ry="3" fill="#3a2c18" opacity=".16"/>
+  <path d="M32 50 q-18 -8 -16 -24 q16 -4 16 10 q0 -14 16 -10 q2 16 -16 24z" fill="#5f9c52"/>
+  <path d="M32 50 q-18 -8 -16 -24 q16 -4 16 10 q0 -14 16 -10 q2 16 -16 24z" fill="url(#ico-depth)"/>
+  <path d="M32 50 V22" stroke="#3f7436" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M32 30 l-9 -4 M32 36 l-9 -3 M32 30 l9 -4 M32 36 l9 -3" stroke="#4c8843" stroke-width="1.3" stroke-linecap="round"/>`);
+
+ICONS.guayusa = _svg(`
+  <ellipse cx="33" cy="52" rx="13" ry="3" fill="#3a2c18" opacity=".16"/>
+  <path d="M32 50 V26" stroke="#4f7c3a" stroke-width="2.4" stroke-linecap="round"/>
+  <ellipse cx="23" cy="30" rx="9" ry="5" transform="rotate(-28 23 30)" fill="#6ba84f"/>
+  <ellipse cx="41" cy="28" rx="9" ry="5" transform="rotate(24 41 28)" fill="#7cb85e"/>
+  <ellipse cx="25" cy="40" rx="8" ry="4.4" transform="rotate(-18 25 40)" fill="#5f9c46"/>
+  <ellipse cx="39" cy="39" rx="8" ry="4.4" transform="rotate(16 39 39)" fill="#6ba84f"/>
+  ${face(32, 27, .68)}`);
+
+ICONS.chontaduro = _svg(ball('#e2732f', `
+  <path d="M32 16 q-3 -3 -6 -2 q2 3 6 3 q4 0 6 -3 q-3 -1 -6 2z" fill="#7c9c4a"/>`));
+
+ICONS.parrilla = _svg(`
+  <ellipse cx="33" cy="52" rx="19" ry="3.4" fill="#3a2c18" opacity=".18"/>
+  <path d="M12 40 h40 v4 q0 6 -8 6 H20 q-8 0 -8 -6z" fill="#5a5158"/>
+  <g stroke="#8a8088" stroke-width="2.6" stroke-linecap="round">
+    <path d="M14 36 h36"/><path d="M14 31 h36"/><path d="M14 26 h36"/>
+  </g>
+  <g stroke="#e2732f" stroke-width="2" stroke-linecap="round" opacity=".85">
+    <path d="M22 44 q-2 -4 1 -6"/><path d="M32 45 q-2 -4 1 -6"/><path d="M42 44 q-2 -4 1 -6"/>
+  </g>`);
+
+/* preparaciones del Oriente */
+ICONS.tilapia_limpia   = _svg(bowl('#dfe6ee', { extra: `<path d="M24 28 q8 -3 15 1" stroke="#c2ccd6" stroke-width="2.4" fill="none" stroke-linecap="round"/>` }));
+ICONS.maito_envuelto   = _svg(`
+  <ellipse cx="33" cy="52" rx="16" ry="3" fill="#3a2c18" opacity=".16"/>
+  <path d="M14 34 q18 -10 36 0 q-4 14 -18 14 q-14 0 -18 -14z" fill="#5f9c52"/>
+  <path d="M14 34 q18 -10 36 0 q-4 14 -18 14 q-14 0 -18 -14z" fill="url(#ico-depth)"/>
+  <path d="M22 32 q10 16 20 0" stroke="#3f7436" stroke-width="1.8" fill="none"/>
+  <path d="M20 30 h24" stroke="#e0b45c" stroke-width="2.4" stroke-linecap="round"/>
+  ${face(32, 40, .8)}`);
+ICONS.palmito_picado   = _svg(bowl('#f6f2e2', { extra: `<rect x="25" y="27" width="4" height="4" rx="1" fill="#fdfbf2"/><rect x="33" y="28" width="4" height="4" rx="1" fill="#fdfbf2"/>` }));
+ICONS.mezcla_ayampaco  = _svg(bowl('#eeeacc', { extra: `<ellipse cx="32" cy="28" rx="11" ry="4" fill="#f7f2d8"/><circle cx="36" cy="30" r="2.2" fill="#f2b84e"/>` }));
+ICONS.ayampaco_envuelto = _svg(`
+  <ellipse cx="33" cy="52" rx="15" ry="3" fill="#3a2c18" opacity=".16"/>
+  <path d="M16 32 q16 -12 32 0 q-2 16 -16 16 q-14 0 -16 -16z" fill="#6ba85c"/>
+  <path d="M16 32 q16 -12 32 0 q-2 16 -16 16 q-14 0 -16 -16z" fill="url(#ico-depth)"/>
+  <path d="M32 20 v28" stroke="#4c8843" stroke-width="1.8"/>
+  ${face(32, 38, .78)}`);
+ICONS.masa_yuca        = _svg(ball('#f2ece0'));
+ICONS.chontaduro_cocido = _svg(bowl('#e08a4a', { steamOn: true, extra: `<circle cx="27" cy="28" r="3.4" fill="#ea9a5c"/><circle cx="36" cy="29" r="3.4" fill="#ea9a5c"/>` }));
+
+/* platillos del Oriente */
+ICONS.maito = _svg(`${steam(32, 12)}
+  <ellipse cx="33" cy="52" rx="17" ry="3.2" fill="#3a2c18" opacity=".16"/>
+  <path d="M12 36 q20 -12 40 0 q-5 14 -20 14 q-15 0 -20 -14z" fill="#5f9c52"/>
+  <path d="M18 34 q14 -6 28 0 q-4 -10 -14 -10 q-10 0 -14 10z" fill="#8fa9a2"/>
+  <path d="M20 33 q12 -5 24 0" stroke="#7d968f" stroke-width="1.6" fill="none"/>
+  ${face(32, 41, .82)}`);
+ICONS.ayampaco = _svg(`${steam(32, 12)}
+  <ellipse cx="33" cy="52" rx="16" ry="3.2" fill="#3a2c18" opacity=".16"/>
+  <path d="M14 34 q18 -12 36 0 q-3 15 -18 15 q-15 0 -18 -15z" fill="#6ba85c"/>
+  <path d="M22 32 q10 -6 20 0 q-3 -8 -10 -8 q-7 0 -10 8z" fill="#f2dfae"/>
+  ${face(32, 40, .82)}`);
+ICONS.chicha_yuca = _svg(`${steam(32, 13)}
+  <ellipse cx="33" cy="53" rx="13" ry="3" fill="#3a2c18" opacity=".16"/>
+  <path d="M21 24 h22 l-3 24 q-1 4 -8 4 q-7 0 -8 -4z" fill="#f2ece0"/>
+  <path d="M21 24 h22 l-3 24 q-1 4 -8 4 q-7 0 -8 -4z" fill="url(#ico-depth)"/>
+  <ellipse cx="32" cy="25" rx="11" ry="3.4" fill="#fdfbf4"/>
+  ${face(32, 38, .82)}`);
+ICONS.chontaduro_asado = _svg(`${steam(32, 12)}${ball('#d9682a', `
+  <path d="M22 32 q10 5 20 0" stroke="#a84f1c" stroke-width="1.8" fill="none" stroke-linecap="round"/>`)}`);
+ICONS.guayusa_hervida = _svg(`${steam(32, 11)}
+  <ellipse cx="33" cy="53" rx="13" ry="3" fill="#3a2c18" opacity=".16"/>
+  <path d="M18 30 h26 l-3 18 q-1 4 -10 4 q-9 0 -10 -4z" fill="#f7f2e6"/>
+  <ellipse cx="31" cy="31" rx="12.5" ry="4" fill="#7c6a3c"/>
+  <path d="M44 34 q7 1 6 6 q-1 5 -7 4" fill="none" stroke="#f7f2e6" stroke-width="2.6"/>
+  ${face(31, 40, .8)}`);
+
 /* iconos de pestañas */
 ICONS.tab_libros = _svg(`
   <rect x="12" y="14" width="12" height="38" rx="3" fill="#9dbd8a"/>

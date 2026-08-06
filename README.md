@@ -32,8 +32,14 @@ El mesón tiene **tres niveles**, de atrás hacia adelante:
 - **Un ingrediente en la estación equivocada tampoco se pierde**: se
   queda ahí esperando, y la pista de abajo te dice qué estación sí
   le sirve.
-- **Recetario**: 16 platillos y 40 preparaciones por región. Lo que
-  aún no descubres se ve como un plato cubierto, con su pista lista.
+- **Recetario**: 21 platillos y 47 preparaciones en tres regiones
+  (Costa, Sierra y Oriente). Lo que aún no descubres se ve como un
+  plato cubierto, con su pista lista.
+- **Cada región trae su estación**: la Sierra el molino, el Oriente
+  la parrilla de leña.
+- **La estación hace su trabajo a la vista**: el cuchillo pica, la
+  olla hierve, la sartén saltea, el pilón maja, el molino muele y la
+  brasa late. La carta aparece cuando termina el gesto.
 - **Despensa**: todo lo que tienes guardado, más el mercado y las
   cajas. Desde ahí eliges qué va a la canasta.
 
