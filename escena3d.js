@@ -40,7 +40,7 @@ const CAJON = {                             /* el cajón abierto de abajo (corri
   floorY: 0.24, zMin: 1.18,
 };
 const PER_PAGE = 6;
-const TACHO = { x: 1.78, z: 2.0, r: 0.72 };   /* el basurero */
+const TACHO = { x: 1.6, z: 2.1, r: 0.7 };     /* el basurero */
 const DRAG_Y = 1.5;                            /* altura "en la mano" */
 
 let renderer, scene, camera, clock, raf = null, active = false;
@@ -264,13 +264,45 @@ function estrellitas(x, y, z, cuantas = 14) {
 /* ---------- construcción de la cocina ---------- */
 
 function construirCocina() {
-  /* pared de azulejos */
+  /* pared de azulejos (alta: en pantallas alargadas se ve mucha pared) */
   const tiles = texturaAzulejos();
   tiles.wrapS = tiles.wrapT = THREE.RepeatWrapping;
-  tiles.repeat.set(4, 2);
-  const pared = new THREE.Mesh(new THREE.PlaneGeometry(9.5, 4.6), new THREE.MeshLambertMaterial({ map: tiles }));
-  pared.position.set(0, 2.7, -1.35);
+  tiles.repeat.set(4, 3.4);
+  const pared = new THREE.Mesh(new THREE.PlaneGeometry(9.5, 8), new THREE.MeshLambertMaterial({ map: tiles }));
+  pared.position.set(0, 3.2, -1.35);
   scene.add(pared);
+
+  /* piso ajedrezado cálido, para cuando la cámara ve bajo el mesón */
+  const pisoTex = canvasTexture((ctx, S) => {
+    const T = S / 2;
+    for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
+      ctx.fillStyle = (x + y) % 2 ? '#e9a08b' : '#f7d9b8';
+      ctx.fillRect(x * T, y * T, T, T);
+    }
+  }, 128);
+  pisoTex.wrapS = pisoTex.wrapT = THREE.RepeatWrapping;
+  pisoTex.repeat.set(7, 5);
+  const pisoCocina = new THREE.Mesh(new THREE.PlaneGeometry(14, 10), new THREE.MeshLambertMaterial({ map: pisoTex }));
+  pisoCocina.rotation.x = -Math.PI / 2;
+  pisoCocina.position.set(0, -0.02, 2.5);
+  scene.add(pisoCocina);
+
+  /* frente del gabinete bajo la mesada: la boca oscura de donde salió
+     el cajón abierto, y las gavetas vecinas con sus tiradores */
+  const gabinete = new THREE.Mesh(new THREE.BoxGeometry(7.8, 1.1, 0.08), mat('#c9556f'));
+  gabinete.position.set(0, 0.28, 1.06);
+  scene.add(gabinete);
+  const boca = new THREE.Mesh(new THREE.BoxGeometry(3.34, 0.8, 0.06), mat('#6e1f33'));
+  boca.position.set(CAJON.centroX, 0.28, 1.11);
+  scene.add(boca);
+  [[-2.96, 1.6], [2.6, 2.3]].forEach(([x, w]) => {
+    const cara = new THREE.Mesh(new THREE.BoxGeometry(w, 0.8, 0.06), mat('#d94f72'));
+    cara.position.set(x, 0.28, 1.11);
+    const tir = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.42, 4, 10), mat('#f2b31f'));
+    tir.rotation.z = Math.PI / 2;
+    tir.position.set(x, 0.5, 1.17);
+    scene.add(cara, tir);
+  });
 
   /* repisa con frascos */
   const repisa = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.09, 0.42), mat('#b5793f'));
@@ -674,12 +706,23 @@ const Escena3D = {
     };
     flechas = { prev: mkFlecha('prev', '‹', -1), next: mkFlecha('next', '›', 1) };
 
+    /* el FOV horizontal se mantiene constante: una pantalla más alta
+       muestra MÁS cocina (pared y piso), nunca menos ancho de mesada */
+    const HFOV = 46;
     const resize = () => {
       const w = container.clientWidth, h = container.clientHeight;
       if (!w || !h) return;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
+      camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(HFOV / 2)) / camera.aspect));
       camera.updateProjectionMatrix();
+      /* las flechas del cajón siguen a la fila de casillas */
+      const aLocal = (x, y, z) => {
+        const v = new THREE.Vector3(x, y, z).project(camera);
+        return { x: (v.x + 1) / 2 * w, y: (1 - v.y) / 2 * h };
+      };
+      const filaY = aLocal(0, CAJON.floorY + 0.2, 1.95).y;
+      [flechas.prev, flechas.next].forEach(f => { f.style.top = filaY + 'px'; f.style.bottom = 'auto'; f.style.transform = 'translateY(-50%)'; });
     };
     new ResizeObserver(resize).observe(container);
     resize();
