@@ -344,7 +344,7 @@ function renderTallerAction() {
     combinar.addEventListener('click', combinarMesa);
     zone.appendChild(combinar);
     const limpiar = document.createElement('button');
-    limpiar.type = 'button'; limpiar.className = 'btn btn--cream btn--sm';
+    limpiar.type = 'button'; limpiar.className = 'btn btn--peltre btn--sm';
     limpiar.textContent = 'limpiar la estación';
     limpiar.addEventListener('click', clearSlots);
     zone.appendChild(limpiar);
@@ -355,13 +355,13 @@ function renderTallerAction() {
     if (rapidas.length) {
       rapidas.forEach(accion => {
         const btn = document.createElement('button');
-        btn.type = 'button'; btn.className = 'btn btn--leaf combinar-btn';
+        btn.type = 'button'; btn.className = 'btn btn--nopal combinar-btn';
         btn.textContent = `${VERBO_LABEL[accion.rec.verbo] || accion.rec.verbo} ✦`;
         btn.addEventListener('click', () => ejecutarAccionRapida(accion));
         zone.appendChild(btn);
       });
       const limpiar = document.createElement('button');
-      limpiar.type = 'button'; limpiar.className = 'btn btn--cream btn--sm';
+      limpiar.type = 'button'; limpiar.className = 'btn btn--peltre btn--sm';
       limpiar.textContent = 'quitar';
       limpiar.addEventListener('click', clearSlots);
       zone.appendChild(limpiar);

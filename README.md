@@ -40,9 +40,19 @@ Jugable en: https://franciscombp.github.io/pambamesa/
 
 ## El sistema de diseño
 
-Todas las pantallas comparten un mismo mundo — pared de azulejo celeste
-arriba, filo de madera, muro crema abajo — para que la cocina 3D no se
-sienta pegada aparte del resto de la interfaz.
+La paleta es de comida popular latinoamericana — puesto de mercado y
+taquería de barrio: azulejo de **talavera**, **rosa mexicano**, amarillo
+**cempasúchil**, verde **nopal**, rojo **guajillo**, madera pintada y
+blanco de **peltre**. Nada de cremas de cuaderno.
+
+Todas las pantallas comparten un mismo mundo — guirnalda de papel
+picado colgada arriba, zócalo de talavera, repisa de madera y pared de
+cal con textura de mantel de hule — para que la cocina 3D no se sienta
+pegada aparte del resto de la interfaz.
+
+La escena 3D **no** tiene colores propios: `escena3d.js` lee los tokens
+con `getComputedStyle` sobre `:root`, así que cambiar la paleta del
+sistema repinta también el mesón, el cajón y el piso.
 
 Para agregar o cambiar algo visual:
 

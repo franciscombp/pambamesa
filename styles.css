@@ -32,22 +32,32 @@ svg { display: block; width: 100%; height: 100%; }
   margin: 0 auto;
   height: 100vh; height: 100dvh;
   overflow: hidden;
-  /* pared: azulejo arriba, muro crema abajo — el mismo mundo en
-     todas las pantallas, para que la cocina 3D no se sienta aparte */
+  /* el puesto: zócalo de talavera arriba, repisa de madera y pared
+     de cal blanca abajo — el mismo mundo en todas las pantallas */
   background:
+    /* cuadros de mantel de hule sobre la cal (el zócalo de arriba
+       los tapa con el azulejo opaco del ::before) */
+    var(--patron-mantel),
     linear-gradient(180deg,
-      var(--tile-300) 0, var(--tile-300) 132px,
-      var(--tile-400) 132px, var(--tile-400) 140px,
-      var(--wood-300) 140px, var(--wood-400) 148px,
-      var(--cream-300) 148px, var(--cream-200) 100%);
+      transparent 0, transparent 128px,
+      var(--madera-500) 128px, var(--madera-300) 133px, var(--madera-600) 140px,
+      var(--peltre-200) 140px, var(--peltre-200) 100%);
   box-shadow: var(--e-4);
 }
-/* juntas del azulejo */
+/* el azulejo pintado del zócalo */
 #stage::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 132px; z-index: 0;
-  background:
-    repeating-linear-gradient(90deg, rgba(255,255,255,.4) 0 2px, transparent 2px 46px),
-    repeating-linear-gradient(180deg, rgba(255,255,255,.4) 0 2px, transparent 2px 46px);
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 128px; z-index: 0;
+  background: var(--patron-talavera);
+  background-size: var(--patron-talavera-size);
+  box-shadow: inset 0 -6px 12px -6px rgba(43,33,41,.35);
+  pointer-events: none;
+}
+/* la guirnalda de papel picado, colgada del borde superior */
+#stage::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 30px; z-index: 3;
+  background: var(--papel-picado) repeat-x top left;
+  background-size: 112px 30px;
+  filter: drop-shadow(0 3px 3px rgba(20,12,18,.35));
   pointer-events: none;
 }
 
@@ -88,22 +98,22 @@ svg { display: block; width: 100%; height: 100%; }
 @keyframes sol-entra { from { opacity: 0; } to { opacity: 1; } }
 
 .cover-star {
-  font-size: var(--t-2xl); color: var(--gold-400);
-  text-shadow: 0 2px 0 var(--gold-600), 0 0 20px rgba(255,210,77,.85);
+  font-size: var(--t-2xl); color: var(--maiz-400);
+  text-shadow: 0 2px 0 var(--maiz-600), 0 0 20px rgba(255,210,77,.85);
   animation: estrella-late 5s ease-in-out infinite;
 }
 @keyframes estrella-late { 50% { transform: rotate(16deg) scale(1.14); } }
 
 .cover-over {
   font-family: var(--font-display); font-size: var(--t-xs); font-weight: 700;
-  letter-spacing: .3em; text-transform: uppercase; color: var(--tile-600);
+  letter-spacing: .3em; text-transform: uppercase; color: var(--talavera-500);
 }
 .cover-title {
   font-family: var(--font-display); font-size: var(--t-3xl); font-weight: 800; line-height: 1;
   color: #fff;
-  text-shadow: 0 3px 0 var(--berry-600), 0 6px 0 rgba(74,44,42,.22), 0 10px 22px rgba(74,44,42,.35);
+  text-shadow: 0 3px 0 var(--rosa-600), 0 6px 0 rgba(43,33,41,.22), 0 10px 22px rgba(43,33,41,.35);
 }
-.cover-sub { font-family: var(--font-display); font-size: var(--t-xl); font-weight: 700; color: var(--berry-600); }
+.cover-sub { font-family: var(--font-display); font-size: var(--t-xl); font-weight: 700; color: var(--rosa-600); }
 
 .cover-peek { display: flex; justify-content: center; gap: var(--sp-4); margin: var(--sp-1) 0 var(--sp-2); }
 .cover-peek .plate {
@@ -131,7 +141,7 @@ svg { display: block; width: 100%; height: 100%; }
   position: relative; flex: 1; min-height: 280px;
   border-radius: var(--r-xl); overflow: hidden;
   border: var(--ring);
-  background: linear-gradient(180deg, var(--tile-300), var(--cream-300));
+  background: linear-gradient(180deg, var(--talavera-200), var(--peltre-300));
   box-shadow: var(--e-3);
 }
 .cocina3d canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
@@ -142,9 +152,9 @@ svg { display: block; width: 100%; height: 100%; }
   width: 2.3rem; height: 2.3rem;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-display); font-size: var(--t-xl); font-weight: 800; line-height: 1;
-  color: var(--berry-700);
-  background: linear-gradient(180deg, var(--cream-100), var(--cream-200));
-  border: 2.5px solid var(--berry-600);
+  color: var(--rosa-700);
+  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
+  border: 2.5px solid var(--rosa-600);
   border-bottom-width: 4px;
   border-radius: 50%;
   box-shadow: var(--e-2);
@@ -162,7 +172,7 @@ svg { display: block; width: 100%; height: 100%; }
 }
 .mesa-etiqueta { animation: etiqueta-pop var(--dur) var(--ease-pop) both; }
 @keyframes etiqueta-pop { from { opacity: 0; transform: translateY(-6px) scale(.9); } }
-.mesa-etiqueta.mess { background: linear-gradient(180deg, var(--wood-500), var(--wood-700)); color: var(--text-invert); border-color: var(--gold-400); }
+.mesa-etiqueta.mess { background: linear-gradient(180deg, var(--madera-500), var(--madera-700)); color: var(--text-invert); border-color: var(--maiz-400); }
 
 /* la pista flota sobre la escena: no gasta alto de pantalla */
 .taller-action {
@@ -174,7 +184,7 @@ svg { display: block; width: 100%; height: 100%; }
 .taller-hint {
   font-family: var(--font-display); font-size: var(--t-sm); font-weight: 600; text-align: center;
   color: var(--text-invert);
-  background: rgba(74,44,42,.75);
+  background: rgba(43,33,41,.75);
   border: 2px solid rgba(255,255,255,.35);
   border-radius: var(--r-pill); padding: .2rem .9rem;
   box-shadow: var(--e-1);
@@ -185,7 +195,7 @@ svg { display: block; width: 100%; height: 100%; }
   position: relative;
   display: flex; align-items: center; justify-content: center; gap: var(--sp-3);
   padding: var(--sp-6) var(--sp-3);
-  background: linear-gradient(180deg, var(--wood-400), var(--wood-500));
+  background: linear-gradient(180deg, var(--madera-400), var(--madera-500));
   border: var(--ring); border-radius: var(--r-xl);
   box-shadow: var(--e-3);
 }
@@ -210,9 +220,9 @@ svg { display: block; width: 100%; height: 100%; }
 .ing-icono { width: 4.8rem; }
 .ing-sombra {
   display: block; width: 58%; height: 10px; margin-top: -.3rem; border-radius: 50%;
-  background: radial-gradient(50% 100% at 50% 50%, rgba(74,44,42,.45), transparent 75%);
+  background: radial-gradient(50% 100% at 50% 50%, rgba(43,33,41,.45), transparent 75%);
 }
-.ing-nombre { font-family: var(--font-display); font-weight: 700; font-size: var(--t-sm); color: var(--text-invert); background: rgba(74,44,42,.7); border-radius: var(--r-pill); padding: 0 .6rem; }
+.ing-nombre { font-family: var(--font-display); font-weight: 700; font-size: var(--t-sm); color: var(--text-invert); background: rgba(43,33,41,.7); border-radius: var(--r-pill); padding: 0 .6rem; }
 
 /* accesos a la despensa (solo modo 2D) */
 .despensa-accesos { display: flex; gap: var(--sp-3); }
@@ -235,7 +245,7 @@ svg { display: block; width: 100%; height: 100%; }
 .en-preparacion { padding: var(--sp-3); }
 .en-preparacion-label {
   display: block; font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700;
-  letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--leaf-600);
+  letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--nopal-600);
   margin-bottom: var(--sp-2);
 }
 .en-preparacion-row, .mercado-grid {
@@ -249,7 +259,7 @@ svg { display: block; width: 100%; height: 100%; }
   position: relative; flex-shrink: 0;
   display: flex; flex-direction: column; align-items: center; gap: var(--sp-1);
   width: 72px; padding: var(--sp-2) var(--sp-1);
-  background: linear-gradient(180deg, var(--cream-100), var(--cream-200));
+  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
   border: 2px solid var(--hairline);
   border-bottom: 4px solid var(--chip-edge);
   border-radius: var(--r-md);
@@ -264,9 +274,9 @@ svg { display: block; width: 100%; height: 100%; }
 .mini-icon {
   display: flex; align-items: center; justify-content: center;
   width: 2.5rem; aspect-ratio: 1; padding: .22rem;
-  background: radial-gradient(circle at 50% 40%, #fff 0%, #fff 52%, var(--cream-400) 88%);
+  background: radial-gradient(circle at 50% 40%, #fff 0%, #fff 52%, var(--peltre-400) 88%);
   border-radius: 50%;
-  box-shadow: inset 0 0 0 2px rgba(74,44,42,.05);
+  box-shadow: inset 0 0 0 2px rgba(43,33,41,.05);
 }
 .mini-icon > svg { width: 100%; height: auto; aspect-ratio: 1; }
 .mini-name { font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700; line-height: 1.1; color: var(--text); text-align: center; }
@@ -275,14 +285,14 @@ svg { display: block; width: 100%; height: 100%; }
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 1.35rem; height: 1.35rem; padding: 0 .28rem;
   font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; line-height: 1; color: #fff;
-  background: linear-gradient(180deg, var(--tomato-500), var(--tomato-600));
-  border: 2px solid var(--cream-100); border-radius: var(--r-pill);
+  background: linear-gradient(180deg, var(--chile-500), var(--chile-600));
+  border: 2px solid var(--peltre-100); border-radius: var(--r-pill);
   box-shadow: var(--e-1);
 }
-.mini-durab { font-size: .55rem; letter-spacing: .04em; color: var(--steel-600); line-height: 1; }
+.mini-durab { font-size: .55rem; letter-spacing: .04em; color: var(--metal-600); line-height: 1; }
 .mini-costo {
-  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; color: var(--gold-800);
-  background: linear-gradient(180deg, var(--gold-300), var(--gold-400));
+  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; color: var(--maiz-800);
+  background: linear-gradient(180deg, var(--maiz-300), var(--maiz-400));
   border-radius: var(--r-pill); padding: 0 .4rem;
 }
 
@@ -295,7 +305,7 @@ svg { display: block; width: 100%; height: 100%; }
   position: relative; overflow: hidden;
   width: clamp(102px, 29vw, 130px); aspect-ratio: 5 / 7;
   display: flex; flex-direction: column;
-  background: linear-gradient(180deg, var(--cream-100) 0%, var(--cream-200) 100%);
+  background: linear-gradient(180deg, var(--peltre-100) 0%, var(--peltre-200) 100%);
   border: 3px solid var(--carta-edge);
   border-radius: var(--r-md);
   box-shadow: var(--e-2);
@@ -309,7 +319,7 @@ svg { display: block; width: 100%; height: 100%; }
   padding: 11%;
   background: radial-gradient(66% 66% at 50% 46%, #fff 0%, #fff 54%, rgba(236,217,180,.5) 74%, transparent 80%);
 }
-.carta-art svg, .carta-art > span { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(74,44,42,.22)); }
+.carta-art svg, .carta-art > span { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(43,33,41,.22)); }
 .carta-plate { flex-shrink: 0; text-align: center; padding: var(--sp-1) var(--sp-1) .35rem; border-top: 2px dashed var(--hairline); }
 .carta-nombre { display: block; font-family: var(--font-display); font-size: var(--t-sm); font-weight: 700; line-height: var(--lead-tight); color: var(--text); }
 .carta-rareza { display: block; font-size: .55rem; font-weight: 800; letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--carta-edge); margin-top: .1rem; }
@@ -328,7 +338,7 @@ svg { display: block; width: 100%; height: 100%; }
 
 /* el reverso: plato tapado, rayas de caramelo */
 .carta.back {
-  background: repeating-linear-gradient(45deg, var(--berry-400) 0 12px, var(--berry-500) 12px 24px);
+  background: repeating-linear-gradient(45deg, var(--rosa-400) 0 12px, var(--rosa-500) 12px 24px);
 }
 .carta.back.rarity-semilla  { --carta-edge: var(--rarity-semilla); }
 .carta.back.rarity-hallazgo { --carta-edge: var(--rarity-hallazgo); }
@@ -336,17 +346,17 @@ svg { display: block; width: 100%; height: 100%; }
 .carta-textura { position: absolute; inset: 0; }
 .carta-textura::after {
   content: '✦'; position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%);
-  font-size: var(--t-lg); color: var(--gold-300); text-shadow: 0 1px 2px rgba(0,0,0,.3);
+  font-size: var(--t-lg); color: var(--maiz-300); text-shadow: 0 1px 2px rgba(0,0,0,.3);
 }
 .carta-interrogante {
   position: absolute; inset: 0; display: grid; place-items: center;
   font-family: var(--font-display); font-weight: 800; font-size: 2.6rem; color: #fff;
-  text-shadow: 0 3px 0 var(--berry-700), 0 6px 10px rgba(0,0,0,.25);
+  text-shadow: 0 3px 0 var(--rosa-700), 0 6px 10px rgba(0,0,0,.25);
 }
 .carta-cant {
   position: absolute; top: var(--sp-1); right: var(--sp-1); z-index: 2;
   font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; color: #fff;
-  background: rgba(74,44,42,.8); border: 2px solid var(--cream-100);
+  background: rgba(43,33,41,.8); border: 2px solid var(--peltre-100);
   border-radius: var(--r-pill); padding: 0 .38rem;
 }
 
@@ -356,12 +366,12 @@ svg { display: block; width: 100%; height: 100%; }
 
 .region-seccion { margin-bottom: var(--sp-6); }
 .region-head {
-  --region-acento: var(--gold-400);
+  --region-acento: var(--maiz-400);
   position: relative;
   display: flex; align-items: center; gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
   margin-bottom: var(--sp-3);
-  background: linear-gradient(180deg, var(--cream-100), var(--cream-200));
+  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
   border: 2px solid var(--hairline);
   border-left: 7px solid var(--region-acento);
   border-radius: var(--r-md);
@@ -374,14 +384,14 @@ svg { display: block; width: 100%; height: 100%; }
 .region-progress {
   margin-left: auto; flex-shrink: 0;
   font-family: var(--font-display); font-size: var(--t-xs); font-weight: 800; color: #fff;
-  background: var(--region-acento); border: 2px solid var(--cream-100);
+  background: var(--region-acento); border: 2px solid var(--peltre-100);
   border-radius: var(--r-pill); padding: .1rem .55rem;
   box-shadow: var(--e-1);
 }
 .region-locked {
   display: block; font-size: var(--t-sm); color: var(--text-muted); text-align: center;
   padding: var(--sp-4) var(--sp-3);
-  background: rgba(74,44,42,.06);
+  background: rgba(43,33,41,.06);
   border: 2px dashed var(--hairline);
   border-radius: var(--r-md);
 }
@@ -401,7 +411,7 @@ svg { display: block; width: 100%; height: 100%; }
 .caja-visual {
   width: 92px; aspect-ratio: 5 / 7;
   display: grid; place-items: center;
-  background: linear-gradient(160deg, var(--wood-200), var(--wood-400) 60%, var(--wood-500));
+  background: linear-gradient(160deg, var(--madera-200), var(--madera-400) 60%, var(--madera-500));
   border: var(--ring); border-radius: var(--r-md);
   box-shadow: var(--gloss), var(--e-3);
   animation: caja-flota 3.2s ease-in-out infinite;
@@ -409,13 +419,13 @@ svg { display: block; width: 100%; height: 100%; }
 @keyframes caja-flota { 50% { transform: translateY(-5px) rotate(-2deg); } }
 .caja-sello {
   width: 40px; height: 40px; display: grid; place-items: center;
-  font-size: var(--t-lg); color: var(--gold-800);
-  background: conic-gradient(from 210deg, var(--gold-300), var(--gold-600), var(--gold-300));
+  font-size: var(--t-lg); color: var(--maiz-800);
+  background: conic-gradient(from 210deg, var(--maiz-300), var(--maiz-600), var(--maiz-300));
   border-radius: 50%;
   box-shadow: var(--e-2);
 }
 .caja-stash { font-family: var(--font-display); font-size: var(--t-md); font-weight: 700; }
-.sobre-count { font-size: var(--t-xl); font-weight: 800; color: var(--gold-300); }
+.sobre-count { font-size: var(--t-xl); font-weight: 800; color: var(--maiz-300); }
 .caja-timer { font-size: var(--t-xs); opacity: .9; text-align: center; }
 
 .seccion { margin-bottom: var(--sp-5); }
@@ -444,7 +454,7 @@ svg { display: block; width: 100%; height: 100%; }
 .pista-carta { width: 108px; pointer-events: none; }
 .pista-texto { font-family: var(--font-display); font-size: var(--t-lg); font-weight: 600; line-height: 1.35; color: var(--text); }
 .racha-ic { font-size: var(--t-3xl); }
-.racha-recompensa { font-family: var(--font-display); font-size: var(--t-2xl); font-weight: 800; color: var(--gold-600); }
+.racha-recompensa { font-family: var(--font-display); font-size: var(--t-2xl); font-weight: 800; color: var(--maiz-600); }
 
 /* --- Revelación de carta --- */
 .reveal-wrap { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); max-width: 320px; width: 100%; }
@@ -474,7 +484,7 @@ svg { display: block; width: 100%; height: 100%; }
   filter: blur(3px); opacity: .5; transition: opacity var(--dur) var(--ease-out);
 }
 .reveal-stage:has(.carta-flip.is-front)::after { opacity: .9; }
-.reveal-hint { font-family: var(--font-display); font-size: var(--t-md); font-weight: 600; color: var(--gold-300); text-align: center; animation: hint-bob 1.6s ease-in-out infinite; }
+.reveal-hint { font-family: var(--font-display); font-size: var(--t-md); font-weight: 600; color: var(--maiz-300); text-align: center; animation: hint-bob 1.6s ease-in-out infinite; }
 @keyframes hint-bob { 50% { transform: translateY(-5px); } }
 .reveal-banner {
   min-height: 2rem;
@@ -484,7 +494,7 @@ svg { display: block; width: 100%; height: 100%; }
   transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
 }
 .reveal-banner.visible { opacity: 1; transform: none; }
-.reveal-banner.is-new { color: var(--gold-300); }
+.reveal-banner.is-new { color: var(--maiz-300); }
 .carta-face-front .carta.rarity-receta { box-shadow: 0 0 50px -6px rgba(255,210,77,.85), var(--e-3); }
 
 .reveal-burst { position: fixed; z-index: 119; pointer-events: none; }
@@ -497,8 +507,8 @@ svg { display: block; width: 100%; height: 100%; }
   top: calc(env(safe-area-inset-top) + var(--sp-2)); z-index: var(--z-banner);
   width: min(360px, calc(100% - var(--sp-6)));
   display: flex; align-items: center; gap: var(--sp-3);
-  background: linear-gradient(180deg, var(--cream-100), var(--cream-200));
-  border: var(--ring); border-left: 6px solid var(--tomato-500);
+  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
+  border: var(--ring); border-left: 6px solid var(--chile-500);
   border-radius: var(--r-lg);
   box-shadow: var(--e-4);
   padding: var(--sp-3);
@@ -509,8 +519,8 @@ svg { display: block; width: 100%; height: 100%; }
 .banner.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 .banner-ic {
   flex-shrink: 0; width: 2.2rem; height: 2.2rem; display: grid; place-items: center;
-  font-size: var(--t-lg); color: var(--gold-800);
-  background: conic-gradient(from 210deg, var(--gold-300), var(--gold-600), var(--gold-300));
+  font-size: var(--t-lg); color: var(--maiz-800);
+  background: conic-gradient(from 210deg, var(--maiz-300), var(--maiz-600), var(--maiz-300));
   border-radius: 50%; box-shadow: var(--e-1);
 }
 
@@ -540,7 +550,7 @@ svg { display: block; width: 100%; height: 100%; }
   .album-grid { grid-template-columns: repeat(5, 1fr); }
 }
 
-:focus-visible { outline: 3px solid var(--gold-400); outline-offset: 2px; border-radius: var(--r-sm); }
+:focus-visible { outline: 3px solid var(--maiz-400); outline-offset: 2px; border-radius: var(--r-sm); }
 button:focus:not(:focus-visible) { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01s !important; transition-duration: .01s !important; }

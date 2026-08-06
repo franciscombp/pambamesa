@@ -92,7 +92,16 @@ function canvasTexture(draw, size = 256) {
   tx.colorSpace = THREE.SRGBColorSpace;
   return tx;
 }
+/* la paleta del mesón NO se escribe aquí: se lee de los tokens de
+   design-system.css, para que cambiar el sistema cambie también la
+   escena 3D y nunca se desincronicen */
+let _rootStyle = null;
+function token(name, fallback) {
+  if (!_rootStyle) _rootStyle = getComputedStyle(document.documentElement);
+  return (_rootStyle.getPropertyValue(name) || '').trim() || fallback;
+}
 const mat = (color, opts = {}) => new THREE.MeshLambertMaterial({ color, ...opts });
+const matT = (name, fallback, opts = {}) => mat(token(name, fallback), opts);
 
 /* ---------- iconos SVG → sprite (mientras no haya .glb) ---------- */
 
@@ -162,11 +171,21 @@ function texturaAzulejos() {
   return canvasTexture((ctx, S) => {
     const T = S / 4;
     for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
-      ctx.fillStyle = (x + y) % 2 ? '#8fd2dc' : '#9cdae4';
+      /* loza blanca con flor de talavera pintada */
+      ctx.fillStyle = '#f7fafb';
       ctx.fillRect(x * T, y * T, T, T);
-      ctx.fillStyle = 'rgba(255,255,255,.35)';
-      ctx.fillRect(x * T + 4, y * T + 4, T - 8, T * 0.28);
-      ctx.strokeStyle = '#6db4c0';
+      const cx = x * T + T / 2, cy = y * T + T / 2;
+      ctx.fillStyle = token('--jade-400', '#12a9a0');
+      [[0, -T * .24], [0, T * .24], [-T * .24, 0], [T * .24, 0]].forEach(([dx, dy]) => {
+        ctx.beginPath(); ctx.arc(cx + dx, cy + dy, T * .12, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.fillStyle = token('--talavera-500', '#1b5faa');
+      ctx.beginPath(); ctx.arc(cx, cy, T * .16, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = token('--talavera-300', '#5f97d8');
+      [[0, 0], [T, 0], [0, T], [T, T]].forEach(([dx, dy]) => {
+        ctx.beginPath(); ctx.arc(x * T + dx, y * T + dy, T * .17, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.strokeStyle = '#dfe6e8';
       ctx.lineWidth = 4;
       ctx.strokeRect(x * T + 2, y * T + 2, T - 4, T - 4);
     }
@@ -204,7 +223,7 @@ function badgeSprite(n, tool) {
   const key = (tool ? 't' : 'n') + n;
   if (!badgeCache[key]) {
     badgeCache[key] = canvasTexture((ctx, S) => {
-      ctx.fillStyle = tool ? '#5d6b82' : '#e63946';
+      ctx.fillStyle = tool ? token('--metal-600', '#6c7683') : token('--chile-500', '#ce2029');
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 6;
       ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2 - 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#fff';
@@ -239,8 +258,8 @@ function sombraBlob(size = 0.8) {
 let starTex = null;
 function estrellitas(x, y, z, cuantas = 14) {
   if (!starTex) starTex = canvasTexture((ctx, S) => {
-    ctx.fillStyle = '#ffd24d';
-    ctx.strokeStyle = '#e09b12'; ctx.lineWidth = 6;
+    ctx.fillStyle = token('--maiz-300', '#ffc93c');
+    ctx.strokeStyle = token('--maiz-600', '#c07610'); ctx.lineWidth = 6;
     ctx.translate(S / 2, S / 2); ctx.beginPath();
     for (let i = 0; i < 10; i++) {
       const r = i % 2 ? S * .18 : S * .42;
@@ -276,7 +295,7 @@ function construirCocina() {
   const pisoTex = canvasTexture((ctx, S) => {
     const T = S / 2;
     for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
-      ctx.fillStyle = (x + y) % 2 ? '#e9a08b' : '#f7d9b8';
+      ctx.fillStyle = (x + y) % 2 ? token('--chile-500', '#ce2029') : '#f2ece2';
       ctx.fillRect(x * T, y * T, T, T);
     }
   }, 128);
@@ -289,23 +308,23 @@ function construirCocina() {
 
   /* frente del gabinete bajo la mesada: la boca oscura de donde salió
      el cajón abierto, y las gavetas vecinas con sus tiradores */
-  const gabinete = new THREE.Mesh(new THREE.BoxGeometry(7.8, 1.1, 0.08), mat('#c9556f'));
+  const gabinete = new THREE.Mesh(new THREE.BoxGeometry(7.8, 1.1, 0.08), matT('--rosa-500', '#e01b6a'));
   gabinete.position.set(0, 0.28, 1.06);
   scene.add(gabinete);
-  const boca = new THREE.Mesh(new THREE.BoxGeometry(3.34, 0.8, 0.06), mat('#6e1f33'));
+  const boca = new THREE.Mesh(new THREE.BoxGeometry(3.34, 0.8, 0.06), matT('--rosa-700', '#7d0a3b'));
   boca.position.set(CAJON.centroX, 0.28, 1.11);
   scene.add(boca);
   [[-2.96, 1.6], [2.6, 2.3]].forEach(([x, w]) => {
-    const cara = new THREE.Mesh(new THREE.BoxGeometry(w, 0.8, 0.06), mat('#d94f72'));
+    const cara = new THREE.Mesh(new THREE.BoxGeometry(w, 0.8, 0.06), matT('--rosa-400', '#f53d8a'));
     cara.position.set(x, 0.28, 1.11);
-    const tir = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.42, 4, 10), mat('#f2b31f'));
+    const tir = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.42, 4, 10), matT('--maiz-400', '#f5a623'));
     tir.rotation.z = Math.PI / 2;
     tir.position.set(x, 0.5, 1.17);
     scene.add(cara, tir);
   });
 
   /* repisa con frascos */
-  const repisa = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.09, 0.42), mat('#b5793f'));
+  const repisa = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.09, 0.42), matT('--madera-500', '#93491c'));
   repisa.position.set(-1.9, 2.72, -1.1);
   scene.add(repisa);
   const frascoM = mat('#f4e6c8');
@@ -318,16 +337,16 @@ function construirCocina() {
   });
 
   /* la mesada */
-  const woodTop = texturaMadera('#d59a55', '#b97e3c');
+  const woodTop = texturaMadera(token('--madera-300', '#d07c3f'), token('--madera-500', '#93491c'));
   const meson = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.22, 2.4), new THREE.MeshLambertMaterial({ map: woodTop }));
   meson.position.set(0, 0.85, -0.1);
   scene.add(meson);
 
   /* la tabla de picar */
-  const boardTex = texturaMadera('#ecc287', '#d3a15e');
+  const boardTex = texturaMadera(token('--madera-200', '#e8a469'), token('--madera-400', '#b4632c'));
   const tabla = new THREE.Group();
   const cuerpo = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.1, 1.5), new THREE.MeshLambertMaterial({ map: boardTex }));
-  const borde = new THREE.Mesh(new THREE.BoxGeometry(2.56, 0.06, 1.56), mat('#c89357'));
+  const borde = new THREE.Mesh(new THREE.BoxGeometry(2.56, 0.06, 1.56), matT('--madera-400', '#b4632c'));
   borde.position.y = -0.03;
   const mango = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.1, 18), new THREE.MeshLambertMaterial({ map: boardTex }));
   mango.position.set(1.42, 0, 0);
@@ -350,16 +369,16 @@ function construirCocina() {
   });
 
   /* estufa y olla humeante */
-  const estufa = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.1, 1.7), mat('#3c4350'));
+  const estufa = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.1, 1.7), matT('--pizarra-500', '#2f2733'));
   estufa.position.set(2.5, 0.97, -0.3);
-  const quemador = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 24), mat('#20242c'));
+  const quemador = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 24), matT('--pizarra-700', '#1d1822'));
   quemador.position.set(2.5, 1.04, -0.3);
   scene.add(estufa, quemador);
   const olla = new THREE.Group();
-  const cuerpoOlla = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.38, 0.5, 22), mat('#e63946'));
+  const cuerpoOlla = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.38, 0.5, 22), matT('--chile-500', '#ce2029'));
   const tapa = new THREE.Mesh(new THREE.SphereGeometry(0.42, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2.6), mat('#f4f0e6'));
   tapa.position.y = 0.22; tapa.scale.y = 0.55;
-  const perilla = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), mat('#f2b31f'));
+  const perilla = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), matT('--maiz-400', '#f5a623'));
   perilla.position.y = 0.44;
   const asaM = mat('#f4f0e6');
   [-1, 1].forEach(s => {
@@ -397,7 +416,7 @@ function construirCocina() {
   botella.add(bCuerpo, bCuello, bTapa);
   botella.position.set(-2.35, 1.27, -0.6);
   scene.add(botella);
-  const frutero = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat('#f4a23c'));
+  const frutero = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), matT('--maiz-400', '#f5a623'));
   frutero.scale.y = 0.8;
   frutero.position.set(-2.95, 1.28, -0.35);
   scene.add(frutero);
@@ -409,7 +428,7 @@ function construirCocina() {
 
   /* ---- el cajón abierto de abajo, con sus casillas ---- */
   const cajon = new THREE.Group();
-  const rosa = mat('#d94f72'), rosaOscuro = mat('#c23e60');
+  const rosa = matT('--rosa-500', '#e01b6a'), rosaOscuro = matT('--rosa-600', '#b01254');
   const CX = CAJON.centroX, CW = CAJON.ancho;
   const piso = new THREE.Mesh(new THREE.BoxGeometry(CW, 0.08, 1.56), rosaOscuro);
   piso.position.set(CX, CAJON.floorY - 0.04, 1.95);
@@ -420,7 +439,7 @@ function construirCocina() {
   paredFondo.position.set(CX, CAJON.floorY + 0.17, 1.2);
   const paredFrente = new THREE.Mesh(new THREE.BoxGeometry(CW, 0.58, 0.12), rosa);
   paredFrente.position.set(CX, CAJON.floorY + 0.2, 2.7);
-  const tirador = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.7, 4, 10), mat('#f2b31f'));
+  const tirador = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.7, 4, 10), matT('--maiz-400', '#f5a623'));
   tirador.rotation.z = Math.PI / 2;
   tirador.position.set(CX, CAJON.floorY + 0.42, 2.78);
   cajon.add(piso, paredIzq, paredDer, paredFondo, paredFrente, tirador);
@@ -440,11 +459,11 @@ function construirCocina() {
 
   /* ---- el basurero ---- */
   const tacho = new THREE.Group();
-  const cuerpoT = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.33, 0.72, 18), mat('#9aa7b5'));
-  const rimT = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.05, 8, 20), mat('#7c8894'));
+  const cuerpoT = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.33, 0.72, 18), matT('--metal-400', '#9aa3ae'));
+  const rimT = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.05, 8, 20), matT('--metal-600', '#6c7683'));
   rimT.rotation.x = Math.PI / 2;
   rimT.position.y = 0.36;
-  const bolsa = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.34, 0.06, 18), mat('#4a4f58'));
+  const bolsa = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.34, 0.06, 18), matT('--pizarra-500', '#2f2733'));
   bolsa.position.y = 0.33;
   tacho.add(cuerpoT, rimT, bolsa);
   tacho.position.set(TACHO.x, CAJON.floorY + 0.32, TACHO.z);
@@ -452,8 +471,8 @@ function construirCocina() {
   tachoGroup = tacho;
 
   /* luces */
-  scene.add(new THREE.HemisphereLight('#fff6e6', '#d9926c', 1.15));
-  const sol = new THREE.DirectionalLight('#fff2d8', 1.5);
+  scene.add(new THREE.HemisphereLight('#ffffff', token('--peltre-300', '#e3dfd6'), 1.35));
+  const sol = new THREE.DirectionalLight('#fff7ec', 1.35);
   sol.position.set(-2.5, 5, 3.5);
   scene.add(sol);
 }

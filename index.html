@@ -29,7 +29,7 @@
   <header id="hud" class="hud hidden">
     <span class="pill hud-count progress-count"></span>
     <div class="meter"><span class="meter-fill progress-fill"></span></div>
-    <span class="pill pill--gold hud-sucres">
+    <span class="pill pill--maiz hud-sucres">
       <span class="icono-sucre" aria-hidden="true">S</span><span class="hud-sucres-count">0</span>
     </span>
   </header>
@@ -59,7 +59,7 @@
   <main id="screen-taller" class="screen">
     <div class="hoja hoja--cocina">
       <div class="mesa-zona">
-        <span id="combo-indicador" class="pill pill--berry combo-indicador hidden"></span>
+        <span id="combo-indicador" class="pill pill--rosa combo-indicador hidden"></span>
         <!-- el mesón 3D; sin WebGL queda el fogón 2D de abajo -->
         <div id="cocina3d" class="cocina3d hidden"></div>
         <div id="fogon" class="fogon">
@@ -109,10 +109,10 @@
 
       <div class="scroll">
         <!-- La caja del mercado -->
-        <section class="panel panel--berry caja-box">
+        <section class="panel panel--rosa caja-box">
           <div class="caja-visual" aria-hidden="true"><span class="caja-sello">✦</span></div>
           <p class="caja-stash"><span class="sobre-count">0</span> caja(s) por abrir</p>
-          <button type="button" id="feria-abrir-btn" class="btn btn--gold btn--block">Abrir una caja</button>
+          <button type="button" id="feria-abrir-btn" class="btn btn--maiz btn--block">Abrir una caja</button>
           <p id="feria-timer" class="caja-timer"></p>
         </section>
 
@@ -123,8 +123,8 @@
             <p class="seccion-nota">Cocinar te da sucres <span class="icono-sucre">S</span>. Cámbialos por lo que te falte.</p>
             <div id="mercado-semillas" class="mercado-grid"></div>
             <div class="seccion-acciones">
-              <button type="button" id="mercado-sobre-btn" class="btn btn--cream btn--sm">Caja · 20 <span class="icono-sucre">S</span></button>
-              <button type="button" id="pregon-btn" class="btn btn--cream btn--sm">📣 El pregón</button>
+              <button type="button" id="mercado-sobre-btn" class="btn btn--peltre btn--sm">Caja · 20 <span class="icono-sucre">S</span></button>
+              <button type="button" id="pregon-btn" class="btn btn--peltre btn--sm">📣 El pregón</button>
             </div>
             <p id="pregon-timer" class="seccion-nota"></p>
           </div>
@@ -153,7 +153,7 @@
   <div id="modal-reveal" class="modal reveal-modal" role="dialog" aria-modal="true">
     <div class="reveal-wrap">
       <div id="reveal-stage" class="reveal-stage">
-        <span id="reveal-restantes" class="pill pill--gold reveal-restantes hidden"></span>
+        <span id="reveal-restantes" class="pill pill--maiz reveal-restantes hidden"></span>
         <div id="reveal-stack-3" class="carta back reveal-stack-layer hidden" aria-hidden="true"><div class="carta-textura"></div></div>
         <div id="reveal-stack-2" class="carta back reveal-stack-layer hidden" aria-hidden="true"><div class="carta-textura"></div></div>
         <div id="reveal-flip" class="carta-flip">
@@ -178,7 +178,7 @@
       <p id="detalle-rareza" class="sheet-eyebrow"></p>
       <h3 id="detalle-nombre" class="sheet-title"></h3>
       <p id="detalle-lore" class="sheet-body"></p>
-      <button type="button" id="detalle-close" class="btn btn--cream btn--block">Cerrar</button>
+      <button type="button" id="detalle-close" class="btn btn--peltre btn--block">Cerrar</button>
     </div>
   </div>
 
@@ -190,7 +190,7 @@
       </div>
       <p class="sheet-eyebrow">la cocina murmura…</p>
       <p id="pista-texto" class="pista-texto"></p>
-      <button type="button" id="pista-close" class="btn btn--cream btn--block">Cerrar</button>
+      <button type="button" id="pista-close" class="btn btn--peltre btn--block">Cerrar</button>
     </div>
   </div>
 
@@ -199,7 +199,7 @@
     <div class="sheet sheet--wide">
       <h3 id="despensa-titulo" class="sheet-title"></h3>
       <div id="despensa-grid" class="panel panel--sunken despensa-grid"></div>
-      <button type="button" id="despensa-close" class="btn btn--cream btn--block">Cerrar</button>
+      <button type="button" id="despensa-close" class="btn btn--peltre btn--block">Cerrar</button>
     </div>
   </div>
 
@@ -210,7 +210,7 @@
       <p class="sheet-eyebrow">volviste a la cocina</p>
       <h3 class="sheet-title">Racha de <span id="racha-dias">1</span> día(s)</h3>
       <p id="racha-recompensa" class="racha-recompensa"></p>
-      <button type="button" id="racha-reclamar-btn" class="btn btn--gold btn--block">Reclamar</button>
+      <button type="button" id="racha-reclamar-btn" class="btn btn--maiz btn--block">Reclamar</button>
     </div>
   </div>
 
