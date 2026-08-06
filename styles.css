@@ -21,6 +21,11 @@ body {
 
 button { font: inherit; color: inherit; cursor: pointer; background: none; border: none; -webkit-tap-highlight-color: transparent; }
 svg { display: block; width: 100%; height: 100%; }
+/* icons.js inyecta su bloque de <defs> como un <svg width="0" height="0">.
+   La regla de arriba le ganaba a esos atributos y lo estiraba a pantalla
+   completa: invisible, pero dejaba el documento del doble de alto y un
+   scroll fantasma que en móvil se siente como que la página "rebota". */
+svg[width="0"] { width: 0; height: 0; }
 
 /* ============================================================
    EL MUNDO — el marco donde vive el juego

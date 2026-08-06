@@ -17,9 +17,11 @@
 /* el aro rojo que late: la única señal que el jugador necesita
    para saber "esto no se toca" */
 function aroDeAlarma(THREE, r) {
+  const rojo = (getComputedStyle(document.documentElement)
+    .getPropertyValue('--chile-500') || '').trim() || '#ce2029';
   const aro = new THREE.Mesh(
     new THREE.TorusGeometry(r, r * 0.11, 8, 22),
-    new THREE.MeshBasicMaterial({ color: '#e63946', transparent: true, opacity: 0.9 })
+    new THREE.MeshBasicMaterial({ color: rojo, transparent: true, opacity: 0.9 })
   );
   aro.rotation.x = Math.PI / 2;
   aro.userData.ignorar = true;   /* el aro no se raycastea: sería trampa */

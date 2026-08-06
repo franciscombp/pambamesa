@@ -86,17 +86,28 @@ function texturaCanvas(dibuja, size = 256) {
   tx.colorSpace = THREE.SRGBColorSpace;
   return tx;
 }
+/* La escena no tiene colores propios: los lee del sistema de diseño,
+   igual que escena3d.js en el juego grande. Si mañana cambia la
+   paleta, esta cocina se repinta sola en vez de quedarse con los
+   colores de una versión anterior — que es exactamente lo que pasó
+   cuando la paleta pasó de crema a la del barrio. */
+let _raiz = null;
+function token(nombre, respaldo) {
+  if (!_raiz) _raiz = getComputedStyle(document.documentElement);
+  return (_raiz.getPropertyValue(nombre) || '').trim() || respaldo;
+}
 const mat = (color, opts = {}) => new THREE.MeshLambertMaterial({ color, ...opts });
+const matT = (nombre, respaldo, opts = {}) => mat(token(nombre, respaldo), opts);
 
 function texturaAzulejos() {
   return texturaCanvas((ctx, S) => {
     const T = S / 4;
     for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
-      ctx.fillStyle = (x + y) % 2 ? '#8fd2dc' : '#9cdae4';
+      ctx.fillStyle = (x + y) % 2 ? token('--talavera-500', '#1b5faa') : token('--talavera-300', '#5f97d8');
       ctx.fillRect(x * T, y * T, T, T);
-      ctx.fillStyle = 'rgba(255,255,255,.35)';
+      ctx.fillStyle = 'rgba(255,255,255,.28)';
       ctx.fillRect(x * T + 4, y * T + 4, T - 8, T * 0.28);
-      ctx.strokeStyle = '#6db4c0';
+      ctx.strokeStyle = token('--talavera-700', '#123f74');
       ctx.lineWidth = 4;
       ctx.strokeRect(x * T + 2, y * T + 2, T - 4, T - 4);
     }
@@ -177,7 +188,7 @@ function construirCocina() {
   const pisoTex = texturaCanvas((ctx, S) => {
     const T = S / 2;
     for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
-      ctx.fillStyle = (x + y) % 2 ? '#e9a08b' : '#f7d9b8';
+      ctx.fillStyle = (x + y) % 2 ? token('--madera-200', '#e8a469') : token('--peltre-300', '#e3dfd6');
       ctx.fillRect(x * T, y * T, T, T);
     }
   }, 128);
@@ -189,28 +200,28 @@ function construirCocina() {
   scene.add(piso);
 
   /* el mesón: ancho y hondo, porque aquí se trabaja con las manos */
-  const woodTop = texturaMadera('#d59a55', '#b97e3c');
+  const woodTop = texturaMadera(token('--madera-300', '#d07c3f'), token('--madera-500', '#93491c'));
   const meson = new THREE.Mesh(new THREE.BoxGeometry(9, 0.24, 3.9), new THREE.MeshLambertMaterial({ map: woodTop }));
   meson.position.set(0, MESA_Y - 0.12, 0.15);
   scene.add(meson);
 
   /* frente del gabinete, para que el mesón no flote */
-  const gabinete = new THREE.Mesh(new THREE.BoxGeometry(9, 2.6, 0.1), mat('#c9556f'));
+  const gabinete = new THREE.Mesh(new THREE.BoxGeometry(9, 2.6, 0.1), matT('--rosa-500', '#e01b6a'));
   gabinete.position.set(0, -0.46, 2.05);
   scene.add(gabinete);
   [-2.9, 0, 2.9].forEach(x => {
-    const tir = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.5, 4, 10), mat('#f2b31f'));
+    const tir = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.5, 4, 10), matT('--maiz-400', '#f5a623'));
     tir.rotation.z = Math.PI / 2;
     tir.position.set(x, 0.56, 2.12);
     scene.add(tir);
   });
 
   /* repisa con frascos: la misma que en la cocina grande */
-  const repisa = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.09, 0.42), mat('#b5793f'));
+  const repisa = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.09, 0.42), matT('--madera-400', '#b4632c'));
   repisa.position.set(1.6, 2.42, -1.78);
   scene.add(repisa);
-  const frascoM = mat('#f4e6c8');
-  [[0.85, '#e2647e'], [1.35, '#7bc86c'], [1.85, '#f2b31f'], [2.35, '#93b8e4']].forEach(([x, tapa]) => {
+  const frascoM = matT('--peltre-200', '#f3f1ec');
+  [[0.85, token('--rosa-400', '#f53d8a')], [1.35, token('--nopal-400', '#8cc63f')], [1.85, token('--maiz-400', '#f5a623')], [2.35, token('--talavera-300', '#5f97d8')]].forEach(([x, tapa]) => {
     const f = new THREE.Mesh(new THREE.CylinderGeometry(.11, .12, .3, 14), frascoM);
     f.position.set(x, 2.62, -1.78);
     const t = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .06, 14), mat(tapa));
@@ -221,17 +232,17 @@ function construirCocina() {
   /* la olla grande de la fanesca, al fondo a la izquierda, humeando:
      todo lo que preparas termina ahí, y se ve mientras trabajas */
   const olla = new THREE.Group();
-  olla.add(new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.42, 0.56, 24), mat('#e63946')));
-  const borde = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.048, 8, 24), mat('#f4f0e6'));
+  olla.add(new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.42, 0.56, 24), matT('--chile-500', '#ce2029')));
+  const borde = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.048, 8, 24), matT('--peltre-100', '#ffffff'));
   borde.rotation.x = Math.PI / 2; borde.position.y = 0.28;
   olla.add(borde);
   [-1, 1].forEach(s => {
-    const asa = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.033, 8, 14, Math.PI), mat('#f4f0e6'));
+    const asa = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.033, 8, 14, Math.PI), matT('--peltre-100', '#ffffff'));
     asa.position.set(0.48 * s, 0.11, 0);
     asa.rotation.z = s > 0 ? -Math.PI / 2 : Math.PI / 2;
     olla.add(asa);
   });
-  const caldo = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.04, 24), mat('#f1d489'));
+  const caldo = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.04, 24), matT('--maiz-300', '#ffc93c'));
   caldo.position.y = 0.24;
   olla.add(caldo);
   olla.position.set(-1.55, MESA_Y + 0.28, -1.35);
@@ -252,11 +263,11 @@ function construirCocina() {
     vapores.push(p);
   }
 
-  bateaGrupo = construirRecipiente(BATEA, '#c08a4e', '#9c6c39', 0.44, 'batea');
-  compostaGrupo = construirRecipiente(COMPOSTA, '#7d8a5c', '#5d6a42', 0.4, 'composta');
+  bateaGrupo = construirRecipiente(BATEA, token('--madera-300', '#d07c3f'), token('--madera-500', '#93491c'), 0.44, 'batea');
+  compostaGrupo = construirRecipiente(COMPOSTA, token('--nopal-600', '#4c7c1f'), token('--nopal-600', '#4c7c1f'), 0.4, 'composta');
   scene.add(bateaGrupo, compostaGrupo);
 
-  scene.add(new THREE.HemisphereLight('#fff6e6', '#d9926c', 1.2));
+  scene.add(new THREE.HemisphereLight('#fff6e6', token('--madera-300', '#d07c3f'), 1.2));
   const sol = new THREE.DirectionalLight('#fff2d8', 1.45);
   sol.position.set(-2.5, 5.5, 4);
   scene.add(sol);
@@ -282,7 +293,7 @@ function construirRecipiente(pos, colorA, colorB, r, tipo) {
   /* el contenido: un disco que sube conforme se llena */
   const relleno = new THREE.Mesh(
     new THREE.CylinderGeometry(r * 0.86, r * 0.72, 0.06, 22),
-    mat(tipo === 'batea' ? '#f0d071' : '#5a6b3a')
+    mat(tipo === 'batea' ? token('--maiz-300', '#ffc93c') : token('--nopal-600', '#4c7c1f'))
   );
   relleno.position.y = 0.04;
   relleno.scale.setScalar(0.001);
