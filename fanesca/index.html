@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="La fanesca">
-  <meta name="theme-color" content="#9cdae4">
+  <meta name="theme-color" content="#1b5faa">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="../icon.svg">
   <link rel="icon" type="image/svg+xml" href="../icon.svg">
@@ -28,6 +28,7 @@
 
   <!-- ================= Portada ================= -->
   <main id="screen-portada" class="screen active">
+    <span class="mundo-puesto" aria-hidden="true"></span>
     <div class="portada">
       <span class="portada-sol" aria-hidden="true"></span>
       <p class="portada-over">Pambamesa · minijuego</p>
@@ -49,6 +50,7 @@
 
   <!-- ================= La mesa de prep (mapa de ingredientes) ================= -->
   <main id="screen-mesa" class="screen">
+    <span class="mundo-puesto" aria-hidden="true"></span>
     <div class="hoja">
       <header class="hoja-head">
         <div class="sign">
@@ -79,6 +81,7 @@
 
   <!-- ================= El cuaderno: lo que el plato cuenta ================= -->
   <main id="screen-cuaderno" class="screen">
+    <span class="mundo-puesto" aria-hidden="true"></span>
     <div class="hoja">
       <header class="hoja-head">
         <div class="sign">
@@ -93,7 +96,7 @@
           <p class="label">de dónde salió esto</p>
           <ul id="cuaderno-fuentes-lista"></ul>
         </section>
-        <button type="button" id="cuaderno-volver" class="btn btn--cream btn--block">Volver a la mesa</button>
+        <button type="button" id="cuaderno-volver" class="btn btn--peltre btn--block">Volver a la mesa</button>
       </div>
     </div>
   </main>
@@ -132,7 +135,7 @@
       <p id="brief-nota" class="brief-nota"></p>
       <p id="brief-mejor" class="brief-mejor"></p>
       <button type="button" id="brief-ok" class="btn btn--lg btn--block">¡Manos a la obra!</button>
-      <button type="button" id="brief-cancelar" class="btn btn--cream btn--sm btn--block">Ahora no</button>
+      <button type="button" id="brief-cancelar" class="btn btn--peltre btn--sm btn--block">Ahora no</button>
     </div>
   </div>
 
@@ -153,8 +156,8 @@
           <footer id="tarjeta-cita-quien"></footer>
         </blockquote>
       </section>
-      <button type="button" id="listo-seguir" class="btn btn--leaf btn--lg btn--block">Siguiente ingrediente</button>
-      <button type="button" id="listo-repetir" class="btn btn--cream btn--sm btn--block">Repetirlo más rápido</button>
+      <button type="button" id="listo-seguir" class="btn btn--nopal btn--lg btn--block">Siguiente ingrediente</button>
+      <button type="button" id="listo-repetir" class="btn btn--peltre btn--sm btn--block">Repetirlo más rápido</button>
     </div>
   </div>
 
@@ -166,7 +169,7 @@
       <h3 id="arruinado-titulo" class="sheet-title">Un gusanito en la fanesca</h3>
       <p id="arruinado-motivo" class="sheet-body"></p>
       <button type="button" id="arruinado-reintentar" class="btn btn--lg btn--block">Empezar de nuevo</button>
-      <button type="button" id="arruinado-salir" class="btn btn--cream btn--sm btn--block">Dejarlo por hoy</button>
+      <button type="button" id="arruinado-salir" class="btn btn--peltre btn--sm btn--block">Dejarlo por hoy</button>
     </div>
   </div>
 
@@ -179,8 +182,8 @@
       <p class="sheet-body">Todo lo que va adentro pasó por tus manos: grano por grano, vaina por vaina. Ahora sí, que hierva despacio.</p>
       <p id="final-cierre" class="final-cierre"></p>
       <p id="final-total" class="final-total"></p>
-      <button type="button" id="final-cuaderno" class="btn btn--cream btn--sm btn--block">Leer el cuaderno</button>
-      <button type="button" id="final-ok" class="btn btn--gold btn--lg btn--block">Servir</button>
+      <button type="button" id="final-cuaderno" class="btn btn--peltre btn--sm btn--block">Leer el cuaderno</button>
+      <button type="button" id="final-ok" class="btn btn--maiz btn--lg btn--block">Servir</button>
     </div>
   </div>
 

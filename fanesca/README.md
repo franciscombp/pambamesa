@@ -9,8 +9,16 @@ Jugable en: https://franciscombp.github.io/pambamesa/fanesca/
 
 Vive en un subdirectorio de GitHub Pages y **reusa el juego grande**:
 `../design-system.css` (los mismos tokens y componentes),
-`../icons.js` (las ilustraciones de acuarela) y `../vendor/` (Three.js).
+`../icons.js` (las ilustraciones) y `../vendor/` (Three.js).
 No duplica ni un color ni una dependencia.
+
+Eso incluye la escena 3D: `motor3d.js` **lee la paleta de `:root`** con
+`getComputedStyle`, igual que `escena3d.js` en el juego grande. Si la
+paleta del sistema cambia, esta cocina se repinta sola. No es un
+detalle: el minijuego nació sobre la paleta anterior (crema y azulejo
+celeste) y cuando el juego grande pasó a la del barrio —talavera,
+rosa mexicano, peltre— el `git merge` no vio ningún conflicto y sin
+esto habría quedado con los colores de una versión que ya no existe.
 
 ## El plato es la historia
 
