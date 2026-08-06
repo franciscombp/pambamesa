@@ -244,6 +244,7 @@ function regaloCard(id) {
 function renderTaller() {
   if (escenaOn) {
     Escena3D.setSlots(slots);
+    Escena3D.setDespensa(despensaParaEscena());
     renderMesaEtiquetas();
   } else {
     const a = $('#slot-a'), b = $('#slot-b');
@@ -257,18 +258,41 @@ function renderTaller() {
   renderEnPreparacion();
 }
 
-/* nombres de lo que hay sobre la tabla 3D; tocar la etiqueta lo quita */
+/* nombres de lo que hay sobre la tabla 3D */
 function nombreDe(id) { return isUtensilio(id) ? UTENSILIOS.find(u => u.id === id).name : CARTAS[id].name; }
 function renderMesaEtiquetas() {
   const wrap = $('#mesa-etiquetas'); wrap.innerHTML = '';
-  slots.forEach((id, i) => {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'mesa-etiqueta' + (id ? '' : ' vacia');
-    chip.textContent = id ? `${nombreDe(id)} ✕` : (i === 0 ? 'elige un ingrediente' : '+');
-    if (id) chip.addEventListener('click', () => { slots[i] = null; sfx('tab'); renderTaller(); });
-    wrap.appendChild(chip);
+  if (escenaOn && Escena3D.hayMezclaRara()) {
+    wrap.appendChild(el('span', 'mesa-etiqueta mess', '¡mezcla rara! bótala 🗑'));
+    return;
+  }
+  slots.forEach((id) => {
+    if (!id) return;
+    wrap.appendChild(el('span', 'mesa-etiqueta', nombreDe(id)));
   });
+}
+
+/* el contenido del cajón 3D: ingredientes y preparaciones con stock,
+   más los utensilios con usos; n descuenta lo que ya está en la tabla */
+function despensaParaEscena() {
+  const abiertas = regionesAbiertas();
+  const items = [];
+  CARTA_ORDEN.forEach(id => {
+    const c = CARTAS[id];
+    if ((c.rarity === 'semilla' || c.rarity === 'hallazgo') && abiertas.includes(c.region) && stockOf(id) > 0) {
+      items.push({ id, n: stockOf(id) - slots.filter(s => s === id).length, tool: false });
+    }
+  });
+  UTENSILIOS.forEach(u => {
+    if (abiertas.includes(u.region) && toolUses(u.id) > 0) {
+      items.push({ id: u.id, n: slots.includes(u.id) ? 0 : toolUses(u.id), tool: true });
+    }
+  });
+  return items;
+}
+function disponibleParaMesa(id) {
+  if (isUtensilio(id)) return hasTool(id) && !slots.includes(id);
+  return stockOf(id) > slots.filter(s => s === id).length;
 }
 
 /* lo que ya empezaste a preparar se queda a la vista, sobre la mesa
@@ -303,6 +327,16 @@ function ejecutarAccionRapida(accion) {
 
 function renderTallerAction() {
   const zone = $('#taller-action'); zone.innerHTML = '';
+  /* en el mesón 3D no hay botones: todo es arrastrar y juntar */
+  if (escenaOn) {
+    let hint;
+    if (Escena3D.hayMezclaRara()) hint = '¡Puaj! Arrastra esa mezcla al basurero 🗑';
+    else if (slots[0] && slots[1]) hint = 'Arrastra uno encima del otro para combinarlos';
+    else if (slots[0] || slots[1]) hint = 'Junta otro ingrediente o utensilio encima';
+    else hint = 'Arrastra algo del cajón a la tabla para empezar';
+    zone.innerHTML = `<span class="taller-hint">${hint}</span>`;
+    return;
+  }
   if (slots[0] && slots[1]) {
     const combinar = document.createElement('button');
     combinar.type = 'button'; combinar.className = 'btn-leather combinar-btn';
@@ -394,11 +428,18 @@ function combinarMesa() {
   const [x, y] = slots;
   if (!x || !y) return;
   const r = findReceta(x, y);
-  const surface = escenaOn ? $('#cocina3d') : $('#fogon');
   if (!r) {
-    if (escenaOn) Escena3D.shake();
-    surface.classList.remove('shake'); void surface.offsetWidth; surface.classList.add('shake');
     sfx('fail'); buzz(60);
+    if (escenaOn) {
+      /* al estilo MasterChef: la pareja fallida se vuelve un engrudo
+         humeante que hay que botar al basurero (no gasta despensa) */
+      Escena3D.mezclaRara();
+      toast('¡Puaj! Eso no combinó. Bótalo al basurero 🗑');
+      setTimeout(() => { renderTallerAction(); renderMesaEtiquetas(); }, 300);
+      return;
+    }
+    const surface = $('#fogon');
+    surface.classList.remove('shake'); void surface.offsetWidth; surface.classList.add('shake');
     toast('Esos dos no combinan… todavía. Prueba otra pareja.');
     return;
   }
@@ -942,7 +983,57 @@ function initEscena3D() {
   cont.classList.remove('hidden');
   $('#fogon').classList.add('hidden');
   $('#mesa-etiquetas').classList.remove('hidden');
-  Escena3D.onItemTap(i => { if (slots[i]) { slots[i] = null; sfx('tab'); renderTaller(); } });
+  $('#stage').classList.add('mesa3d');   /* oculta los botones que el cajón 3D reemplaza */
+
+  Escena3D.bind({
+    alAgarrar: () => { initAudio(); },
+    sinStock: (id, tool) => toast(tool ? 'Ese utensilio se gastó. Consigue otro en la despensa 🛒' : 'Ya no te queda. Repónlo en la despensa 🛒'),
+
+    /* soltar algo del cajón en un puesto libre de la tabla */
+    alColocar: (id, idx) => {
+      if (slots[idx] || !disponibleParaMesa(id)) return false;
+      slots[idx] = id;
+      sfx('tab'); buzz(10);
+      renderTallerAction(); renderMesaEtiquetas();
+      Escena3D.setDespensa(despensaParaEscena());
+      return true;
+    },
+
+    /* soltar una cosa encima de otra → intentar la combinación */
+    alJuntar: (targetIdx, id, from) => {
+      if (from === 'cajon') {
+        const free = targetIdx === 0 ? 1 : 0;
+        if (slots[free] || !disponibleParaMesa(id)) return false;
+        slots[free] = id;
+      }
+      if (!slots[0] || !slots[1]) return false;
+      setTimeout(combinarMesa, 80);   /* deja aterrizar el gesto antes del poof */
+      return true;
+    },
+
+    /* devolver algo al cajón o al basurero (no gasta stock: solo
+       se gasta lo que de verdad se cocina) */
+    alQuitar: (idx) => {
+      slots[idx] = null;
+      sfx('tab');
+      renderTallerAction(); renderMesaEtiquetas();
+      Escena3D.setDespensa(despensaParaEscena());
+    },
+
+    /* reacomodo dentro de la tabla */
+    alMover: (from, to) => {
+      slots[to] = slots[from]; slots[from] = null;
+      renderMesaEtiquetas();
+    },
+
+    /* el engrudo cayó al basurero */
+    alBotarMezcla: () => {
+      slots = [null, null];
+      sfx('tab'); buzz(20);
+      toast('Directo al basurero. ¡La próxima saldrá mejor!');
+      renderTaller();
+    },
+  });
 }
 
 /* ---------- Arranque ---------- */

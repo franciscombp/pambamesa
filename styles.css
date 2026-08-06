@@ -280,33 +280,54 @@ svg { display: block; width: 100%; height: 100%; }
   content: '✦'; font-size: .7rem; color: var(--oro); letter-spacing: 0;
 }
 
-/* el marco del mesón 3D */
+/* el marco del mesón 3D (incluye el cajón y el basurero adentro) */
 .mesa-zona { position: relative; flex-shrink: 0; }
 .cocina3d {
-  width: 100%; aspect-ratio: 16 / 10.5;
+  position: relative;
+  width: 100%; aspect-ratio: 8 / 7;
   border-radius: 20px; overflow: hidden;
   border: 3px solid #fff;
   background: linear-gradient(180deg, var(--azulejo), var(--crema-2));
   box-shadow: 0 14px 30px -14px rgba(74,44,42,.55);
 }
-.cocina3d canvas { display: block; width: 100% !important; height: 100% !important; }
+.cocina3d canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
 .cocina3d.shake { animation: mesa-shake .4s ease; }
 
-/* etiquetas de lo que hay sobre la tabla (tocar ✕ lo quita) */
+/* flechas para pasar de página en el cajón */
+.cajon-flecha {
+  position: absolute; bottom: 13%; z-index: 5;
+  width: 2.2rem; height: 2.2rem;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--display); font-size: 1.4rem; font-weight: 800; line-height: 1; color: var(--rosa-d);
+  background: #fffdf6;
+  border: 2.5px solid var(--rosa-d);
+  border-radius: 50%;
+  box-shadow: 0 4px 10px -3px rgba(74,44,42,.5);
+  transition: transform .1s ease;
+}
+.cajon-flecha:active { transform: scale(.9); }
+.cajon-flecha { bottom: 37%; }
+.cajon-flecha.prev { left: .45rem; }
+.cajon-flecha.next { right: .45rem; }
+
+/* etiquetas de lo que hay sobre la tabla */
 .mesa-etiquetas {
-  position: absolute; left: 0; right: 0; bottom: .55rem;
+  position: absolute; left: 0; right: 0; top: .55rem;
   display: flex; justify-content: center; gap: .6rem;
   pointer-events: none;
 }
 .mesa-etiqueta {
-  pointer-events: auto;
-  font-family: var(--display); font-size: .88rem; font-weight: 700; color: #fff;
+  font-family: var(--display); font-size: .86rem; font-weight: 700; color: #fff;
   background: rgba(74,44,42,.72);
   border: 2px solid rgba(255,255,255,.5);
-  border-radius: 999px; padding: .12rem .75rem;
+  border-radius: 999px; padding: .1rem .75rem;
   box-shadow: 0 3px 8px rgba(0,0,0,.3);
 }
-.mesa-etiqueta.vacia { background: rgba(74,44,42,.35); font-weight: 600; pointer-events: none; }
+.mesa-etiqueta.mess { background: rgba(110,60,30,.85); border-color: var(--oro-2); }
+
+/* con el mesón 3D, el cajón vive dentro de la escena: los botones
+   de despensa y la tira "en preparación" ya no hacen falta aquí */
+.mesa3d .despensa-accesos, .mesa3d #en-preparacion { display: none !important; }
 
 /* fogón 2D: solo aparece si el navegador no puede con WebGL */
 .fogon {
@@ -831,7 +852,7 @@ svg { display: block; width: 100%; height: 100%; }
   html { font-size: 16px; }
   .carta-slot, .carta { width: clamp(92px, 26vw, 116px); }
   .fogon { padding: 1.1rem .6rem; }
-  .cocina3d { aspect-ratio: 16 / 9; }
+  .cocina3d { aspect-ratio: 16 / 12; }
 }
 
 @media (min-width: 640px) {

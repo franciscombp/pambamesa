@@ -30,5 +30,8 @@ Preparaciones: `verde_pelado`, `verde_cocido`, `masa_verde`,
 
 Platillos: `bolon`, `bolon_mixto`, `tigrillo`, `llapingacho`, `humita`
 
+Extra: `mezcla_rara` — el engrudo humeante que aparece cuando una
+combinación falla y que se bota al basurero.
+
 (La lista crece con cada región nueva: cualquier id nuevo en
 `recetario.js` busca automáticamente su `.glb` aquí.)
