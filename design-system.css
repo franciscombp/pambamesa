@@ -485,3 +485,35 @@
   box-shadow: var(--e-2);
   padding: var(--sp-3);
 }
+
+/* ---------- Ciclo de versión (actualizador.js) ---------- */
+
+/* el botón que aparece cuando hay versión nueva descargada */
+.aviso-actualizar {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-3));
+  z-index: var(--z-toast);
+  animation: aviso-sube var(--dur-slow) var(--ease-pop) both;
+}
+.aviso-actualizar b { font-weight: 800; }
+@keyframes aviso-sube { from { opacity: 0; transform: translateX(-50%) translateY(20px); } }
+
+/* la nota de versiones */
+.nota-version-ic { font-size: var(--t-3xl); line-height: 1; }
+.nota-version-lista {
+  width: 100%; text-align: left;
+  margin: var(--sp-1) 0 var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-6);
+  font-size: var(--t-sm); line-height: var(--lead); color: var(--text);
+  background: rgba(43,33,41,.05);
+  border: 2px dashed var(--hairline);
+  border-radius: var(--r-md);
+}
+.nota-version-lista li { margin: .2rem 0; }
+.nota-version-lista li::marker { color: var(--accent); }
+
+/* la etiqueta discreta de versión en la portada */
+.version-tag {
+  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700;
+  letter-spacing: .12em; color: var(--text-muted); opacity: .75;
+}
