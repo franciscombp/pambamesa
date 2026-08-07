@@ -17,14 +17,44 @@
    muestran en el cuaderno.
    ============================================================ */
 
-/* La cita es real y verificable; la usamos textual y con nombre.
-   No es adorno: es la misma idea que sostiene la mecánica del
-   choclo, dicha cuarenta años antes y en serio. */
-export const CACUANGO = {
-  texto: 'Nosotros somos como los granos de quinua: si estamos solos, el viento lleva lejos. Pero si estamos unidos en un costal, nada hace el viento. Bamboleará, pero no nos hará caer.',
-  quien: 'Dolores Cacuango',
-  datos: 'Pesillo, Cayambe, 1881 – 1971. Lideresa kichwa, precursora de la lucha por los derechos indígenas y campesinos; impulsó las primeras escuelas bilingües kichwa-castellano del Ecuador.',
+/* ============================================================
+   LAS VOCES
+   Citas de lideresas indígenas ecuatorianas. Todas van textuales,
+   con nombre y con datos verificables, y solo se usan donde el
+   juego de verdad las sostiene: una cita puesta de adorno donde
+   no viene a cuento las gasta.
+
+   La de Amaguaña es la que da sentido a todo el nivel del choclo,
+   porque describe LITERALMENTE la mecánica: el grano que se va se
+   lleva la fila, y sin filas no queda mazorca.
+   ============================================================ */
+
+export const AMAGUANA_MAZORCA = {
+  texto: 'Los indígenas que hemos sufrido, que hemos chupado las cuerizas, las garrotizas, tenemos que estar unidos porque la unidad es como la mazorca: si se va el grano, se va la fila; si se va la fila, se acaba la mazorca.',
+  corta: 'La unidad es como la mazorca: si se va el grano, se va la fila; si se va la fila, se acaba la mazorca.',
+  quien: 'Tránsito Amaguaña',
+  datos: 'Pesillo, Cayambe, 10 de septiembre de 1909 – 10 de mayo de 2009. Lideresa kichwa; con Dolores Cacuango encabezó en 1926 la primera huelga de trabajadores de hacienda en Olmedo-Pesillo, y caminó veintiséis marchas a Quito.',
 };
+
+export const AMAGUANA_SANGRE = {
+  texto: 'Yo he viajado y he caminado por todos los lugares, pero nunca he negociado con la sangre de mis hermanos.',
+  quien: 'Tránsito Amaguaña',
+  datos: 'Vivió cien años. Estuvo presa, la acusaron de armar escuelas «comunistas», y siguió.',
+};
+
+export const CACUANGO_PARAMO = {
+  texto: 'Somos como la paja de páramo que se arranca y vuelve a crecer… y de paja de páramo sembraremos el mundo.',
+  quien: 'Dolores Cacuango',
+  datos: 'Pesillo, Cayambe, 1881 – 1971. Fundó en 1946 la primera escuela bilingüe kichwa-castellano del Ecuador, y fue de las fundadoras de la Federación Ecuatoriana de Indios.',
+};
+
+export const CHANCOSO_AGRICULTURA = {
+  texto: 'La agricultura es una historia, una identidad: quienes cultivan lo hacen gracias a la herencia que dejaron los ancestros, mantenida por milenios.',
+  quien: 'Blanca Chancoso',
+  datos: 'Kichwa otavalo, cofundadora de Ecuarunari y de la CONAIE. (Declaración recogida en entrevista, no cita de archivo: por eso va parafraseada y marcada como tal.)',
+};
+
+export const VOCES = [AMAGUANA_MAZORCA, CACUANGO_PARAMO, AMAGUANA_SANGRE, CHANCOSO_AGRICULTURA];
 
 export const HISTORIA = {
   entradilla: 'Se come un solo día al año y casi nadie la cocina solo. Debajo del queso y la leche hay una fiesta de cosecha más vieja que las iglesias que hoy le ponen fecha.',
@@ -90,14 +120,26 @@ export const HISTORIA = {
     },
     {
       id: 'unidad',
-      titulo: '«Como los granos de quinua»',
+      titulo: '«Si se va el grano, se va la fila»',
       icono: 'maiz',
       cuerpo: [
-        'Cualquiera que haya desgranado un choclo lo sabe con las manos antes que con la cabeza: un grano en el centro, apretado por los cuatro lados, no sale. Hay que empezar por una orilla — y en cuanto sale el primero, la hilera entera se va sola.',
-        '<b>Dolores Cacuango</b> (Pesillo, Cayambe, 1881–1971) usó esa misma imagen para explicar por qué había que organizarse. Lideresa kichwa, precursora de la lucha por los derechos indígenas y campesinos, impulsora de las primeras escuelas bilingües kichwa-castellano del país, lo dijo así:',
-        'La mecánica de este juego llegó a lo mismo desde el otro lado: aquí un grano solo se suelta cuando le falta un vecino. Suelto, se va. Apretado con los demás, no hay dedo que lo mueva.',
+        'Cualquiera que haya desgranado un choclo lo sabe con las manos antes que con la cabeza: un grano del centro, apretado por los cuatro lados, no sale. Hay que empezar por una orilla — y en cuanto sale el primero, la hilera entera se va sola.',
+        '<b>Tránsito Amaguaña</b> usó exactamente esa imagen, y no como metáfora bonita: la dijo explicando por qué los peones de hacienda tenían que organizarse.',
+        'No es que el juego se parezca a la frase. Es que la frase describe la mecánica: aquí un grano solo se suelta cuando le falta un vecino, y en cuanto falta uno se va la hilera completa. Ella lo sabía porque desgranaba choclo.',
       ],
-      cita: CACUANGO,
+      cita: AMAGUANA_MAZORCA,
+    },
+    {
+      id: 'voces',
+      titulo: 'Las que lo dijeron primero',
+      icono: 'cuaderno',
+      cuerpo: [
+        'Las dos nacieron en <b>Pesillo, Cayambe</b>, en haciendas donde sus familias eran huasipungueras: trabajaban la tierra del patrón a cambio de un pedazo para sembrar. En 1926 encabezaron juntas la primera huelga de trabajadores de hacienda del país.',
+        '<b>Dolores Cacuango</b> (1881–1971) fundó en 1946 la primera escuela bilingüe kichwa-castellano del Ecuador, cuando enseñar en kichwa era motivo de persecución. Fue de las fundadoras de la Federación Ecuatoriana de Indios.',
+        '<b>Tránsito Amaguaña</b> (1909–2009) caminó veintiséis marchas a Quito, estuvo presa, y vivió cien años. Cuando le preguntaban qué había sacado de todo eso:',
+        'Y de la generación que siguió, <b>Blanca Chancoso</b>, kichwa otavalo, cofundadora de Ecuarunari y de la CONAIE, insiste en algo que este plato demuestra solo: que sembrar y cocinar son también una manera de acordarse.',
+      ],
+      citas: [CACUANGO_PARAMO, AMAGUANA_SANGRE, CHANCOSO_AGRICULTURA],
     },
   ],
 
@@ -106,7 +148,10 @@ export const HISTORIA = {
     { t: 'Origen y permanencia de la Fanesca — Archivo Metropolitano de Historia de Quito', u: 'http://archivoqhistorico.quito.gob.ec/index.php/quito-y-sus-historias/36-origen-y-permanencia-de-la-fanesca' },
     { t: 'El origen de la fanesca, un plato que empezó con carne de llama — Primicias', u: 'https://www.primicias.ec/noticias/entretenimiento/gastronomia/semana-santa-fanesca-origen-historia-ecuador/' },
     { t: 'La historia de la fanesca — Infobae', u: 'https://www.infobae.com/america/america-latina/2022/04/16/la-historia-de-la-fanesca-la-sopa-ecuatoriana-que-recuerda-a-jesus-y-sus-apostoles/' },
-    { t: 'Dolores Cacuango — CONAIE', u: 'https://conaie.org/' },
+    { t: 'Tránsito Amaguaña, la líder indígena que vivió cien años — Infobae', u: 'https://www.infobae.com/america/america-latina/2021/07/11/la-historia-de-transito-amaguana-la-lider-indigena-ecuatoriana-que-vivio-hasta-los-100-anos/' },
+    { t: 'Tránsito Amaguaña — biografía y logros (Lifeder)', u: 'https://www.lifeder.com/transito-amaguana/' },
+    { t: 'El legado de Dolores Cacuango — Fundación Rosa Luxemburg', u: 'https://www.rosalux.org.ec/pdfs/D-Cacuango.pdf' },
+    { t: 'Entrevista a Blanca Chancoso — FLACSO Andes', u: 'https://www.flacsoandes.edu.ec/web/imagesFTP/BLANCA_CHANCOSO.pdf' },
   ],
 };
 
@@ -115,8 +160,8 @@ export const HISTORIA = {
 export const TARJETAS = {
   maiz: {
     titulo: 'El choclo, y la fila que se va sola',
-    texto: 'El choclo es de aquí: llevaba miles de años en estos valles cuando llegó todo lo demás. Se desgrana empezando por una orilla, porque el grano del centro está trabado por sus cuatro vecinos — que es exactamente la imagen que usó Dolores Cacuango para hablar de organizarse.',
-    cita: CACUANGO,
+    texto: 'El choclo es de aquí: llevaba miles de años en estos valles cuando llegó todo lo demás. Se desgrana empezando por una orilla, porque el grano del centro está trabado por sus cuatro vecinos — que es exactamente la imagen que usó Tránsito Amaguaña para explicar por qué había que organizarse.',
+    cita: AMAGUANA_MAZORCA,
     abre: ['unidad'],
   },
   habas: {
@@ -128,6 +173,17 @@ export const TARJETAS = {
     titulo: 'El fréjol, de este lado',
     texto: 'El fréjol sí es de acá, domesticado en América mucho antes de que existiera la Cuaresma. Iba en la uchucuta, la olla de granos tiernos que se comía en el Mushuk Nina para estrenar el año agrícola. La fanesca es esa olla, con otro nombre y otra fecha encima.',
     abre: ['origen', 'fecha'],
+  },
+  chochos: {
+    titulo: 'Lo amargo se quita con paciencia',
+    texto: 'El chocho crudo es tóxico y amarguísimo: no se come sin antes pasar días en agua corriente, cambiándola. Nadie descubrió eso en una tarde. Es conocimiento acumulado por generaciones y transmitido casi siempre entre mujeres, de una cocina a otra, sin escribirse en ninguna parte.',
+    abre: ['origen'],
+  },
+  escoger: {
+    titulo: 'Escoger el grano, que se hace entre varias',
+    texto: 'Escoger el grano —sacarle las piedritas y lo picado— es de las pocas tareas que se hacen sentadas y en conjunto. Por eso la fanesca casi nunca se cocina sola: no es que sea difícil, es que da para conversar. La olla más simbólica del país es, en la práctica, una excusa para juntarse.',
+    cita: CHANCOSO_AGRICULTURA,
+    abre: ['voces'],
   },
   zapallo: {
     titulo: 'Zapallo y sambo, los dos hermanos',

@@ -212,7 +212,12 @@ export default {
     vainasGrupo = new THREE.Group();
     raiz.add(vainasGrupo);
 
-    plaga = nuevaPlaga(THREE, api, raiz, { nombre: 'gusanito', vel: 0.13 });
+    plaga = nuevaPlaga(THREE, api, raiz, { nombre: 'gusanito', vel: 0.13,
+      /* la tabla sobresale del mesón: el bicho tiene que caminar
+         ENCIMA de ella, no dentro */
+      superficie: (x, z) => (Math.abs(x) < 1.55 && Math.abs(z - TABLA_Z) < 0.85)
+        ? api.MESA_Y + 0.10 : api.MESA_Y,
+    });
 
     /* qué vainas traen bicho: se decide al armar, nunca a mitad de partida */
     const conBicho = new Set();

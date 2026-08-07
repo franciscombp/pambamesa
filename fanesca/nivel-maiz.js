@@ -29,7 +29,7 @@
    ============================================================ */
 
 import { nuevoGusano, ARRUINADO } from './bichos.js';
-import { CACUANGO } from './historia.js';
+import { AMAGUANA_MAZORCA } from './historia.js';
 
 let THREE, raiz, api;
 
@@ -370,7 +370,11 @@ function intentarGrano(raizGrano, esArrastre) {
 export default {
   id: 'maiz',
   /* de frente y en vertical: el encuadre del teléfono en la mano */
-  camara: { pos: [0, 2.98, 3.4], mira: [0, 2.38, 0.12] },
+  /* De pie y grande, pero con la batea y la composta dentro del
+     encuadre: en este nivel el gusanito se lleva a la composta, y un
+     cuenco fuera de pantalla convierte esa regla en algo imposible.
+     Es el encuadre más cerrado que todavía deja los dos a mano. */
+  camara: { pos: [0, 2.95, 3.9], mira: [0, 1.95, 0.14] },
   controles: [
     { id: 'izq', txt: '⟲', tip: 'girar' },
     { id: 'der', txt: '⟳', tip: 'girar' },
@@ -593,7 +597,7 @@ export default {
        la prueba de lo que dice. */
     if (citaPendiente && !cascadas.length && !modo) {
       citaPendiente = false;
-      api.voz(CACUANGO, 9500);
+      api.voz(AMAGUANA_MAZORCA, 9500, { corta: true });
       api.abrirCapitulo('unidad');
       api.sfx('bien');
     }

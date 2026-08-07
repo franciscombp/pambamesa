@@ -37,10 +37,14 @@ Todo eso está en `historia.js` y se reparte por el juego:
   se gana con las manos, igual que en la cocina.
 - **La tarjeta** que aparece al terminar un nivel, con lo que ese
   ingrediente concreto cuenta.
-- **La voz**: la frase de **Dolores Cacuango** sobre los granos de
-  quinua aparece la primera vez que una cascada larga te limpia una
-  hilera entera — es decir, en el segundo exacto en que acabas de
-  comprobar con el pulgar lo que ella decía. No antes.
+- **La voz**: la frase de **Tránsito Amaguaña** —«la unidad es como
+  la mazorca: si se va el grano, se va la fila; si se va la fila, se
+  acaba la mazorca»— aparece la primera vez que una cascada larga te
+  limpia una hilera entera. O sea, en el segundo exacto en que
+  acabas de comprobarla con el pulgar. No antes.
+
+  No es que el juego se parezca a la frase: la frase **describe la
+  mecánica**. Ella lo sabía porque desgranaba choclo.
 
 Lo que está en disputa se dice que está en disputa: el origen del
 nombre (¿*fames*? ¿*faneca*? ¿*juanesca*?) no lo sabe nadie, y el
@@ -54,9 +58,20 @@ Cinco ingredientes, cinco gestos, una sola regla compartida.
 |---|---|---|---|
 | **El choclo** | tocar un grano | arrastrar a lo largo de la hilera → cascada | gusanito bajo un grano |
 | **Las habas** | tocar haba por haba | barrer la vaina abierta | gusanito dentro de la vaina |
+| **Los chochos** | apretar uno | arrastrar y van saltando en fila | gorgojo del mismo color |
 | **El fréjol** | — | mantener el dedo hasta que truene, y barrer | gorgojo entre los granos |
 | **El zapallo** | — | cruzar la línea punteada de un trazo | gusano paseando sobre el corte |
+| **La lenteja** | tocar cada piedrita | *no hay* — barrer antes de limpiar arruina la olla | gorgojo igualito a una piedra |
 | **El bacalao** | frotar la sal | — | mosca posada en la presa |
+
+**La lenteja es la excepción a propósito.** Los otros seis premian la
+mano rápida; escoger el grano premia la mirada. Ahí el bicho deja de
+ser un castigo añadido y se vuelve el nivel entero: el gorgojo tiene
+el tamaño y casi el color de una piedrita, y tocar lo que sobra es
+justamente el gesto correcto. La única defensa es mirar antes de
+tocar. Es también la tarea que en la vida real se hace sentadas y
+entre varias — por eso cierra el argumento de que este plato es una
+excusa para juntarse.
 
 ### El teléfono es la mano
 

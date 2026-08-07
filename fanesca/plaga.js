@@ -21,7 +21,15 @@ export function nuevaPlaga(THREE, api, raiz, opts = {}) {
      vaina de la derecha está a un palmo del cuenco. Nazca donde nazca,
      se lo aparta hasta esta distancia para que siempre haya carrera. */
   const ARRANQUE = opts.arranque || 1.15;
-  const ALTO = opts.alto != null ? opts.alto : 0.05;   /* sobre el mesón */
+  /* Cuánto levanta al bicho sobre la superficie que pisa: la panza
+     del gusano y las patas del gorgojo bajan ~0.06, así que menos
+     que esto lo entierra. */
+  const ALTO = opts.alto != null ? opts.alto : 0.055;
+  /* Y CUÁL es esa superficie. Sin esto el bicho camina a la altura
+     del mesón y la tabla de picar —que sobresale un centímetro— se
+     lo traga: se le ve media cabeza y el jugador no puede agarrarlo.
+     Cada nivel dice dónde está su tabla. */
+  const SUELO = opts.superficie || (() => api.MESA_Y);
   const CERCA_BATEA = opts.cercaBatea || 0.42;
   const CERCA_COMPOSTA = opts.cercaComposta || 0.7;
   /* El bicho aparece justo bajo el dedo que lo destapó, y muchas veces
@@ -53,7 +61,7 @@ export function nuevaPlaga(THREE, api, raiz, opts = {}) {
       nodo.position.x = Math.max(-1.3, Math.min(1.3, api.BATEA.x + (dx / d) * ARRANQUE));
       nodo.position.z = Math.max(-0.45, Math.min(1.05, api.BATEA.z + (dz / d) * ARRANQUE));
     }
-    nodo.position.y = api.MESA_Y + ALTO;
+    nodo.position.y = SUELO(nodo.position.x, nodo.position.z) + ALTO;
     grupo.add(nodo);
     nodo.scale.setScalar(0.01);
     api.tween(nodo.scale, 'x', 1, 0.28); api.tween(nodo.scale, 'y', 1, 0.28); api.tween(nodo.scale, 'z', 1, 0.28);
@@ -133,7 +141,7 @@ export function nuevaPlaga(THREE, api, raiz, opts = {}) {
       }
       rec.estado = 'suelto';
       rec.bicho.aro.visible = true;
-      rec.nodo.position.y = api.MESA_Y + ALTO;
+      rec.nodo.position.y = SUELO(rec.nodo.position.x, rec.nodo.position.z) + ALTO;
       rec.nodo.rotation.z = 0;
       api.sfx('resist');
       api.aviso(`🪱 Se te resbaló. Otra vez: hasta la composta`);
@@ -155,6 +163,7 @@ export function nuevaPlaga(THREE, api, raiz, opts = {}) {
         }
         p.x += (dx / d) * VEL * dt;
         p.z += (dz / d) * VEL * dt;
+        p.y = SUELO(p.x, p.z) + ALTO;    /* sube y baja de la tabla */
         rec.nodo.rotation.y = Math.atan2(dx, dz);
       }
       return false;

@@ -10,7 +10,7 @@
 
 import Motor, { MESA_Y, BATEA, COMPOSTA } from './motor3d.js';
 import { NIVELES, porId, cucharasDe, tiempoBonito } from './niveles.js';
-import { HISTORIA, TARJETAS, CIERRE } from './historia.js';
+import { HISTORIA, TARJETAS, CIERRE, CACUANGO_PARAMO } from './historia.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -192,10 +192,11 @@ function renderCuaderno() {
           <span class="grano-chip alla">del otro</span>
         </div>`;
     }
-    if (cap.cita) {
-      html += `<blockquote class="cita"><p>«${cap.cita.texto}»</p>
-        <footer>${cap.cita.quien}<span>${cap.cita.datos}</span></footer></blockquote>`;
-    }
+    const citas = cap.citas || (cap.cita ? [cap.cita] : []);
+    citas.forEach(c => {
+      html += `<blockquote class="cita"><p>«${c.texto}»</p>
+        <footer>${c.quien}<span>${c.datos}</span></footer></blockquote>`;
+    });
     art.innerHTML = html;
     cont.appendChild(art);
   });
@@ -269,10 +270,12 @@ let vozId = null;
 /* Una cita no es un toast: se queda el tiempo suficiente para leerla
    y no interrumpe el juego, porque llega justo cuando el jugador
    acaba de HACER lo que la cita dice. */
-function voz(cita, ms = 9000) {
+function voz(cita, ms = 9000, opts = {}) {
   const v = $('#voz');
   if (!cita) { v.classList.remove('visible'); return; }
-  $('#voz-texto').textContent = '«' + cita.texto + '»';
+  /* sobre la escena va la versión corta si la hay: la cita entera se
+     lee en el cuaderno, con su contexto y su fuente */
+  $('#voz-texto').textContent = '«' + ((opts.corta && cita.corta) || cita.texto) + '»';
   $('#voz-quien').textContent = cita.quien;
   v.classList.add('visible');
   clearTimeout(vozId);
@@ -510,6 +513,7 @@ function mostrarFinal() {
   const total = NIVELES.reduce((a, n) => a + (estado.mejores[n.id] ? estado.mejores[n.id].ms : 0), 0);
   const cuch = NIVELES.reduce((a, n) => a + (estado.mejores[n.id] ? estado.mejores[n.id].cucharas : 0), 0);
   $('#final-cierre').textContent = CIERRE;
+  $('#final-voz').innerHTML = `«${CACUANGO_PARAMO.texto}»<span>${CACUANGO_PARAMO.quien}</span>`;
   $('#final-total').textContent = `${cuch} de ${NIVELES.length * 3} cucharas · ${tiempoBonito(total)} en total`;
   HISTORIA.capitulos.forEach(c => abrirCapitulo(c.id));
   $('#modal-final').classList.add('open');

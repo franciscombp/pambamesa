@@ -175,7 +175,12 @@ export default {
     vainasGrupo = new THREE.Group();
     granosGrupo = new THREE.Group();
     raiz.add(vainasGrupo, granosGrupo);
-    plaga = nuevaPlaga(THREE, api, raiz, { nombre: 'gorgojo', vel: 0.15 });
+    plaga = nuevaPlaga(THREE, api, raiz, { nombre: 'gorgojo', vel: 0.15,
+      /* la tabla sobresale del mesón: el bicho tiene que caminar
+         ENCIMA de ella, no dentro */
+      superficie: (x, z) => (Math.abs(x) < 1.55 && Math.abs(z - TABLA_Z) < 0.85)
+        ? api.MESA_Y + 0.10 : api.MESA_Y,
+    });
 
     const conBicho = new Set();
     while (conBicho.size < CON_GORGOJO) conBicho.add(Math.floor(Math.random() * VAINAS));
