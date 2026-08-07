@@ -52,17 +52,27 @@ cuaderno lo dice así.
 
 ## La idea
 
-Cinco ingredientes, cinco gestos, una sola regla compartida.
+Siete ingredientes, siete gestos, una sola regla compartida.
 
 | Nivel | Gesto lento | Gesto rápido | El bicho |
 |---|---|---|---|
-| **El choclo** | tocar un grano | arrastrar a lo largo de la hilera → cascada | gusanito bajo un grano |
+| **El choclo** | deshojar, y tocar grano a grano | arrastrar a lo largo → cascada | gusanito bajo un grano |
 | **Las habas** | tocar haba por haba | barrer la vaina abierta | gusanito dentro de la vaina |
 | **Los chochos** | apretar uno | arrastrar y van saltando en fila | gorgojo del mismo color |
 | **El fréjol** | — | mantener el dedo hasta que truene, y barrer | gorgojo entre los granos |
 | **El zapallo** | — | cruzar la línea punteada de un trazo | gusano paseando sobre el corte |
 | **La lenteja** | tocar cada piedrita | *no hay* — barrer antes de limpiar arruina la olla | gorgojo igualito a una piedra |
 | **El bacalao** | frotar la sal | — | mosca posada en la presa |
+
+**El choclo llega con hojas y con genio.** Se deshoja jalando cada
+hoja hacia abajo y arrancando los pelos de un jalón — el mismo gesto
+que en la cocina. Y van **dos choclos por olla**, nunca iguales: el
+**tierno** cede casi solo, pero si pasas el dedo con fuerza el grano
+revienta en papilla que se pega, traba la hilera y toca limpiar a
+mano; el **duro** no revienta nunca, pero sus granos trabados
+aguantan el doble y la cascada corre pesada. Ir rápido en el choclo
+equivocado es ir más lento — que es exactamente lo que enseña
+desgranar de verdad.
 
 **La lenteja es la excepción a propósito.** Los otros seis premian la
 mano rápida; escoger el grano premia la mirada. Ahí el bicho deja de
@@ -77,9 +87,10 @@ excusa para juntarse.
 
 El juego es vertical, así que cuando el ingrediente es de los que se
 sostienen, se sostiene: **el choclo va de pie**, ocupando la pantalla
-a lo alto, con una mano agarrándolo por el tallo abajo. El pulgar baja
-por una hilera y la desgrana — que es exactamente el gesto real.
-Girarlo es pasar el dedo de lado, como hacerlo rodar entre los dedos.
+a lo alto, con su sombra en el mesón. El pulgar baja por una hilera
+y la desgrana — que es exactamente el gesto real. Girarlo es pasar
+el dedo de lado, y rueda **hacia** el dedo, como rodaría de verdad
+entre los dedos.
 
 Lo que no se sostiene, no se sostiene: el zapallo se corta sobre la
 tabla y el bacalao se frota en el mesón. Cada nivel declara su propio
@@ -94,7 +105,7 @@ hueco. Abierto el primer hueco, arrastrar el dedo a lo largo de la
 hilera la desgrana entera en cascada. El zapallo repite la idea con
 otra cara: una tajada solo cae cuando quedó suelta por los dos lados.
 
-**Y los bichos, iguales en los cinco niveles** (por eso viven en
+**Y los bichos, iguales en todos los niveles** (por eso viven en
 `bichos.js` y no en cada nivel):
 
 - **tocarlo** → lo aplastas → se arruina la olla y se empieza de nuevo

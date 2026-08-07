@@ -11,14 +11,14 @@ export const NIVELES = [
   {
     id: 'maiz',
     nombre: 'El choclo',
-    tarea: 'Desgranar',
+    tarea: 'Deshojar y desgranar',
     icono: 'maiz',
     modulo: () => import('./nivel-maiz.js'),
-    gesto: 'Toca un grano del borde y <b>arrastra</b> a lo largo: la fila entera se va sola. Del centro, ni te molestes.',
-    nota: 'Doce granos, doce apóstoles. El choclo tierno se desgrana con el pulgar, empezando siempre por una orilla.',
+    gesto: 'Primero <b>deshoja</b>: jala cada hoja hacia abajo y arranca los pelos. Luego toca un grano de la punta y <b>arrastra</b> a lo largo: la fila se va en cascada. Van dos choclos, y no son iguales: el <b>tierno</b> revienta si pasas el dedo con fuerza; el <b>duro</b> pelea grano a grano.',
+    nota: 'Doce granos, doce apóstoles. El choclo se compra con hoja —así se sabe que es de hoy— y se desgrana con el pulgar, empezando siempre por una orilla.',
     bicho: 'el gusanito',
     /* segundos para 3, 2 y 1 cuchara */
-    cucharas: [55, 85, 130],
+    cucharas: [80, 120, 175],
   },
   {
     id: 'habas',

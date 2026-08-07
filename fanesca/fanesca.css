@@ -284,11 +284,15 @@ svg[width="0"] { width: 0; height: 0; }
   position: absolute; left: 50%; transform: translateX(-50%);
   bottom: calc(env(safe-area-inset-bottom) + var(--prep-ctrl-h) + var(--sp-3));
   z-index: 4; width: max-content; max-width: 88%;
-  padding: .3rem .9rem;
+  padding: .34rem 1rem;
   font-family: var(--font-text); font-size: var(--t-xs); font-weight: 600; text-align: center;
   color: var(--tinta-invert);
-  background: rgba(74,44,42,.82);
+  background: rgba(74,44,42,.86);
+  border: 1.5px solid rgba(255,255,255,.16);
   border-radius: var(--r-pill);
+  box-shadow: var(--e-2);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   opacity: 0; pointer-events: none;
   transition: opacity var(--dur) var(--ease-out);
 }

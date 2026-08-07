@@ -56,11 +56,13 @@ tocar código.
 
 En `fanesca/` vive un minijuego aparte —
 https://franciscombp.github.io/pambamesa/fanesca/ — con otra gracia:
-en vez de combinar cartas, se **prepara con los dedos**. Desgranas
-una mazorca 3D grano por grano, desvainas habas, revientas fréjol,
-cortas el zapallo y tiendes el bacalao, un nivel por ingrediente.
+en vez de combinar cartas, se **prepara con los dedos**. Deshojas y
+desgranas mazorcas 3D (una tierna que revienta si vas con fuerza,
+una dura que pelea), desvainas habas, pelas chochos, revientas
+fréjol, cortas el zapallo, escoges la lenteja y tiendes el bacalao,
+un nivel por ingrediente.
 
-El truco es el mismo en todos: lo lento es ir de uno en uno, lo
+El truco es el mismo en casi todos: lo lento es ir de uno en uno, lo
 rápido es arrastrar desde una orilla y que la fila se vaya sola. Y
 en cada ingrediente hay un bicho escondido — si lo aplastas o se te
 cuela a la batea, se arruina la olla entera y toca empezar de nuevo.
@@ -68,13 +70,29 @@ cuela a la batea, se arruina la olla entera y toca empezar de nuevo.
 Y cuenta de dónde sale el plato mientras lo preparas: la uchucuta del
 Mushuk Nina, por qué la Pascua cae en la misma fecha del equinoccio,
 por qué un bacalao del Atlántico Norte terminó en una sopa de páramo,
-y la frase de Dolores Cacuango sobre los granos de quinua — que
-aparece justo cuando el pulgar acaba de demostrarla desgranando una
-hilera entera de un tirón.
+y la frase de Tránsito Amaguaña sobre la mazorca — «si se va el
+grano, se va la fila» — que aparece justo cuando el pulgar acaba de
+demostrarla desgranando una hilera entera de un tirón.
 
 Reusa este juego sin duplicar nada: el mismo `design-system.css`,
 los mismos `icons.js` y el mismo `vendor/` de Three.js, un directorio
 más arriba. Los detalles, en [`fanesca/README.md`](fanesca/README.md).
+
+## Instalable y sin conexión
+
+Las dos cocinas son PWA y comparten un solo service worker de raíz:
+
+| Archivo | Rol |
+|---|---|
+| `notas.js` | **La única fuente de verdad de la versión** y sus notas («qué hay de nuevo»). La entrada de arriba es la vigente. |
+| `sw.js` | Caché versionada con todo lo necesario para jugar sin conexión (la cocina, la fanesca y Three.js). El nombre de la caché lleva la versión: subirla en `notas.js` **es** publicar. La versión nueva queda en espera hasta que el jugador acepte. |
+| `actualizador.js` | El mismo módulo en las dos portadas: pinta `v1.2.0 · qué hay de nuevo`, registra el worker y, cuando al reconectarse aparece una versión nueva, muestra el aviso de **Actualizar** — se recarga solo al aceptar y enseña las notas. |
+
+**Publicar una actualización** = editar `notas.js` (nueva entrada
+arriba, con su versión) y hacer push. Nada más: la caché se renombra,
+los clientes ven el aviso al volver a tener internet y el que acepta
+queda en la última versión. A nadie se le cambia el juego a mitad de
+partida.
 
 ## Arquitectura (heredada de Huecas, adaptada)
 

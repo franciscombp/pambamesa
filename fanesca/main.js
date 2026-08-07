@@ -307,6 +307,8 @@ const api = {
   aviso: alerta,
   pista,
   voz,
+  /* un nivel con fases puede renombrar lo que se está haciendo */
+  rotulo(txt) { if (txt) $('#hud-tarea').textContent = txt; },
   /* un nivel puede abrir una página del cuaderno desde adentro */
   abrirCapitulo,
   toast,
