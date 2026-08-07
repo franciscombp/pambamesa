@@ -1,49 +1,41 @@
 /* ============================================================
-   PAMBAMESA — cocina cenital coleccionable
-   app.js — motor de álbum (Little Alchemy × TCG) sobre una
-   encimera que se manipula con el dedo. Ver ESTILO.md.
+   PAMBAMESA — app.js
+   El motor del juego.
 
-   Tres capas separadas a propósito:
-   - state.discovered  → tu ÁLBUM. Permanente. Nunca se pierde.
-   - state.stock/tools → tu DESPENSA, lo que hay sobre la mesa.
-     Se gasta al cocinar y se repone abriendo canastas (o con un
-     regalo de alguien más).
-   - state.regionsUnlocked → qué colecciones (Costa, Sierra…) ya
-     se abrieron. Completar los platos de una región abre la
-     siguiente, con su propia canasta de bienvenida.
+   Tres capas de inventario, a propósito:
+   - state.discovered → EL RECETARIO. Permanente, nunca se pierde.
+   - state.stock      → LA DESPENSA. Todo lo que tienes guardado.
+   - state.canasta    → LA CANASTA. Solo lo que elegiste llevar al
+                        mesón. Chica (CANASTA_MAX) para que cocinar
+                        sea elegir, no bucear en una lista enorme.
+
+   Las preparaciones no ocupan canasta: aparecen solas en la repisa
+   del mesón. Los utensilios tampoco: son las estaciones.
    ============================================================ */
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-const SAVE_KEY = 'pambamesa_save_v2';
-/* nombres que ve el jugador (los ids internos 'semilla'/'hallazgo'
-   se quedan igual en el motor, solo cambia la etiqueta) */
-const RARITY_LABEL = { semilla: 'Ingrediente', hallazgo: 'Preparación', receta: 'Receta' };
-const RARITY_ORDER = ['semilla', 'hallazgo', 'receta'];
-const VERBO_LABEL = { pelar: 'Pelar', cocer: 'Cocinar', majar: 'Majar', freir: 'Freír', moler: 'Moler' };
+const SAVE_KEY = 'pambamesa_save_v3';
+const RARITY_LABEL = { semilla: 'Ingrediente', hallazgo: 'Preparación', receta: 'Platillo' };
+const CANASTA_MAX = 8;
 
-/* ---------- Economía de sobres ---------- */
+/* ---------- Economía ---------- */
 
-const SOBRE_TAM = 3;                          /* cartas por sobre */
-const SOBRE_INTERVALO_MS = 3 * 60 * 60 * 1000; /* un sobre gratis cada 3h */
-const SOBRE_MAX_STASH = 3;                    /* tope de sobres guardados */
+const SOBRE_TAM = 3;
+const SOBRE_INTERVALO_MS = 3 * 60 * 60 * 1000;
+const SOBRE_MAX_STASH = 3;
 const REGALOS_DIARIOS_MAX = 3;
 
-/* ---------- Sucres: la moneda de la feria ---------- */
-/* se ganan cocinando (así el mercado nunca compite con el taller,
-   lo alimenta); se gastan cuando la despensa se queda corta. */
 const SUCRES_POR_COCINAR = 1;
 const SUCRES_POR_RAREZA = { semilla: 3, hallazgo: 6, receta: 25 };
-const SUCRES_POR_RECETA_REPETIDA = 8;  /* cocinar de nuevo un plato ya terminado también vale: para eso sirve — vender o regalar */
+const SUCRES_POR_RECETA_REPETIDA = 8;
 const MERCADO_COSTO_SEMILLA = 4;
 const MERCADO_COSTO_SOBRE = 20;
-const PREGON_COOLDOWN_MS = 20 * 60 * 1000;   /* cada 20 min hay pregón nuevo */
+const PREGON_COOLDOWN_MS = 20 * 60 * 1000;
 const PREGON_RECOMPENSA = 15;
 
-/* racha diaria: recompensa creciente por volver cada día (7 días, luego se repite) */
 const RACHA_RECOMPENSAS = [5, 8, 12, 16, 20, 25, 40];
-/* combo de cocina: cocinar varias veces seguidas sin salir del taller da un extra */
 const COMBO_CADA = 3;
 const COMBO_BONO = 5;
 
@@ -54,12 +46,10 @@ function tablaDeSobre() {
   const semillas = GAME_DATA.ingredientes.filter(i => abiertas.includes(i.region)).map(i => i.id);
   const hallazgos = CARTA_ORDEN.filter(id => CARTAS[id].rarity === 'hallazgo' && abiertas.includes(CARTAS[id].region));
   const recetas = CARTA_ORDEN.filter(id => CARTAS[id].rarity === 'receta' && abiertas.includes(CARTAS[id].region));
-  const herramientas = UTENSILIOS.filter(u => abiertas.includes(u.region)).map(u => u.id);
   return [
-    { peso: 45, tipo: 'semilla',    pool: semillas },
-    { peso: 25, tipo: 'herramienta', pool: herramientas },
-    { peso: 22, tipo: 'hallazgo',   pool: hallazgos },
-    { peso: 8,  tipo: 'receta',     pool: recetas },
+    { peso: 62, tipo: 'semilla',  pool: semillas },
+    { peso: 28, tipo: 'hallazgo', pool: hallazgos },
+    { peso: 10, tipo: 'receta',   pool: recetas },
   ].filter(t => t.pool.length);
 }
 function sacarCarta() {
@@ -74,9 +64,11 @@ function sacarCarta() {
 
 function newState() {
   return {
-    discovered: [],           /* álbum: permanente */
-    stock: {},                /* despensa: copias que tienes ahora */
-    tools: {},                /* {id: usos restantes} */
+    discovered: [],
+    stock: {},
+    canasta: [],              /* ids al alcance en el mesón */
+    tools: {},                /* estaciones abiertas: {id: true} */
+    estacion: 'cuchillo',
     regionsUnlocked: ['costa'],
     sobres: 0,
     proximoSobreGratisEn: 0,
@@ -94,7 +86,7 @@ function load() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (!s) return null;
-    return Object.assign(newState(), s);   /* completa campos si vienen de un guardado anterior */
+    return Object.assign(newState(), s);
   } catch (e) { return null; }
 }
 
@@ -102,17 +94,22 @@ let state = null;
 let currentScreen = 'cover';
 let slots = [null, null];
 let feriaTimerId = null;
+let escenaOn = false;
 
 const stockOf = (id) => state.stock[id] || 0;
 function addStock(id, n) { state.stock[id] = Math.max(0, (state.stock[id] || 0) + n); }
 function discoverCard(id) { if (!state.discovered.includes(id)) { state.discovered.push(id); return true; } return false; }
 
-const toolUses = (id) => state.tools[id] || 0;
-const hasTool = (id) => toolUses(id) > 0;
-function grantTool(id) { state.tools[id] = DURABILIDAD_HERRAMIENTA[id]; }
-function useTool(id) { state.tools[id] = Math.max(0, toolUses(id) - 1); }
+/* ---------- Estaciones ---------- */
 
-/* ---------- Regiones: desbloqueo progresivo ---------- */
+const tieneEstacion = (id) => !!(state.tools && state.tools[id]);
+function estacionesAbiertas() {
+  return UTENSILIOS.filter(u => regionesAbiertas().includes(u.region) && tieneEstacion(u.id)).map(u => u.id);
+}
+function nombreEstacion(id) { const u = UTENSILIOS.find(x => x.id === id); return u ? u.name : id; }
+function verboEstacion(id) { const u = UTENSILIOS.find(x => x.id === id); return u ? u.verbo : ''; }
+
+/* ---------- Regiones ---------- */
 
 let pendingRegionUnlock = null;
 function revisarDesbloqueoRegiones() {
@@ -126,13 +123,17 @@ function iniciarSobreDeRegion(rid) {
   const r = REGIONES[rid];
   if (!state.regionsUnlocked.includes(rid)) state.regionsUnlocked.push(rid);
   const items = [];
-  r.kitHerramientas.forEach(id => { const isNew = !hasTool(id); grantTool(id); items.push({ id, tool: true, isNew }); });
+  r.kitHerramientas.forEach(id => { const isNew = !tieneEstacion(id); state.tools[id] = true; items.push({ id, tool: true, isNew }); });
   r.kitSemillas.forEach(x => { addStock(x.id, x.n); items.push({ id: x.id, tool: false, isNew: discoverCard(x.id) }); });
+  r.kitSemillas.slice(0, 4).forEach(x => {
+    if (!state.canasta.includes(x.id) && state.canasta.length < CANASTA_MAX) state.canasta.push(x.id);
+  });
+  if (!tieneEstacion(state.estacion)) state.estacion = estacionesAbiertas()[0] || 'cuchillo';
   save();
-  procesarColeccionables(items, { finalLabel: `¡A explorar ${r.nombre}! ✦`, finalCb: () => banner(`Se abrió ${r.nombre}`, '🗺') });
+  procesarColeccionables(items, { finalLabel: `¡A cocinar ${r.nombre}! ✦`, finalCb: () => banner(`Nuevo menú: ${r.nombre}`, '🍽') });
 }
 
-/* ---------- Juice mínimo: sonido y vibración ---------- */
+/* ---------- Juice: sonido y vibración ---------- */
 
 let audioCtx = null;
 function initAudio() {
@@ -145,6 +146,7 @@ const SFX = {
   win:  [{ f: 523, d: .1, g: .1 }, { f: 659, t: .08, d: .1, g: .1 }, { f: 784, t: .16, d: .18, g: .12 }],
   flip: [{ f: 440, d: .07, g: .08 }, { f: 660, t: .05, d: .08, g: .07 }],
   peel: [{ f: 300, d: .06, g: .05 }],
+  swap: [{ f: 380, d: .07, g: .06 }, { f: 520, t: .06, d: .08, g: .06 }],
 };
 function sfx(type) {
   initAudio(); if (!audioCtx) return;
@@ -160,7 +162,7 @@ function sfx(type) {
     o.start(t0); o.stop(t0 + dur + .03);
   });
 }
-function buzz(pattern) { if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} } }
+function buzz(p) { if (navigator.vibrate) { try { navigator.vibrate(p); } catch (e) {} } }
 
 let toastTimer = null;
 function toast(msg) {
@@ -169,10 +171,8 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('visible'), 2600);
 }
-
-/* mensaje grande para momentos que sí importan (abrir una región nueva) */
 let bannerTimer = null;
-function banner(msg, icon = '🗺') {
+function banner(msg, icon = '🍽') {
   const b = $('#banner');
   b.innerHTML = `<span class="banner-ic" aria-hidden="true">${icon}</span><span class="banner-txt">${msg}</span>`;
   b.classList.remove('visible'); void b.offsetWidth; b.classList.add('visible');
@@ -180,8 +180,9 @@ function banner(msg, icon = '🗺') {
   bannerTimer = setTimeout(() => b.classList.remove('visible'), 3600);
 }
 function el(tag, cls, text) { const n = document.createElement(tag); n.className = cls; if (text != null) n.textContent = text; return n; }
+const nombreDe = (id) => (isUtensilio(id) ? nombreEstacion(id) : (CARTAS[id] ? CARTAS[id].name : id));
 
-/* ---------- Fichas de carta (HTML) ---------- */
+/* ---------- Fichas de carta ---------- */
 
 function cardInner(id, { showName = true } = {}) {
   const c = CARTAS[id];
@@ -193,334 +194,267 @@ function cardInner(id, { showName = true } = {}) {
     </div>
     ${c.rarity === 'receta' ? '<span class="carta-foil" aria-hidden="true"></span>' : ''}`;
 }
-function cardBackInner() {
-  return `<div class="carta-textura" aria-hidden="true"></div><span class="carta-interrogante">?</span>`;
-}
+function cardBackInner() { return `<div class="carta-textura" aria-hidden="true"></div><span class="carta-interrogante">?</span>`; }
 function toolInner(id) {
-  const t = UTENSILIOS.find(u => u.id === id);
-  return `<div class="carta-art">${iconOf(id)}</div><div class="carta-plate"><span class="carta-nombre">${t.name}</span><span class="carta-rareza">Utensilio</span></div>`;
+  return `<div class="carta-art">${iconOf(id)}</div><div class="carta-plate"><span class="carta-nombre">${nombreEstacion(id)}</span><span class="carta-rareza">Estación</span></div>`;
 }
-
-/* pequeña carta de la colección, para elegir qué regalar (no gasta despensa) */
-function regaloCard(id) {
+function chipDe(id, { n = null, costo = null, activo = false, onClick = null } = {}) {
   const c = CARTAS[id];
-  const card = document.createElement('button');
-  card.type = 'button';
-  card.className = 'carta rarity-' + c.rarity + ' regalo-mini';
-  card.innerHTML = cardInner(id);
-  card.addEventListener('click', () => generarRegalo(id));
-  return card;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = `carta-mini rarity-${c ? c.rarity : 'tool'}` + (activo ? ' activo' : '');
+  btn.innerHTML =
+    (n != null ? `<span class="mini-cant">${n}</span>` : '') +
+    `<span class="mini-icon">${iconOf(id)}</span><span class="mini-name">${nombreDe(id)}</span>` +
+    (costo != null ? `<span class="mini-costo">${costo} <span class="icono-sucre">S</span></span>` : '');
+  if (onClick) btn.addEventListener('click', onClick);
+  return btn;
 }
 
 /* ============================================================
-   LA COCINA — la encimera vista desde arriba.
-   Todo lo que tienes está sobre la mesa, a la vista, y se lleva
-   a la olla arrastrándolo (o con un toque, que hace lo mismo).
-   Ver ESTILO.md §5: si es un objeto, se toca o se arrastra.
+   LA COCINA
    ============================================================ */
 
+function reservado(id) { return slots.filter(s => s === id).length; }
+function canastaItems() {
+  return state.canasta.map(id => ({ id, n: stockOf(id) - reservado(id) })).filter(x => x.n > 0);
+}
+function repisaItems() {
+  return CARTA_ORDEN
+    .filter(id => CARTAS[id].rarity !== 'semilla' && stockOf(id) > 0)
+    .map(id => ({ id, n: stockOf(id) - reservado(id) }))
+    .filter(x => x.n > 0);
+}
+function disponible(id) { return stockOf(id) - reservado(id) > 0; }
+
+function syncEscena(extra = {}) {
+  if (!escenaOn) return;
+  Escena3D.sync(Object.assign({
+    canasta: canastaItems(),
+    repisa: repisaItems(),
+    slots: slots.slice(),
+    estacion: state.estacion,
+  }, extra));
+}
+
 function renderTaller() {
-  renderOlla();
+  if (escenaOn) {
+    syncEscena();
+    renderEstacionFichas();
+    renderMesaEtiquetas();
+  } else {
+    const a = $('#slot-a'), b = $('#slot-b');
+    a.innerHTML = slots[0] ? mesaItemInner(slots[0]) : slotEmptyHTML();
+    a.className = 'carta-slot' + (slots[0] ? ' filled' : '');
+    b.innerHTML = slots[1] ? mesaItemInner(slots[1]) : slotEmptyHTML();
+    b.className = 'carta-slot' + (slots[1] ? ' filled' : '');
+  }
   renderTallerAction();
   renderComboIndicador();
-  renderEncimera();
+  renderEnPreparacion();
 }
-
-/* ---------- la olla ---------- */
-
-function renderOlla() {
-  const olla = $('#olla');
-  const dentro = $('#olla-dentro');
-  const puestos = slots.filter(Boolean);
-  dentro.innerHTML = '';
-  if (!puestos.length) {
-    dentro.innerHTML = `<span class="olla-vacia-txt">trae algo de la mesa</span>`;
-  } else {
-    puestos.forEach(id => {
-      const ic = el('div', 'olla-item' + (isUtensilio(id) ? ' es-utensilio' : ''));
-      ic.innerHTML = iconOf(id);
-      dentro.appendChild(ic);
-    });
-  }
-  olla.classList.toggle('tiene-algo', puestos.length > 0);
-  /* la brasa se enciende solo cuando lo de adentro sí lleva a algo */
-  const lista = slots[0] && slots[1] && !!findReceta(slots[0], slots[1]);
-  $('#hornilla').classList.toggle('encendida', lista);
+function mesaItemInner(id) {
+  return `<div class="ingrediente-mesa">
+      <div class="ing-icono">${iconOf(id)}</div>
+      <span class="ing-sombra" aria-hidden="true"></span>
+      <span class="ing-nombre">${nombreDe(id)}</span>
+    </div>`;
 }
+function slotEmptyHTML() { return '<span class="slot-plus" aria-hidden="true">+</span><span class="slot-txt">pon algo aquí</span>'; }
 
-/* qué utensilios sirven para lo que hay ahora mismo en la olla: se
-   resaltan sobre la mesa para que no haya que adivinar */
-function utensiliosSugeridos() {
-  if (!slots[0] || slots[1]) return [];
-  const id = slots[0];
-  const out = [];
-  RECETAS.forEach(r => {
-    if (r.a === id && isUtensilio(r.b) && hasTool(r.b)) out.push(r.b);
-    else if (r.b === id && isUtensilio(r.a) && hasTool(r.a)) out.push(r.a);
+/* la fila de estaciones sobre el mesón */
+function renderEstacionFichas() {
+  const wrap = $('#estacion-fichas');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  estacionesAbiertas().forEach(id => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'estacion-ficha' + (id === state.estacion ? ' activa' : '');
+    b.innerHTML = `<span class="estacion-ic">${iconOf(id)}</span><span class="estacion-txt">${verboEstacion(id)}</span>`;
+    b.addEventListener('click', () => cambiarEstacion(id));
+    wrap.appendChild(b);
   });
-  return out;
+}
+function cambiarEstacion(id, dir = 0) {
+  if (id === state.estacion || !tieneEstacion(id)) return;
+  state.estacion = id;
+  save();
+  sfx('swap'); buzz(12);
+  syncEscena({ dir });
+  renderEstacionFichas();
+  renderTallerAction();
+  /* cambiar de estación puede completar lo que ya estaba puesto */
+  setTimeout(intentarCocinar, 280);
+}
+function estacionVecina(dir) {
+  const lista = estacionesAbiertas();
+  if (lista.length < 2) return null;
+  const i = lista.indexOf(state.estacion);
+  return lista[(i + dir + lista.length) % lista.length];
 }
 
+function renderMesaEtiquetas() {
+  const wrap = $('#mesa-etiquetas'); wrap.innerHTML = '';
+  if (escenaOn && Escena3D.hayMezclaRara()) {
+    wrap.appendChild(el('span', 'pill pill--dark mesa-etiqueta mess', 'mezcla rara 🗑'));
+  }
+  slots.forEach(id => { if (id) wrap.appendChild(el('span', 'pill pill--dark mesa-etiqueta', nombreDe(id))); });
+}
+
+/* la pista de abajo: siempre dice cuál es el siguiente gesto */
 function renderTallerAction() {
   const zone = $('#taller-action'); zone.innerHTML = '';
-  const hint = $('#fogon-hint');
-
-  if (slots[0] && slots[1]) {
-    hint.textContent = findReceta(slots[0], slots[1]) ? 'el fogón está listo' : 'a ver qué sale de esto…';
-    const cocinar = document.createElement('button');
-    cocinar.type = 'button'; cocinar.className = 'btn-leather combinar-btn';
-    cocinar.textContent = 'Cocinar ✦';
-    cocinar.addEventListener('click', combinarMesa);
-    zone.appendChild(cocinar);
-    return;
-  }
-  if (slots[0]) {
-    const sug = utensiliosSugeridos();
-    hint.textContent = sug.length
-      ? 'trae el utensilio que brilla, o algo más de la mesa'
-      : 'añade algo más de la mesa';
-    return;
-  }
-  hint.textContent = 'arrastra un ingrediente hasta la olla';
-}
-
-/* ---------- la encimera: todo a la vista, nada en cajones ---------- */
-
-function renderEncimera() {
-  const abiertas = regionesAbiertas();
-  const sugeridos = utensiliosSugeridos();
-
-  const tools = UTENSILIOS.filter(u => abiertas.includes(u.region) && hasTool(u.id)).map(u => u.id);
-  pintarRepisa($('#repisa-utensilios'), tools, 'a la mano', { tool: true, sugeridos });
-
-  const preps = state.discovered.filter(id => CARTAS[id] && CARTAS[id].rarity === 'hallazgo' && stockOf(id) > 0);
-  pintarRepisa($('#repisa-prep'), preps, 'en preparación', {});
-
-  const ings = CARTA_ORDEN.filter(id => CARTAS[id].rarity === 'semilla' && abiertas.includes(CARTAS[id].region) && stockOf(id) > 0);
-  const platos = state.discovered.filter(id => CARTAS[id] && CARTAS[id].rarity === 'receta' && stockOf(id) > 0);
-  const vacio = !ings.length && !platos.length && !preps.length
-    ? 'La mesa está vacía. Pásate por la feria a conseguir ingredientes.' : null;
-  pintarRepisa($('#repisa-ingredientes'), ings.concat(platos), 'en la mesa', { vacio });
-}
-
-function pintarRepisa(wrap, ids, titulo, { tool = false, sugeridos = [], vacio = null } = {}) {
-  wrap.innerHTML = '';
-  if (!ids.length) {
-    if (vacio) wrap.appendChild(el('p', 'encimera-vacio', vacio));
-    return;
-  }
-  wrap.appendChild(el('span', 'repisa-label hand', titulo));
-  const fila = el('div', 'repisa-fila');
-  ids.forEach(id => fila.appendChild(objetoDeMesa(id, { tool, sugerido: sugeridos.includes(id) })));
-  wrap.appendChild(fila);
-}
-
-/* un objeto real apoyado en la encimera: icono, sombra y su cuenta */
-function objetoDeMesa(id, { tool = false, sugerido = false } = {}) {
-  const nombre = tool ? UTENSILIOS.find(u => u.id === id).name : CARTAS[id].name;
-  const rarity = tool ? 'tool' : CARTAS[id].rarity;
-  const nodo = document.createElement('div');
-  nodo.className = `objeto rarity-${rarity}` + (sugerido ? ' sugerido' : '');
-  nodo.setAttribute('role', 'button');
-  nodo.setAttribute('tabindex', '0');
-  nodo.setAttribute('aria-label', nombre);
-
-  const insignia = tool
-    ? `<span class="objeto-durab">${dotsDurabilidad(id)}</span>`
-    : `<span class="objeto-cant">${stockOf(id)}</span>`;
-  nodo.innerHTML = `
-    ${tool ? '' : insignia}
-    <div class="objeto-icono">${iconOf(id)}</div>
-    <span class="objeto-sombra" aria-hidden="true"></span>
-    <span class="objeto-nombre">${nombre}</span>
-    ${tool ? insignia : ''}`;
-
-  hacerArrastrable(nodo, id, tool);
-  nodo.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tryPlace(id); }
-  });
-  return nodo;
-}
-function dotsDurabilidad(id) {
-  const max = DURABILIDAD_HERRAMIENTA[id] || 0, quedan = toolUses(id);
-  let out = '';
-  for (let i = 0; i < max; i++) out += `<i class="${i < quedan ? '' : 'gastado'}"></i>`;
-  return out;
-}
-
-/* ---------- arrastrar de la mesa a la olla ---------- */
-
-let arrastre = null;
-function hacerArrastrable(nodo, id, tool) {
-  nodo.addEventListener('pointerdown', (e) => {
-    if (e.button != null && e.button !== 0) return;
-    arrastre = { id, tool, x0: e.clientX, y0: e.clientY, movido: false, fantasma: null };
-    try { nodo.setPointerCapture(e.pointerId); } catch (err) {}
-    sfx('tab'); buzz(8);
-  });
-
-  nodo.addEventListener('pointermove', (e) => {
-    if (!arrastre || arrastre.id !== id) return;
-    const dx = e.clientX - arrastre.x0, dy = e.clientY - arrastre.y0;
-    if (!arrastre.movido && Math.abs(dx) < 7 && Math.abs(dy) < 7) return;
-    if (!arrastre.movido) {
-      arrastre.movido = true;
-      const f = el('div', 'objeto-fantasma');
-      f.innerHTML = iconOf(id);
-      document.body.appendChild(f);
-      arrastre.fantasma = f;
+  if (escenaOn) {
+    let hint;
+    if (Escena3D.hayMezclaRara()) hint = 'Arrastra la mezcla rara al basurero 🗑';
+    else if (!slots[0] && !slots[1]) hint = 'Arrastra algo de la canasta a la estación';
+    else if (slots[0] && slots[1]) hint = 'Estos dos no combinan — prueba otra pareja';
+    else {
+      const uno = slots[0] || slots[1];
+      if (findReceta(uno, state.estacion)) hint = `${verboEstacion(state.estacion)}…`;
+      else {
+        const otra = estacionesAbiertas().find(e => e !== state.estacion && findReceta(uno, e));
+        hint = otra ? `Cambia de estación: ${verboEstacion(otra)}` : 'Pon algo más encima para combinar';
+      }
     }
-    arrastre.fantasma.style.left = e.clientX + 'px';
-    arrastre.fantasma.style.top = e.clientY + 'px';
-    $('#olla').classList.toggle('encima', sobreLaOlla(e.clientX, e.clientY));
-  });
-
-  const soltar = (e) => {
-    if (!arrastre || arrastre.id !== id) return;
-    const { movido, fantasma } = arrastre;
-    if (fantasma) fantasma.remove();
-    $('#olla').classList.remove('encima');
-    const enOlla = movido ? sobreLaOlla(e.clientX, e.clientY) : true;  /* un toque también sirve */
-    arrastre = null;
-    if (enOlla) tryPlace(id);
-  };
-  nodo.addEventListener('pointerup', soltar);
-  nodo.addEventListener('pointercancel', () => {
-    if (arrastre && arrastre.fantasma) arrastre.fantasma.remove();
-    $('#olla').classList.remove('encima');
-    arrastre = null;
-  });
-}
-function sobreLaOlla(x, y) {
-  const r = $('#olla').getBoundingClientRect();
-  const margen = 26;   /* la olla perdona: no hay que apuntar fino */
-  return x >= r.left - margen && x <= r.right + margen && y >= r.top - margen && y <= r.bottom + margen;
-}
-
-function tryPlace(id) {
-  const disponible = isUtensilio(id) ? hasTool(id) : stockOf(id) > 0;
-  if (!disponible) { toast(isUtensilio(id) ? 'Se gastó. Consigue otro en la feria 🎟' : 'Ya no te queda. Consíguelo en la feria 🎟'); return; }
-
-  /* soltar un utensilio en una olla con algo dentro cocina de una vez:
-     es el gesto natural, no hace falta confirmar con un botón */
-  if (isUtensilio(id) && slots[0] && !slots[1]) {
-    slots[1] = id;
-    plopEnOlla();
-    renderOlla();
-    setTimeout(combinarMesa, 180);
+    zone.innerHTML = `<span class="taller-hint">${hint}</span>`;
     return;
   }
-  const i = slots[0] === null ? 0 : (slots[1] === null ? 1 : null);
-  if (i === null) { toast('La olla está llena. Cocínala o vacíala tocándola.'); return; }
-  slots[i] = id;
-  plopEnOlla();
-  renderTaller();
-}
-function plopEnOlla() {
-  const olla = $('#olla');
-  olla.classList.remove('recibe'); void olla.offsetWidth; olla.classList.add('recibe');
-  sfx('peel'); buzz(12);
-}
-function clearSlots() { slots = [null, null]; renderTaller(); }
-function vaciarOlla() {
-  if (!slots[0] && !slots[1]) return;
-  sfx('tab'); buzz(10);
-  clearSlots();
+  if (slots[0] && slots[1]) {
+    const combinar = document.createElement('button');
+    combinar.type = 'button'; combinar.className = 'btn combinar-btn';
+    combinar.textContent = 'Combinar ✦';
+    combinar.addEventListener('click', intentarCocinar);
+    zone.appendChild(combinar);
+  }
+  const limpiar = document.createElement('button');
+  limpiar.type = 'button'; limpiar.className = 'btn btn--peltre btn--sm';
+  limpiar.textContent = 'limpiar';
+  limpiar.addEventListener('click', () => { slots = [null, null]; renderTaller(); });
+  zone.appendChild(limpiar);
 }
 
-/* combo de cocina: cocinar seguido sin salir del taller da un extra;
-   se reinicia cada vez que entras de nuevo a la pantalla */
 let comboCocina = 0;
 function renderComboIndicador() {
   const badge = $('#combo-indicador');
   if (comboCocina > 1) { badge.textContent = `🔥 x${comboCocina}`; badge.classList.remove('hidden'); }
   else badge.classList.add('hidden');
 }
+function renderEnPreparacion() {
+  const wrap = $('#en-preparacion');
+  if (!wrap) return;
+  const ids = repisaItems();
+  if (escenaOn || !ids.length) { wrap.classList.add('hidden'); wrap.innerHTML = ''; return; }
+  wrap.classList.remove('hidden');
+  wrap.innerHTML = '<span class="en-preparacion-label">En preparación</span>';
+  const row = el('div', 'en-preparacion-row');
+  ids.forEach(x => row.appendChild(chipDe(x.id, { n: x.n, onClick: () => tryPlace(x.id) })));
+  wrap.appendChild(row);
+}
+function tryPlace(id) {
+  const i = slots[0] === null ? 0 : (slots[1] === null ? 1 : null);
+  if (i === null) { toast('La estación ya tiene dos cosas.'); return; }
+  if (!disponible(id)) { toast('Ya no te queda.'); return; }
+  slots[i] = id;
+  sfx('tab'); buzz(10);
+  renderTaller();
+  setTimeout(intentarCocinar, 120);
+}
+
+/* ---------- cocinar ---------- */
 
 function findReceta(x, y) {
+  if (!x || !y) return null;
   return RECETAS.find(r => (r.a === x && r.b === y) || (r.a === y && r.b === x)) || null;
 }
-function combinarMesa() {
-  const [x, y] = slots;
-  if (!x || !y) return;
-  const r = findReceta(x, y);
-  const surface = $('#hornilla');
-  if (!r) {
-    surface.classList.remove('shake'); void surface.offsetWidth; surface.classList.add('shake');
-    sfx('fail'); buzz(60);
-    toast('Estos dos no reaccionan… todavía.');
-    return;
-  }
-  const xOk = isUtensilio(x) ? hasTool(x) : stockOf(x) > 0;
-  const yOk = isUtensilio(y) ? hasTool(y) : stockOf(y) > 0;
-  if (!xOk || !yOk) { toast('Ya no te queda esto. Consíguelo en la feria 🎟'); return; }
 
-  isUtensilio(x) ? useTool(x) : addStock(x, -1);
-  isUtensilio(y) ? useTool(y) : addStock(y, -1);
+function intentarCocinar() {
+  const [x, y] = slots;
+  if (x && y) {
+    const r = findReceta(x, y);
+    if (r) return cocinar(r, [x, y]);
+    return noCombina();
+  }
+  const uno = x || y;
+  if (!uno) return;
+  const r = findReceta(uno, state.estacion);
+  if (r) return cocinar(r, [uno]);
+  /* un ingrediente solo en una estación que no le hace nada NO se
+     desperdicia: se queda esperando la estación correcta */
+  renderTallerAction();
+}
+
+function cocinar(r, consumidos) {
+  consumidos.forEach(id => addStock(id, -1));
   const isNew = discoverCard(r.result);
   addStock(r.result, 1);
   comboCocina += 1;
   const comboBono = (comboCocina % COMBO_CADA === 0) ? COMBO_BONO : 0;
   const rarity = CARTAS[r.result].rarity;
-  /* un plato ya conocido no se descubre de nuevo, pero sí sirve para
-     vender o regalar — por eso repetirlo también da sucres */
   const bonoRareza = isNew ? (SUCRES_POR_RAREZA[rarity] || 0) : (rarity === 'receta' ? SUCRES_POR_RECETA_REPETIDA : 0);
   const sucres = SUCRES_POR_COCINAR + bonoRareza + comboBono;
   state.sucres = (state.sucres || 0) + sucres;
   revisarDesbloqueoRegiones();
+  slots = [null, null];
   save();
-  fogonazo();
-  clearSlots();
-  procesarColeccionables([{ id: r.result, tool: false, isNew, sucres, combo: comboBono ? comboCocina : 0 }], { finalLabel: 'Guardar en el álbum' });
+  const fin = () => procesarColeccionables(
+    [{ id: r.result, tool: false, isNew, sucres, combo: comboBono ? comboCocina : 0 }],
+    { finalLabel: 'Al recetario ✦' });
+  if (escenaOn) { Escena3D.combinar(fin); renderMesaEtiquetas(); renderTallerAction(); }
+  else fin();
 }
 
-/* el destello de calor cuando algo sale bien del fogón */
-function fogonazo() {
-  const hornilla = $('#hornilla');
-  if (!hornilla) return;
-  const flash = el('div', 'fogonazo');
-  hornilla.appendChild(flash);
-  setTimeout(() => flash.remove(), 600);
+/* la pareja no dio nada: queda una mezcla rara que estorba un puesto,
+   pero NO gasta ingredientes — experimentar nunca debe castigar */
+function noCombina() {
+  sfx('fail'); buzz(60);
+  slots = [null, null];
+  if (escenaOn) {
+    Escena3D.mezclaRara(0);
+    toast('Eso no combinó. Bótalo y sigue probando 🗑');
+    setTimeout(() => { renderTallerAction(); renderMesaEtiquetas(); syncEscena(); }, 320);
+  } else {
+    const surface = $('#fogon');
+    surface.classList.remove('shake'); void surface.offsetWidth; surface.classList.add('shake');
+    toast('Eso no combinó… todavía.');
+    renderTaller();
+  }
 }
 
 /* ============================================================
-   Ceremonia de revelación vs. resultado silencioso: una preparación
-   que ya tienes en el álbum no necesita mostrarse en grande otra vez
-   (rompe el ritmo de cocinar); un plato terminado o algo nuevo sí.
+   Revelación de cartas
    ============================================================ */
+
 function necesitaCeremonia(item) {
   if (item.isNew) return true;
-  return !item.tool && CARTAS[item.id].rarity === 'receta';
+  return !item.tool && CARTAS[item.id] && CARTAS[item.id].rarity === 'receta';
 }
 function procesarColeccionables(items, opts = {}) {
   const ceremonia = items.filter(necesitaCeremonia);
   const silenciosos = items.filter(it => !necesitaCeremonia(it));
   if (silenciosos.length) {
-    const resumen = silenciosos.map(it => `+1 ${it.tool ? UTENSILIOS.find(u => u.id === it.id).name : CARTAS[it.id].name}`).join(' · ');
-    toast(resumen);
+    toast(silenciosos.map(it => `+1 ${nombreDe(it.id)}`).join(' · '));
     sfx('tab');
   }
   if (ceremonia.length) { showRevealQueue(ceremonia, opts); return; }
   if (pendingRegionUnlock) { const rid = pendingRegionUnlock; pendingRegionUnlock = null; iniciarSobreDeRegion(rid); return; }
   if (opts.finalCb) opts.finalCb();
+  refrescarPantalla();
+}
+function refrescarPantalla() {
+  if (currentScreen === 'taller') renderTaller();
+  if (currentScreen === 'coleccion') renderColeccion();
+  if (currentScreen === 'feria') renderFeria();
+  renderProgress();
 }
 
-/* ============================================================
-   REVELACIÓN — al estilo de un sobre de cartas coleccionables:
-   giro 3D para voltear la carta, desliza para pasar a la
-   siguiente. El botón sigue ahí como respaldo (teclado/escritorio).
-   ============================================================ */
-
-let revealQueue = [];
-let revealFinalLabel = 'Guardar en el álbum';
-let revealFinalCb = null;
-let revealIsGift = false;
-let revealCurrent = null;
-let revealPhase = 'back';   /* 'back' | 'front' */
+let revealQueue = [], revealFinalLabel = 'Al recetario ✦', revealFinalCb = null;
+let revealIsGift = false, revealCurrent = null, revealPhase = 'back';
 
 function showRevealQueue(items, opts = {}) {
   revealQueue = items.slice();
-  revealFinalLabel = opts.finalLabel || 'Guardar en el álbum';
+  revealFinalLabel = opts.finalLabel || 'Al recetario ✦';
   revealFinalCb = opts.finalCb || null;
   revealIsGift = !!opts.giftFrom;
   $('#modal-reveal').classList.add('open');
@@ -531,10 +465,7 @@ function terminarRevelacion() {
   revealCurrent = null;
   const cb = revealFinalCb; revealFinalCb = null;
   if (cb) cb();
-  if (currentScreen === 'taller') renderTaller();
-  if (currentScreen === 'coleccion') renderColeccion();
-  if (currentScreen === 'feria') renderFeria();
-  renderProgress();
+  refrescarPantalla();
 }
 function nextRevealCard(first) {
   if (!revealQueue.length) {
@@ -561,7 +492,6 @@ function nextRevealCard(first) {
   actualizarPilaReveal();
   sfx('peel'); buzz(8);
 }
-/* pila detrás de la carta actual: deja ver que hay más esperando */
 function actualizarPilaReveal() {
   const restantes = revealQueue.length;
   $('#reveal-stack-2').classList.toggle('hidden', restantes < 1);
@@ -577,24 +507,24 @@ function revealFlip() {
   flip.style.transform = 'rotateY(180deg)';
   flip.classList.add('is-front');
   const item = revealCurrent;
-  const nombre = item.tool ? UTENSILIOS.find(u => u.id === item.id).name : CARTAS[item.id].name;
+  const nombre = nombreDe(item.id);
   const rarity = item.tool ? null : CARTAS[item.id].rarity;
   const esRecetaRepetida = !item.isNew && rarity === 'receta';
   const especial = item.isNew || revealIsGift || esRecetaRepetida;
-  let msg = revealIsGift ? '¡Te compartieron esta carta! 🎁'
-    : item.isNew ? '¡Nueva carta para tu álbum!'
-    : esRecetaRepetida ? `¡Otra vez ${nombre}! Sirve para vender o compartir`
+  let msg = revealIsGift ? '¡Te invitaron a probar este plato! 🎁'
+    : item.isNew ? (rarity === 'receta' ? '¡Platillo nuevo!' : '¡Nuevo en tu recetario!')
+    : esRecetaRepetida ? `¡Otra vez ${nombre}!`
     : `+1 ${nombre}`;
   if (item.sucres) msg += ` · +${item.sucres} <span class="icono-sucre">S</span>`;
-  if (item.combo) msg += ` · 🔥 Racha de cocina x${item.combo}`;
+  if (item.combo) msg += ` · 🔥 x${item.combo}`;
   $('#reveal-banner').innerHTML = msg;
   $('#reveal-banner').classList.add('visible');
   $('#reveal-banner').classList.toggle('is-new', especial);
   $('#reveal-hint').classList.add('hidden');
-  $('#reveal-ok').textContent = revealQueue.length ? 'Siguiente carta →' : revealFinalLabel;
+  $('#reveal-ok').textContent = revealQueue.length ? 'Siguiente →' : revealFinalLabel;
   sfx(especial ? 'win' : 'flip');
   buzz(especial ? [30, 40, 60] : 15);
-  if (especial && !item.tool && rarity === 'receta') burstConfetti($('#reveal-front'));
+  if (especial && rarity === 'receta') burstConfetti($('#reveal-front'));
   if (item.combo) burstConfetti($('#reveal-front'));
 }
 function revealAdvance() {
@@ -612,7 +542,7 @@ function burstConfetti(target) {
   wrap.className = 'reveal-burst';
   wrap.style.left = (rect.left + rect.width / 2) + 'px';
   wrap.style.top = (rect.top + rect.height / 2) + 'px';
-  const colors = ['#c9982f', '#e8c877', '#fff3d0', '#f6dcae'];
+  const colors = ['#e01b6a', '#f5a623', '#12a9a0', '#ffc93c'];
   for (let i = 0; i < 18; i++) {
     const p = document.createElement('i');
     const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 70;
@@ -626,13 +556,9 @@ function burstConfetti(target) {
   setTimeout(() => wrap.remove(), 900);
 }
 
-/* gestos: desliza arriba para revelar, desliza a los lados para pasar
-   a la siguiente; el giro 3D sigue al dedo mientras tanto */
 function bindRevealGestures() {
-  const stage = $('#reveal-stage');
-  const flip = $('#reveal-flip');
+  const stage = $('#reveal-stage'), flip = $('#reveal-flip');
   let dragging = false, moved = false, startX = 0, startY = 0;
-
   stage.addEventListener('pointerdown', (e) => {
     if (!revealCurrent) return;
     dragging = true; moved = false;
@@ -646,13 +572,9 @@ function bindRevealGestures() {
     if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
     if (revealPhase === 'back') {
       const lift = Math.max(-80, Math.min(10, dy));
-      const tiltX = Math.max(-16, Math.min(16, -dy * .22));
-      const tiltY = Math.max(-14, Math.min(14, dx * .12));
-      flip.style.transform = `translateY(${lift}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+      flip.style.transform = `translateY(${lift}px) rotateX(${Math.max(-16, Math.min(16, -dy * .22))}deg) rotateY(${Math.max(-14, Math.min(14, dx * .12))}deg)`;
     } else {
-      const tiltX = Math.max(-10, Math.min(10, -dy * .08));
-      const tiltY = Math.max(-10, Math.min(10, dx * .06));
-      flip.style.transform = `translateX(${dx}px) rotateY(${180 + tiltY}deg) rotateX(${tiltX}deg) rotateZ(${(dx * .04).toFixed(2)}deg)`;
+      flip.style.transform = `translateX(${dx}px) rotateY(${180 + Math.max(-10, Math.min(10, dx * .06))}deg)`;
     }
   });
   const onUp = (e) => {
@@ -666,7 +588,7 @@ function bindRevealGestures() {
     } else {
       if (Math.abs(dx) > 90) {
         const dir = dx < 0 ? -1 : 1;
-        flip.style.transform = `translateX(${dir * 560}px) rotateY(${180 + dir * 40}deg) rotateZ(${dir * 16}deg)`;
+        flip.style.transform = `translateX(${dir * 560}px) rotateY(${180 + dir * 40}deg)`;
         setTimeout(() => nextRevealCard(false), 240);
       } else if (!moved) revealAdvance();
       else flip.style.transform = 'rotateY(180deg)';
@@ -676,7 +598,9 @@ function bindRevealGestures() {
   stage.addEventListener('pointercancel', () => { dragging = false; });
 }
 
-/* ---------- El álbum (Colección), organizado por región ---------- */
+/* ============================================================
+   EL RECETARIO
+   ============================================================ */
 
 function renderColeccion() {
   const body = $('#coleccion-body'); body.innerHTML = '';
@@ -684,28 +608,38 @@ function renderColeccion() {
     const r = REGIONES[rid];
     const abierta = regionesAbiertas().includes(rid);
     const idsRegion = CARTA_ORDEN.filter(id => CARTAS[id].region === rid);
-    const gotRegion = idsRegion.filter(id => state.discovered.includes(id)).length;
+    const platos = idsRegion.filter(id => CARTAS[id].rarity === 'receta');
+    const gotPlatos = platos.filter(id => state.discovered.includes(id)).length;
+    const got = idsRegion.filter(id => state.discovered.includes(id)).length;
 
     const section = el('section', 'region-seccion');
     const head = document.createElement('header');
     head.className = 'region-head';
     head.style.setProperty('--region-acento', r.acento);
-    head.innerHTML = `<h3>${r.nombre}</h3><p class="region-tagline hand">${r.tagline}</p>` +
-      (abierta ? `<p class="region-progress">${gotRegion} / ${idsRegion.length}</p>` : '');
+    head.innerHTML = `<div class="region-nombre"><h3>${r.nombre}</h3><p class="region-tagline">${r.tagline}</p></div>` +
+      (abierta ? `<span class="region-progress">${got}/${idsRegion.length}</span>` : '<span class="region-progress region-progress--lock">🔒</span>');
     section.appendChild(head);
 
     if (r.proximamente) {
-      section.appendChild(el('p', 'region-locked', '🗺 Muy pronto en tu recetario…'));
+      section.appendChild(el('p', 'region-locked', '🗺 Muy pronto en tu cocina…'));
     } else if (!abierta) {
       const faltan = (r.desbloqueo_recetas || []).map(id => CARTAS[id] && CARTAS[id].name).filter(Boolean).join(', ');
-      section.appendChild(el('p', 'region-locked', `🔒 Completa ${faltan} para abrir esta región.`));
+      section.appendChild(el('p', 'region-locked', `Cocina ${faltan} para abrir esta región.`));
     } else {
-      const grid = document.createElement('div'); grid.className = 'album-grid';
-      idsRegion.forEach(id => grid.appendChild(albumCard(id, CARTAS[id].rarity)));
-      section.appendChild(grid);
+      section.appendChild(el('p', 'sub-label', `Platillos · ${gotPlatos}/${platos.length}`));
+      const gPlatos = el('div', 'album-grid');
+      platos.forEach(id => gPlatos.appendChild(albumCard(id, 'receta')));
+      section.appendChild(gPlatos);
+
+      section.appendChild(el('p', 'sub-label', 'Ingredientes y preparaciones'));
+      const gResto = el('div', 'album-grid album-grid--sm');
+      idsRegion.filter(id => CARTAS[id].rarity !== 'receta')
+        .forEach(id => gResto.appendChild(albumCard(id, CARTAS[id].rarity)));
+      section.appendChild(gResto);
     }
     body.appendChild(section);
   });
+  body.appendChild(el('p', 'coleccion-footnote', 'Toca un plato cubierto: la cocina ya te dejó una pista.'));
   renderProgress();
 }
 function albumCard(id, rar) {
@@ -725,25 +659,22 @@ function renderProgress() {
   $$('.progress-fill').forEach(n => n.style.width = (total ? (got / total * 100) : 0) + '%');
   renderSucres();
 }
-let sucresPintados = null;
-function renderSucres() {
-  const v = state.sucres || 0;
-  $$('.hud-sucres-count').forEach(n => n.textContent = v);
-  /* que se note cuando entra plata: la moneda da un brinco */
-  if (sucresPintados !== null && v > sucresPintados) {
-    const chip = $('.hud-sucres');
-    if (chip) { chip.classList.remove('gana'); void chip.offsetWidth; chip.classList.add('gana'); }
-  }
-  sucresPintados = v;
-}
+function renderSucres() { $$('.hud-sucres-count').forEach(n => n.textContent = state.sucres || 0); }
 
 function showDetalle(id) {
   const c = CARTAS[id];
-  $('#detalle-art').innerHTML = cardInner(id, { showName: false });
-  $('#detalle-art').className = 'detalle-art rarity-' + c.rarity;
+  $('#detalle-art').innerHTML = iconOf(id);
+  $('#detalle-art').className = 'plate detalle-art rarity-' + c.rarity;
   $('#detalle-nombre').textContent = c.name;
-  $('#detalle-rareza').textContent = RARITY_LABEL[c.rarity] + (c.city ? ` · ${c.city}` : '') + ` · tienes ×${stockOf(id)}`;
+  $('#detalle-rareza').textContent = RARITY_LABEL[c.rarity] + (c.city ? ` · ${c.city}` : '') + ` · ×${stockOf(id)}`;
   $('#detalle-lore').textContent = c.lore || '';
+  /* cómo se hace: la pareja que lo produce */
+  const r = RECETAS.find(x => x.result === id);
+  const paso = $('#detalle-paso');
+  if (r) {
+    paso.classList.remove('hidden');
+    paso.innerHTML = `<span class="paso-item">${nombreDe(r.a)}</span><span class="paso-mas">+</span><span class="paso-item">${nombreDe(r.b)}</span>`;
+  } else paso.classList.add('hidden');
   $('#modal-detalle').classList.add('open');
   sfx('tab');
 }
@@ -754,7 +685,9 @@ function showPista(id) {
   sfx('tab');
 }
 
-/* ---------- La feria: sobres y regalos ---------- */
+/* ============================================================
+   LA DESPENSA
+   ============================================================ */
 
 function formatDuracion(ms) {
   const totalMin = Math.max(0, Math.ceil(ms / 60000));
@@ -776,21 +709,126 @@ function abrirSobre() {
   const pulls = [];
   for (let i = 0; i < SOBRE_TAM; i++) {
     const p = sacarCarta();
-    if (p.tipo === 'herramienta') {
-      const isNew = !hasTool(p.id);
-      grantTool(p.id);
-      pulls.push({ id: p.id, tool: true, isNew });
-    } else {
-      addStock(p.id, p.tipo === 'semilla' ? 2 : 1);
-      const isNew = discoverCard(p.id);
-      pulls.push({ id: p.id, tool: false, isNew });
-    }
+    addStock(p.id, p.tipo === 'semilla' ? 2 : 1);
+    pulls.push({ id: p.id, tool: false, isNew: discoverCard(p.id) });
   }
   revisarDesbloqueoRegiones();
   save();
   procesarColeccionables(pulls, { finalLabel: '¡Genial!' });
 }
 
+/* --- la canasta: qué me llevo al mesón --- */
+function enCanasta(id) { return state.canasta.includes(id); }
+function alternarCanasta(id) {
+  const i = state.canasta.indexOf(id);
+  if (i >= 0) { state.canasta.splice(i, 1); sfx('tab'); }
+  else {
+    if (state.canasta.length >= CANASTA_MAX) { toast(`La canasta lleva ${CANASTA_MAX} cosas. Saca alguna primero.`); return; }
+    if (stockOf(id) <= 0) { toast('No te queda de eso.'); return; }
+    state.canasta.push(id);
+    sfx('win'); buzz(10);
+  }
+  save();
+  renderFeria();
+  syncEscena();
+}
+
+function renderFeria() {
+  actualizarSobresGratis();
+  $$('.sobre-count').forEach(n => n.textContent = state.sobres);
+  $('#feria-abrir-btn').disabled = state.sobres <= 0;
+  const rest = Math.max(0, state.proximoSobreGratisEn - Date.now());
+  $('#feria-timer').textContent = state.sobres >= SOBRE_MAX_STASH
+    ? 'No te caben más cajas por ahora.'
+    : rest <= 0 ? '¡Llegó una caja del mercado!' : `Próxima caja gratis en ${formatDuracion(rest)}`;
+
+  renderCanastaPanel();
+  renderDespensaPanel();
+  renderMercado();
+
+  $('#regalos-restantes').textContent = regalosRestantesHoy();
+  const grid = $('#regalos-grid'); grid.innerHTML = '';
+  const disponibles = state.discovered.filter(id => CARTAS[id] && CARTAS[id].rarity === 'receta');
+  if (!disponibles.length) grid.appendChild(el('span', 'regalos-empty', 'Descubre un platillo para poder invitarlo.'));
+  else disponibles.forEach(id => grid.appendChild(regaloCard(id)));
+}
+
+function renderCanastaPanel() {
+  const grid = $('#canasta-grid'); grid.innerHTML = '';
+  $('#canasta-cuenta').textContent = `${state.canasta.length}/${CANASTA_MAX}`;
+  if (!state.canasta.length) {
+    grid.appendChild(el('span', 'despensa-vacio', 'Canasta vacía. Toca abajo lo que quieras llevar al mesón.'));
+    return;
+  }
+  state.canasta.forEach(id => grid.appendChild(chipDe(id, { n: stockOf(id), activo: true, onClick: () => alternarCanasta(id) })));
+}
+function renderDespensaPanel() {
+  const grid = $('#despensa-grid'); grid.innerHTML = '';
+  const abiertas = regionesAbiertas();
+  const ids = CARTA_ORDEN.filter(id =>
+    CARTAS[id].rarity === 'semilla' && abiertas.includes(CARTAS[id].region) && stockOf(id) > 0);
+  if (!ids.length) { grid.appendChild(el('span', 'despensa-vacio', 'Sin ingredientes. Abre una caja o compra en el mercado.')); return; }
+  ids.forEach(id => grid.appendChild(chipDe(id, { n: stockOf(id), activo: enCanasta(id), onClick: () => alternarCanasta(id) })));
+}
+
+function mercadoChip(id) {
+  const costo = MERCADO_COSTO_SEMILLA;
+  const btn = chipDe(id, { n: stockOf(id), costo, onClick: () => comprarSemilla(id, costo) });
+  if ((state.sucres || 0) < costo) btn.classList.add('agotado');
+  return btn;
+}
+function comprarSemilla(id, costo) {
+  if ((state.sucres || 0) < costo) { toast('No te alcanzan los sucres. Cocina algo o escucha el pregón 📣'); return; }
+  state.sucres -= costo;
+  addStock(id, 1);
+  save(); sfx('win'); buzz(15);
+  toast(`+1 ${nombreDe(id)}`);
+  renderFeria(); renderSucres(); syncEscena();
+}
+function comprarSobreConSucres() {
+  if (state.sobres >= SOBRE_MAX_STASH) { toast('No te caben más cajas por ahora.'); return; }
+  if ((state.sucres || 0) < MERCADO_COSTO_SOBRE) { toast('Te faltan sucres para una caja.'); return; }
+  state.sucres -= MERCADO_COSTO_SOBRE;
+  state.sobres += 1;
+  save(); sfx('win'); buzz([20, 30, 20]);
+  toast('¡Caja nueva en tu despensa!');
+  renderFeria(); renderSucres();
+}
+function escucharPregon() {
+  if (Math.max(0, (state.pregonProximoEn || 0) - Date.now()) > 0) return;
+  const btn = $('#pregon-btn');
+  btn.disabled = true; btn.textContent = '📣 Escuchando…';
+  sfx('tab');
+  setTimeout(() => {
+    state.sucres = (state.sucres || 0) + PREGON_RECOMPENSA;
+    state.pregonProximoEn = Date.now() + PREGON_COOLDOWN_MS;
+    save(); sfx('win'); buzz([30, 40, 60]);
+    toast(`¡+${PREGON_RECOMPENSA} sucres de propina!`);
+    renderFeria(); renderSucres();
+  }, 3200);
+}
+function renderMercado() {
+  const grid = $('#mercado-semillas'); grid.innerHTML = '';
+  GAME_DATA.ingredientes.filter(i => regionesAbiertas().includes(i.region)).forEach(i => grid.appendChild(mercadoChip(i.id)));
+  const sobreBtn = $('#mercado-sobre-btn');
+  sobreBtn.disabled = (state.sucres || 0) < MERCADO_COSTO_SOBRE || state.sobres >= SOBRE_MAX_STASH;
+  const rest = Math.max(0, (state.pregonProximoEn || 0) - Date.now());
+  const pregonBtn = $('#pregon-btn');
+  if (rest <= 0) pregonBtn.textContent = '📣 El pregón';
+  pregonBtn.disabled = rest > 0;
+  $('#pregon-timer').innerHTML = rest > 0 ? `El pregonero vuelve en ${formatDuracion(rest)}` : `Gana ${PREGON_RECOMPENSA} <span class="icono-sucre">S</span> de propina`;
+}
+
+/* ---------- regalos ---------- */
+
+function regaloCard(id) {
+  const card = document.createElement('button');
+  card.type = 'button';
+  card.className = 'carta rarity-' + CARTAS[id].rarity + ' regalo-mini';
+  card.innerHTML = cardInner(id);
+  card.addEventListener('click', () => generarRegalo(id));
+  return card;
+}
 function hoyISO() { return new Date().toISOString().slice(0, 10); }
 function regalosRestantesHoy() {
   if (!state.regalosHechos || state.regalosHechos.fecha !== hoyISO()) return REGALOS_DIARIOS_MAX;
@@ -807,22 +845,19 @@ function codificarRegalo(id) {
   return btoa(`${id}:${nonce}`).replace(/=+$/, '');
 }
 async function generarRegalo(id) {
-  if (regalosRestantesHoy() <= 0) { toast('Ya compartiste tus regalos de hoy. Vuelve mañana 🎟'); return; }
+  if (regalosRestantesHoy() <= 0) { toast('Ya repartiste tus invitaciones de hoy 🍽'); return; }
   const code = codificarRegalo(id);
   const url = `${location.origin}${location.pathname}?regalo=${code}`;
-  const nombre = CARTAS[id].name;
-  const texto = `¡Te regalo mi carta de ${nombre} en Pambamesa! 🎁`;
+  const texto = `¡Te invito a probar mi ${CARTAS[id].name} en Pambamesa! 🍽`;
   registrarRegaloHecho();
   renderFeria();
   if (navigator.share) {
-    try { await navigator.share({ title: 'Pambamesa', text: texto, url }); return; } catch (e) { /* canceló, no pasa nada */ }
+    try { await navigator.share({ title: 'Pambamesa', text: texto, url }); return; } catch (e) {}
   }
   try {
     await navigator.clipboard.writeText(`${texto}\n${url}`);
-    toast('Enlace de regalo copiado. ¡Pégalo donde quieras! 📋');
-  } catch (e) {
-    toast(url);
-  }
+    toast('Enlace copiado. ¡Pégalo donde quieras! 📋');
+  } catch (e) { toast(url); }
 }
 function intentarCanjearRegalo() {
   const params = new URLSearchParams(location.search);
@@ -835,152 +870,55 @@ function intentarCanjearRegalo() {
   if (!id || !CARTAS[id] || !nonce) return;
   const marca = `${id}:${nonce}`;
   if (!state.regalosCanjeados) state.regalosCanjeados = [];
-  if (state.regalosCanjeados.includes(marca)) { setTimeout(() => toast('Ya abriste este regalo en esta cocina.'), 500); return; }
+  if (state.regalosCanjeados.includes(marca)) { setTimeout(() => toast('Ya probaste este plato en esta cocina.'), 500); return; }
   state.regalosCanjeados.push(marca);
   const isNew = discoverCard(id);
   addStock(id, 1);
   revisarDesbloqueoRegiones();
   save();
-  setTimeout(() => showRevealQueue([{ id, tool: false, isNew }], { finalLabel: '¡Qué lindo detalle!', giftFrom: true }), 500);
+  setTimeout(() => showRevealQueue([{ id, tool: false, isNew }], { finalLabel: '¡Buen provecho!', giftFrom: true }), 500);
 }
 
-function renderFeria() {
-  actualizarSobresGratis();
-  $$('.sobre-count').forEach(n => n.textContent = state.sobres);
-  const abrirBtn = $('#feria-abrir-btn');
-  abrirBtn.disabled = state.sobres <= 0;
-  const rest = Math.max(0, state.proximoSobreGratisEn - Date.now());
-  $('#feria-timer').textContent =
-    state.sobres > 0 ? 'toca la canasta para abrirla'
-    : state.sobres >= SOBRE_MAX_STASH ? 'Tu bolsa de canastas está llena.'
-    : rest <= 0 ? '¡Ya tienes una canasta nueva!'
-    : `Próxima canasta gratis en ${formatDuracion(rest)}`;
-
-  renderMercado();
-
-  $('#regalos-restantes').textContent = regalosRestantesHoy();
-  const grid = $('#regalos-grid'); grid.innerHTML = '';
-  const disponibles = state.discovered.filter(id => CARTAS[id]);
-  if (!disponibles.length) grid.appendChild(el('span', 'regalos-empty', 'Descubre una carta primero para poder compartirla.'));
-  else disponibles.forEach(id => grid.appendChild(regaloCard(id)));
-}
-
-/* ---------- El mercado: cambia sucres (ganados al cocinar) por despensa ---------- */
-
-function mercadoChip(id) {
-  const c = CARTAS[id];
-  const costo = MERCADO_COSTO_SEMILLA;
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'objeto rarity-' + c.rarity + ' mercado-chip' + ((state.sucres || 0) < costo ? ' agotado' : '');
-  btn.innerHTML = `
-    <span class="objeto-cant">${stockOf(id)}</span>
-    <div class="objeto-icono">${iconOf(id)}</div>
-    <span class="objeto-sombra" aria-hidden="true"></span>
-    <span class="objeto-nombre">${c.name}</span>
-    <span class="objeto-precio">${costo} <span class="icono-sucre">S</span></span>`;
-  btn.addEventListener('click', () => comprarSemilla(id, costo));
-  return btn;
-}
-function comprarSemilla(id, costo) {
-  if ((state.sucres || 0) < costo) { toast('No te alcanzan los sucres. Cocina algo o escucha el pregón 📣'); return; }
-  state.sucres -= costo;
-  addStock(id, 1);
-  save(); sfx('win'); buzz(15);
-  toast(`+1 ${CARTAS[id].name}`);
-  renderFeria();
-  if (currentScreen === 'taller') renderTaller();
-  renderSucres();
-}
-function comprarSobreConSucres() {
-  if (state.sobres >= SOBRE_MAX_STASH) { toast('Tu bolsa de canastas está llena.'); return; }
-  if ((state.sucres || 0) < MERCADO_COSTO_SOBRE) { toast('Te faltan sucres para una canasta.'); return; }
-  state.sucres -= MERCADO_COSTO_SOBRE;
-  state.sobres += 1;
-  save(); sfx('win'); buzz([20, 30, 20]);
-  toast('¡Canasta nueva en tu bolsa!');
-  renderFeria(); renderSucres();
-}
-function escucharPregon() {
-  const rest = Math.max(0, (state.pregonProximoEn || 0) - Date.now());
-  if (rest > 0) return;
-  const btn = $('#pregon-btn');
-  btn.disabled = true; btn.textContent = '📣 Escuchando…';
-  sfx('tab');
-  setTimeout(() => {
-    state.sucres = (state.sucres || 0) + PREGON_RECOMPENSA;
-    state.pregonProximoEn = Date.now() + PREGON_COOLDOWN_MS;
-    save();
-    sfx('win'); buzz([30, 40, 60]);
-    toast(`¡+${PREGON_RECOMPENSA} sucres de propina!`);
-    renderFeria(); renderSucres();
-  }, 3200);
-}
-function renderMercado() {
-  const grid = $('#mercado-semillas'); grid.innerHTML = '';
-  GAME_DATA.ingredientes.filter(i => regionesAbiertas().includes(i.region)).forEach(i => grid.appendChild(mercadoChip(i.id)));
-
-  const sobreBtn = $('#mercado-sobre-btn');
-  sobreBtn.disabled = (state.sucres || 0) < MERCADO_COSTO_SOBRE || state.sobres >= SOBRE_MAX_STASH;
-
-  const rest = Math.max(0, (state.pregonProximoEn || 0) - Date.now());
-  const pregonBtn = $('#pregon-btn');
-  if (rest <= 0) pregonBtn.textContent = '📣 Escuchar el pregón';
-  pregonBtn.disabled = rest > 0;
-  $('#pregon-timer').innerHTML = rest > 0 ? `El pregonero vuelve en ${formatDuracion(rest)}` : `Escúchalo y gana ${PREGON_RECOMPENSA} <span class="icono-sucre">S</span> de propina`;
-}
-
-/* ---------- Racha diaria: recompensa creciente por volver cada día ---------- */
+/* ---------- racha diaria ---------- */
 
 let rachaPendiente = false;
 function revisarRachaDiaria() {
   const hoy = hoyISO();
   if (!state.racha) state.racha = { dias: 0, ultimaFecha: '' };
   if (state.racha.ultimaFecha === hoy) { rachaPendiente = false; return; }
-  if (!state.racha.ultimaFecha) {
-    /* primera vez que entra a la cocina: arranca la racha sin modal,
-       para no saturar el onboarding con otro premio más */
-    state.racha = { dias: 1, ultimaFecha: hoy };
-    save();
-    return;
-  }
+  if (!state.racha.ultimaFecha) { state.racha = { dias: 1, ultimaFecha: hoy }; save(); return; }
   const ayer = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   state.racha.diasCandidato = state.racha.ultimaFecha === ayer ? state.racha.dias + 1 : 1;
   rachaPendiente = true;
 }
 function mostrarModalRacha() {
   const dias = state.racha.diasCandidato || 1;
-  const recompensa = RACHA_RECOMPENSAS[(dias - 1) % RACHA_RECOMPENSAS.length];
   $('#racha-dias').textContent = dias;
-  $('#racha-recompensa').innerHTML = `+${recompensa} <span class="icono-sucre">S</span>`;
+  $('#racha-recompensa').innerHTML = `+${RACHA_RECOMPENSAS[(dias - 1) % RACHA_RECOMPENSAS.length]} <span class="icono-sucre">S</span>`;
   $('#modal-racha').classList.add('open');
   sfx('peel');
 }
 function reclamarRacha() {
   const dias = state.racha.diasCandidato || 1;
-  const recompensa = RACHA_RECOMPENSAS[(dias - 1) % RACHA_RECOMPENSAS.length];
-  state.sucres = (state.sucres || 0) + recompensa;
+  state.sucres = (state.sucres || 0) + RACHA_RECOMPENSAS[(dias - 1) % RACHA_RECOMPENSAS.length];
   state.racha.dias = dias;
   state.racha.ultimaFecha = hoyISO();
   rachaPendiente = false;
   save();
   $('#modal-racha').classList.remove('open');
   sfx('win'); buzz([30, 40, 60]);
-  toast(`¡+${recompensa} sucres de racha!`);
   renderSucres();
 }
 
-/* ---------- El sobre de bienvenida ---------- */
+/* ---------- arranque de partida ---------- */
 
 function abrirSobreInicial() {
   iniciarSobreDeRegion('costa');
   state.starterOpened = true;
-  state.sobres += 1;   /* un sobre de propina, para que abran uno "de verdad" enseguida */
+  state.sobres += 1;
   state.proximoSobreGratisEn = Date.now() + SOBRE_INTERVALO_MS;
   save();
-  /* iniciarSobreDeRegion ya llama a showRevealQueue; le cambiamos el cierre
-     para que aterrice en el taller en vez de solo mostrar el banner */
-  revealFinalLabel = 'A la mesa ✦';
+  revealFinalLabel = 'A cocinar ✦';
   revealFinalCb = () => show('taller');
 }
 
@@ -1001,27 +939,88 @@ function show(screen) {
   if (screen === 'coleccion') renderColeccion();
   if (screen === 'feria') renderFeria();
   renderProgress();
+  $('#stage').classList.toggle('en-cocina', screen === 'taller');
+  if (escenaOn) Escena3D.setActive(screen === 'taller');
   clearInterval(feriaTimerId);
   if (screen === 'feria') feriaTimerId = setInterval(renderFeria, 30000);
-  window.scrollTo(0, 0);
 }
 
-/* ---------- Arranque ---------- */
+/* ---------- El mesón 3D ---------- */
+
+function initEscena3D() {
+  const cont = $('#cocina3d');
+  if (!window.Escena3D || !cont) return;
+  try { escenaOn = Escena3D.init(cont); } catch (e) { escenaOn = false; }
+  if (!escenaOn) return;
+  cont.classList.remove('hidden');
+  $('#fogon').classList.add('hidden');
+  $('#mesa-etiquetas').classList.remove('hidden');
+  $('#stage').classList.add('mesa3d');
+
+  Escena3D.bind({
+    alAgarrar: () => initAudio(),
+    sinStock: () => toast('Ya no te queda de eso.'),
+    estacionLlena: () => toast('La estación está ocupada.'),
+
+    alColocar: (id, idx) => {
+      slots[idx] = id;
+      sfx('tab'); buzz(10);
+      renderMesaEtiquetas(); renderTallerAction();
+      syncEscena();
+      setTimeout(intentarCocinar, 170);
+    },
+    alQuitar: (idx) => {
+      slots[idx] = null;
+      sfx('tab');
+      renderMesaEtiquetas(); renderTallerAction();
+      syncEscena();
+    },
+    alDeslizarEstacion: (dir) => {
+      const otra = estacionVecina(dir);
+      if (otra) cambiarEstacion(otra, dir);
+    },
+    alBotarMezcla: () => {
+      sfx('tab'); buzz(20);
+      toast('Al basurero. ¡No perdiste nada!');
+      renderTaller();
+    },
+  });
+}
+
+/* ---------- Migración de partidas anteriores ---------- */
+
+function migrar() {
+  /* las estaciones pasaron de gastarse a estar siempre listas */
+  Object.keys(state.tools || {}).forEach(k => { state.tools[k] = true; });
+  /* el recetario creció: repone lo básico de las regiones ya abiertas
+     para que nadie se quede sin los ingredientes nuevos */
+  if (!state.migradoV3 && state.starterOpened) {
+    regionesAbiertas().forEach(rid => {
+      (REGIONES[rid].kitHerramientas || []).forEach(id => { state.tools[id] = true; });
+      (REGIONES[rid].kitSemillas || []).forEach(x => { if (stockOf(x.id) === 0) addStock(x.id, x.n); });
+    });
+    state.migradoV3 = true;
+  }
+  if (!tieneEstacion(state.estacion)) state.estacion = estacionesAbiertas()[0] || 'cuchillo';
+  /* nunca dejar en la canasta algo que ya no existe */
+  state.canasta = state.canasta.filter(id => CARTAS[id] && CARTAS[id].rarity === 'semilla');
+  if (!state.canasta.length) {
+    CARTA_ORDEN.filter(id => CARTAS[id].rarity === 'semilla' && stockOf(id) > 0)
+      .slice(0, 5).forEach(id => state.canasta.push(id));
+  }
+}
+
+/* ---------- Eventos ---------- */
 
 function bindEvents() {
   $('#btn-abrir').addEventListener('click', () => { initAudio(); state.seenCover = true; save(); abrirSobreInicial(); });
+  $('#slot-a').addEventListener('click', () => { if (slots[0]) { slots[0] = null; sfx('tab'); renderTaller(); } });
+  $('#slot-b').addEventListener('click', () => { if (slots[1]) { slots[1] = null; sfx('tab'); renderTaller(); } });
   $$('.tab-btn').forEach(b => b.addEventListener('click', () => { sfx('tab'); show(b.dataset.tab); }));
 
   $('#feria-abrir-btn').addEventListener('click', () => { initAudio(); abrirSobre(); });
   $('#mercado-sobre-btn').addEventListener('click', () => { initAudio(); comprarSobreConSucres(); });
   $('#pregon-btn').addEventListener('click', () => { initAudio(); escucharPregon(); });
-
-  /* tocar la olla la vacía: devuelve todo a la mesa */
-  $('#olla').addEventListener('click', vaciarOlla);
-  $('#olla').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vaciarOlla(); }
-  });
-
   $('#racha-reclamar-btn').addEventListener('click', reclamarRacha);
 
   $('#reveal-ok').addEventListener('click', revealAdvance);
@@ -1030,7 +1029,6 @@ function bindEvents() {
 
   $('#detalle-close').addEventListener('click', () => $('#modal-detalle').classList.remove('open'));
   $('#modal-detalle').addEventListener('click', (e) => { if (e.target === $('#modal-detalle')) $('#modal-detalle').classList.remove('open'); });
-
   $('#pista-close').addEventListener('click', () => $('#modal-pista').classList.remove('open'));
   $('#modal-pista').addEventListener('click', (e) => { if (e.target === $('#modal-pista')) $('#modal-pista').classList.remove('open'); });
 
@@ -1044,8 +1042,11 @@ function bindEvents() {
 
 function init() {
   state = load() || newState();
+  document.body.insertAdjacentHTML('beforeend', ICON_DEFS);
   $$('[data-icon]').forEach(n => { n.innerHTML = iconOf(n.dataset.icon); });
+  migrar();
   revisarRachaDiaria();
+  initEscena3D();
   bindEvents();
   show(state.seenCover ? 'taller' : 'cover');
   intentarCanjearRegalo();

@@ -1,7 +1,7 @@
 {
-  "name": "Pambamesa",
-  "short_name": "Pambamesa",
-  "description": "Tu cocina de autor: combina los ingredientes que tienes y descubre platillos nuevos para tu recetario.",
+  "name": "La fanesca — Pambamesa",
+  "short_name": "La fanesca",
+  "description": "Desgrana el choclo, desvaina las habas y corta el zapallo con los dedos: el minijuego de preparación de Pambamesa.",
   "lang": "es",
   "start_url": ".",
   "scope": ".",

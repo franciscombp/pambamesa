@@ -1,0 +1,674 @@
+/* ============================================================
+   FANESCA — motor3d.js
+   El mesón de preparación en 3D: lo único que todos los niveles
+   comparten. Aquí viven la cocina de fondo, la cámara fija, la
+   luz, los tweens, las chispas y —sobre todo— la lectura de los
+   dedos: qué es un toque, qué es un arrastre y sobre qué cayó.
+
+   Un nivel no sabe nada de Three.js más allá de armar sus mallas
+   dentro de `ctx.raiz`. Todo lo demás se lo pide al motor por
+   `ctx.api`. Ese contrato está descrito abajo y es lo que hace
+   que agregar un ingrediente nuevo sea escribir un archivo, no
+   tocar el juego.
+
+   ------------------------------------------------------------
+   CONTRATO DE NIVEL — un módulo que exporta por defecto:
+
+     {
+       id: 'maiz',
+       construir(ctx),            arma las mallas dentro de ctx.raiz
+       objetivos(),               [Object3D] contra los que raycastea
+                                  el motor (el primero que pegue manda)
+       actualizar(dt, t),         cada cuadro
+       alTocar(info),             dedo abajo y arriba sin moverse
+       alArrastrarInicio(info),   pasó el umbral de movimiento
+       alArrastrar(info),         cada cuadro con el dedo abajo
+       alArrastrarFin(info),      dedo arriba tras arrastrar
+       controles: [{id, txt, tip}] botones DOM del nivel (opcional)
+       alControl(id, fase),       'abajo' | 'arriba'
+       destruir(),
+     }
+
+   `info` = { objeto, raiz, punto, ndc, cliente, dx, dy, arrastre }
+     objeto  malla exacta que pegó el rayo
+     raiz    su ancestro con userData.tipo (lo que el nivel marcó)
+     punto   Vector3 del impacto en el mundo
+     dx, dy  desplazamiento en píxeles desde que empezó el gesto
+
+   `ctx.api` — lo que el nivel le pide al juego:
+     progreso(hechos, total)   pinta la barra del HUD
+     completar()               nivel superado
+     arruinar(motivo)          se dañó la olla: se reinicia
+     aviso(msg)                mensaje corto abajo
+     sfx(nombre), buzz(patron)
+     chispas(v3, color, n), destello(color), sacudir(fuerza)
+     tween(obj, prop, a, dur, ease, fin)
+     volarA(obj, destino, opts)  parábola hacia la batea/composta
+     BATEA, COMPOSTA           Vector3 en el mundo
+     MESA_Y                    altura de la superficie de trabajo
+   ============================================================ */
+
+import * as THREE from 'three';
+
+/* ---------- geografía compartida del mesón ---------- */
+export const MESA_Y = 0.96;                              /* cara del mesón */
+export const BATEA = new THREE.Vector3(0.98, MESA_Y, 1.42);    /* lo bueno va aquí */
+export const COMPOSTA = new THREE.Vector3(-1.0, MESA_Y, 1.44);  /* cáscaras y bichos */
+const UMBRAL_ARRASTRE = 8;                               /* px antes de considerar arrastre */
+
+let renderer, scene, camera, clock, raf = null, activo = false;
+let raiz = null;                 /* donde el nivel arma lo suyo */
+let nivel = null;                /* módulo de nivel en curso */
+let contenedor = null;
+let tweens = [];
+let particulas = [];
+let vuelos = [];
+let sacudida = { t: 0, fuerza: 0 };
+let camBase = new THREE.Vector3();
+let camMira = new THREE.Vector3();
+const CAM_POR_DEFECTO = { pos: [0, 3.02, 4.05], mira: [0, 1.12, 0.46] };
+let destelloEl = null;
+let bateaGrupo = null, compostaGrupo = null;
+
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+
+/* ---------- utilidades de dibujo ---------- */
+
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+const easePop = (t) => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2);
+
+function texturaCanvas(dibuja, size = 256) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  dibuja(c.getContext('2d'), size);
+  const tx = new THREE.CanvasTexture(c);
+  tx.colorSpace = THREE.SRGBColorSpace;
+  return tx;
+}
+/* La escena no tiene colores propios: los lee del sistema de diseño,
+   igual que escena3d.js en el juego grande. Si mañana cambia la
+   paleta, esta cocina se repinta sola en vez de quedarse con los
+   colores de una versión anterior — que es exactamente lo que pasó
+   cuando la paleta pasó de crema a la del barrio. */
+let _raiz = null;
+function token(nombre, respaldo) {
+  if (!_raiz) _raiz = getComputedStyle(document.documentElement);
+  return (_raiz.getPropertyValue(nombre) || '').trim() || respaldo;
+}
+const mat = (color, opts = {}) => new THREE.MeshLambertMaterial({ color, ...opts });
+const matT = (nombre, respaldo, opts = {}) => mat(token(nombre, respaldo), opts);
+
+function texturaAzulejos() {
+  return texturaCanvas((ctx, S) => {
+    const T = S / 4;
+    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
+      ctx.fillStyle = (x + y) % 2 ? token('--talavera-500', '#1b5faa') : token('--talavera-300', '#5f97d8');
+      ctx.fillRect(x * T, y * T, T, T);
+      ctx.fillStyle = 'rgba(255,255,255,.28)';
+      ctx.fillRect(x * T + 4, y * T + 4, T - 8, T * 0.28);
+      ctx.strokeStyle = token('--talavera-700', '#123f74');
+      ctx.lineWidth = 4;
+      ctx.strokeRect(x * T + 2, y * T + 2, T - 4, T - 4);
+    }
+  });
+}
+function texturaMadera(base, veta) {
+  return texturaCanvas((ctx, S) => {
+    ctx.fillStyle = base; ctx.fillRect(0, 0, S, S);
+    ctx.strokeStyle = veta; ctx.lineWidth = 3; ctx.globalAlpha = .5;
+    for (let i = 0; i < 9; i++) {
+      ctx.beginPath();
+      const y = (i + .5) * S / 9;
+      ctx.moveTo(0, y);
+      ctx.bezierCurveTo(S * .3, y - 8, S * .6, y + 8, S, y);
+      ctx.stroke();
+    }
+  });
+}
+
+let sombraTex = null;
+export function sombraBlob(size = 0.8, alto = 0.012) {
+  if (!sombraTex) sombraTex = texturaCanvas((ctx, S) => {
+    const g = ctx.createRadialGradient(S / 2, S / 2, 2, S / 2, S / 2, S / 2);
+    g.addColorStop(0, 'rgba(60,30,10,.42)');
+    g.addColorStop(1, 'rgba(60,30,10,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+  }, 64);
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(size, size),
+    new THREE.MeshBasicMaterial({ map: sombraTex, transparent: true, depthWrite: false })
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = alto;
+  return m;
+}
+
+/* dos ojitos de caricatura: los bichos del juego los usan todos */
+export function ojitos(sep = 0.06, y = 0.05, z = 0.09, r = 0.028) {
+  const g = new THREE.Group();
+  const blanco = new THREE.MeshBasicMaterial({ color: '#fffdf6' });
+  const negro = new THREE.MeshBasicMaterial({ color: '#3a2a20' });
+  [-1, 1].forEach(s => {
+    const o = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), blanco);
+    o.position.set(sep * s, y, z);
+    const p = new THREE.Mesh(new THREE.SphereGeometry(r * 0.55, 8, 6), negro);
+    p.position.set(sep * s, y, z + r * 0.62);
+    g.add(o, p);
+  });
+  return g;
+}
+
+let chispaTex = null;
+function texturaChispa() {
+  if (!chispaTex) chispaTex = texturaCanvas((ctx, S) => {
+    ctx.fillStyle = '#fff';
+    ctx.translate(S / 2, S / 2);
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? S * .16 : S * .44;
+      const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+      ctx[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r);
+    }
+    ctx.closePath(); ctx.fill();
+  }, 64);
+  return chispaTex;
+}
+
+/* ---------- la cocina de fondo (idéntica en todos los niveles) ---------- */
+
+function construirCocina() {
+  const tiles = texturaAzulejos();
+  tiles.wrapS = tiles.wrapT = THREE.RepeatWrapping;
+  tiles.repeat.set(4, 3.4);
+  const pared = new THREE.Mesh(new THREE.PlaneGeometry(11, 9), new THREE.MeshLambertMaterial({ map: tiles }));
+  pared.position.set(0, 3.4, -1.9);
+  scene.add(pared);
+
+  const pisoTex = texturaCanvas((ctx, S) => {
+    const T = S / 2;
+    for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
+      ctx.fillStyle = (x + y) % 2 ? token('--madera-200', '#e8a469') : token('--peltre-300', '#e3dfd6');
+      ctx.fillRect(x * T, y * T, T, T);
+    }
+  }, 128);
+  pisoTex.wrapS = pisoTex.wrapT = THREE.RepeatWrapping;
+  pisoTex.repeat.set(7, 5);
+  const piso = new THREE.Mesh(new THREE.PlaneGeometry(16, 12), new THREE.MeshLambertMaterial({ map: pisoTex }));
+  piso.rotation.x = -Math.PI / 2;
+  piso.position.set(0, -0.02, 3);
+  scene.add(piso);
+
+  /* el mesón: ancho y hondo, porque aquí se trabaja con las manos */
+  const woodTop = texturaMadera(token('--madera-300', '#d07c3f'), token('--madera-500', '#93491c'));
+  const meson = new THREE.Mesh(new THREE.BoxGeometry(9, 0.24, 3.9), new THREE.MeshLambertMaterial({ map: woodTop }));
+  meson.position.set(0, MESA_Y - 0.12, 0.15);
+  scene.add(meson);
+
+  /* frente del gabinete, para que el mesón no flote */
+  const gabinete = new THREE.Mesh(new THREE.BoxGeometry(9, 2.6, 0.1), matT('--rosa-500', '#e01b6a'));
+  gabinete.position.set(0, -0.46, 2.05);
+  scene.add(gabinete);
+  [-2.9, 0, 2.9].forEach(x => {
+    const tir = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.5, 4, 10), matT('--maiz-400', '#f5a623'));
+    tir.rotation.z = Math.PI / 2;
+    tir.position.set(x, 0.56, 2.12);
+    scene.add(tir);
+  });
+
+  /* repisa con frascos: la misma que en la cocina grande */
+  const repisa = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.09, 0.42), matT('--madera-400', '#b4632c'));
+  repisa.position.set(1.6, 2.42, -1.78);
+  scene.add(repisa);
+  const frascoM = matT('--peltre-200', '#f3f1ec');
+  [[0.85, token('--rosa-400', '#f53d8a')], [1.35, token('--nopal-400', '#8cc63f')], [1.85, token('--maiz-400', '#f5a623')], [2.35, token('--talavera-300', '#5f97d8')]].forEach(([x, tapa]) => {
+    const f = new THREE.Mesh(new THREE.CylinderGeometry(.11, .12, .3, 14), frascoM);
+    f.position.set(x, 2.62, -1.78);
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .06, 14), mat(tapa));
+    t.position.set(x, 2.79, -1.78);
+    scene.add(f, t);
+  });
+
+  /* la olla grande de la fanesca, al fondo a la izquierda, humeando:
+     todo lo que preparas termina ahí, y se ve mientras trabajas */
+  const olla = new THREE.Group();
+  olla.add(new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.42, 0.56, 24), matT('--chile-500', '#ce2029')));
+  const borde = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.048, 8, 24), matT('--peltre-100', '#ffffff'));
+  borde.rotation.x = Math.PI / 2; borde.position.y = 0.28;
+  olla.add(borde);
+  [-1, 1].forEach(s => {
+    const asa = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.033, 8, 14, Math.PI), matT('--peltre-100', '#ffffff'));
+    asa.position.set(0.48 * s, 0.11, 0);
+    asa.rotation.z = s > 0 ? -Math.PI / 2 : Math.PI / 2;
+    olla.add(asa);
+  });
+  const caldo = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.04, 24), matT('--maiz-300', '#ffc93c'));
+  caldo.position.y = 0.24;
+  olla.add(caldo);
+  olla.position.set(-1.55, MESA_Y + 0.28, -1.35);
+  scene.add(olla);
+
+  const vaporTex = texturaCanvas((ctx, S) => {
+    const g = ctx.createRadialGradient(S / 2, S / 2, 4, S / 2, S / 2, S / 2);
+    g.addColorStop(0, 'rgba(255,255,255,.85)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+  }, 64);
+  for (let i = 0; i < 3; i++) {
+    const p = new THREE.Sprite(new THREE.SpriteMaterial({ map: vaporTex, transparent: true, opacity: 0 }));
+    p.position.set(-1.55, MESA_Y + 0.8, -1.35);
+    p.userData.fase = i / 3;
+    p.userData.vapor = true;
+    scene.add(p);
+    vapores.push(p);
+  }
+
+  bateaGrupo = construirRecipiente(BATEA, token('--madera-300', '#d07c3f'), token('--madera-500', '#93491c'), 0.44, 'batea');
+  compostaGrupo = construirRecipiente(COMPOSTA, token('--nopal-600', '#4c7c1f'), token('--nopal-600', '#4c7c1f'), 0.4, 'composta');
+  scene.add(bateaGrupo, compostaGrupo);
+
+  scene.add(new THREE.HemisphereLight('#fff6e6', token('--madera-300', '#d07c3f'), 1.2));
+  const sol = new THREE.DirectionalLight('#fff2d8', 1.45);
+  sol.position.set(-2.5, 5.5, 4);
+  scene.add(sol);
+}
+
+const vapores = [];
+
+/* una batea de madera: cuenco abierto con un fondo que se llena */
+function construirRecipiente(pos, colorA, colorB, r, tipo) {
+  const g = new THREE.Group();
+  const cuerpo = new THREE.Mesh(
+    new THREE.CylinderGeometry(r, r * 0.72, r * 0.62, 22, 1, true),
+    new THREE.MeshLambertMaterial({ color: colorA, side: THREE.DoubleSide })
+  );
+  cuerpo.position.y = r * 0.31;
+  const fondo = new THREE.Mesh(new THREE.CircleGeometry(r * 0.72, 22), mat(colorB));
+  fondo.rotation.x = -Math.PI / 2;
+  fondo.position.y = 0.012;
+  const labio = new THREE.Mesh(new THREE.TorusGeometry(r, r * 0.075, 8, 24), mat(colorB));
+  labio.rotation.x = Math.PI / 2;
+  labio.position.y = r * 0.62;
+  g.add(cuerpo, fondo, labio);
+  /* el contenido: un disco que sube conforme se llena */
+  const relleno = new THREE.Mesh(
+    new THREE.CylinderGeometry(r * 0.86, r * 0.72, 0.06, 22),
+    mat(tipo === 'batea' ? token('--maiz-300', '#ffc93c') : token('--nopal-600', '#4c7c1f'))
+  );
+  relleno.position.y = 0.04;
+  relleno.scale.setScalar(0.001);
+  relleno.visible = false;
+  g.add(relleno);
+  g.userData.relleno = relleno;
+  g.userData.r = r;
+  g.position.copy(pos);
+  g.add(sombraBlob(r * 2.4, 0.008));
+  return g;
+}
+
+/* sube el nivel del cuenco: se ve que lo que sacaste fue a algún lado */
+export function llenarRecipiente(cual, k) {
+  const g = cual === 'composta' ? compostaGrupo : bateaGrupo;
+  if (!g) return;
+  const r = g.userData.relleno;
+  const t = Math.max(0, Math.min(1, k));
+  if (t <= 0.001) { r.visible = false; return; }
+  r.visible = true;
+  r.scale.set(1, 1, 1);
+  r.position.y = 0.04 + t * g.userData.r * 0.5;
+}
+
+/* ---------- tweens y partículas ---------- */
+
+export function tween(obj, prop, to, dur, ease = easeOut, fin = null) {
+  const v = obj[prop];
+  tweens.push({ obj, prop, from: v && v.clone ? v.clone() : v, to, t0: clock.elapsedTime, dur, ease, fin });
+}
+function pasoTweens() {
+  const ahora = clock.elapsedTime;
+  const listos = [];
+  tweens = tweens.filter(tw => {
+    const t = Math.min(1, (ahora - tw.t0) / tw.dur);
+    const k = tw.ease(t);
+    const v = tw.obj[tw.prop];
+    if (v && v.lerpVectors) v.lerpVectors(tw.from, tw.to, k);
+    else tw.obj[tw.prop] = tw.from + (tw.to - tw.from) * k;
+    if (t >= 1) { listos.push(tw); return false; }
+    return true;
+  });
+  listos.forEach(tw => { if (tw.fin) tw.fin(); });
+}
+
+export function chispas(pos, color = '#ffd24d', cuantas = 10, escala = 1) {
+  const tex = texturaChispa();
+  for (let i = 0; i < cuantas; i++) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, color }));
+    s.position.copy(pos);
+    s.scale.setScalar((0.08 + Math.random() * 0.1) * escala);
+    const a = Math.random() * Math.PI * 2;
+    s.userData.vel = new THREE.Vector3(Math.cos(a) * (0.6 + Math.random()), 1.1 + Math.random() * 1.2, Math.sin(a) * 0.6 + 0.3);
+    s.userData.nace = clock.elapsedTime;
+    s.userData.vida = 0.55 + Math.random() * 0.3;
+    scene.add(s);
+    particulas.push(s);
+  }
+}
+
+/* parábola de "esto se fue al cuenco": el arco vende el gesto */
+export function volarA(obj, destino, opts = {}) {
+  const dur = opts.dur || 0.5;
+  const alto = opts.alto != null ? opts.alto : 0.9;
+  const desde = obj.position.clone();
+  if (obj.parent && obj.parent !== scene) {
+    obj.parent.updateWorldMatrix(true, false);
+    obj.parent.localToWorld(desde);
+    scene.attach(obj);
+  }
+  obj.userData.suelto = true;   /* para que descargar() lo barra si queda a medio vuelo */
+  vuelos.push({
+    obj, desde, hasta: destino.clone(), alto, dur, t0: clock.elapsedTime,
+    giro: new THREE.Vector3((Math.random() - .5) * 9, (Math.random() - .5) * 9, (Math.random() - .5) * 9),
+    fin: opts.fin || null, encoge: opts.encoge !== false,
+  });
+}
+function pasoVuelos() {
+  const ahora = clock.elapsedTime;
+  const listos = [];
+  vuelos = vuelos.filter(v => {
+    const t = Math.min(1, (ahora - v.t0) / v.dur);
+    v.obj.position.lerpVectors(v.desde, v.hasta, t);
+    v.obj.position.y += Math.sin(t * Math.PI) * v.alto;
+    v.obj.rotation.x += v.giro.x * 0.016;
+    v.obj.rotation.z += v.giro.z * 0.016;
+    if (v.encoge && t > 0.72) v.obj.scale.setScalar(Math.max(0.001, (1 - (t - 0.72) / 0.28)) * (v.obj.userData.escalaBase || 1));
+    if (t >= 1) { listos.push(v); return false; }
+    return true;
+  });
+  listos.forEach(v => { scene.remove(v.obj); if (v.fin) v.fin(); });
+}
+
+export function sacudir(fuerza = 1) { sacudida = { t: 0, fuerza }; }
+
+export function destello(color = 'rgba(230,57,70,.55)') {
+  if (!destelloEl) return;
+  destelloEl.style.background = color;
+  destelloEl.classList.remove('activo');
+  void destelloEl.offsetWidth;
+  destelloEl.classList.add('activo');
+}
+
+/* ---------- lectura de los dedos ---------- */
+
+let gesto = null;   /* { x0, y0, arrastrando, infoInicial } */
+let ultimoPtr = { clientX: 0, clientY: 0 };
+
+function actualizarRayo(e) {
+  ultimoPtr = { clientX: e.clientX, clientY: e.clientY };
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+}
+
+/* Three no descarta lo invisible al raycastear, y solo mirar el
+   `visible` de la malla no basta: un nivel puede esconder un grupo
+   entero (las habas dentro de la vaina cerrada) dejando sus mallas
+   visibles. Sin esta cadena, lo escondido intercepta el dedo y el
+   jugador toca cosas que todavía no existen para él. */
+function seVe(obj) {
+  while (obj && obj !== scene) {
+    if (obj.visible === false) return false;
+    obj = obj.parent;
+  }
+  return true;
+}
+
+function raizMarcada(obj) {
+  while (obj && obj !== scene) {
+    if (obj.userData && obj.userData.tipo) return obj;
+    obj = obj.parent;
+  }
+  return null;
+}
+
+function leerInfo(e) {
+  const objetivos = (nivel && nivel.objetivos) ? nivel.objetivos() : [];
+  const hits = objetivos.length ? ray.intersectObjects(objetivos, true) : [];
+  const hit = hits.find(h => !h.object.userData.ignorar && seVe(h.object)) || null;
+  return {
+    objeto: hit ? hit.object : null,
+    raiz: hit ? raizMarcada(hit.object) : null,
+    punto: hit ? hit.point.clone() : null,
+    distancia: hit ? hit.distance : Infinity,
+    ndc: ndc.clone(),
+    cliente: { x: e.clientX, y: e.clientY },
+    dx: gesto ? e.clientX - gesto.x0 : 0,
+    dy: gesto ? e.clientY - gesto.y0 : 0,
+    arrastre: !!(gesto && gesto.arrastrando),
+  };
+}
+
+/* dónde cruza el rayo un plano horizontal: para llevar cosas "en la mano" */
+const planoAux = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const puntoAux = new THREE.Vector3();
+export function puntoEnPlano(y) {
+  planoAux.constant = -y;
+  return ray.ray.intersectPlane(planoAux, puntoAux) ? puntoAux.clone() : null;
+}
+
+/* raycast a voluntad del nivel, con el rayo del último evento.
+   Devuelve solo lo que el jugador realmente puede ver y tocar. */
+export function raycast(objetos, recursivo = true) {
+  if (!objetos || !objetos.length) return [];
+  return ray.intersectObjects(objetos, recursivo)
+    .filter(h => !h.object.userData.ignorar && seVe(h.object));
+}
+
+function onDown(e) {
+  if (!nivel) return;
+  e.preventDefault();
+  actualizarRayo(e);
+  gesto = { x0: e.clientX, y0: e.clientY, arrastrando: false, info: null };
+  gesto.info = leerInfo(e);
+  try { renderer.domElement.setPointerCapture(e.pointerId); } catch (err) {}
+  if (nivel.alPresionar) nivel.alPresionar(gesto.info);
+}
+function onMove(e) {
+  if (!gesto || !nivel) return;
+  e.preventDefault();
+  actualizarRayo(e);
+  const info = leerInfo(e);
+  if (!gesto.arrastrando && Math.hypot(info.dx, info.dy) > UMBRAL_ARRASTRE) {
+    gesto.arrastrando = true;
+    info.arrastre = true;
+    if (nivel.alArrastrarInicio) nivel.alArrastrarInicio(gesto.info);
+  }
+  if (gesto.arrastrando && nivel.alArrastrar) nivel.alArrastrar(info);
+  else if (nivel.alMover) nivel.alMover(info);
+}
+function onUp(e) {
+  if (!gesto || !nivel) { gesto = null; return; }
+  actualizarRayo(e || ultimoPtr);
+  const info = leerInfo(e || ultimoPtr);
+  const arrastraba = gesto.arrastrando;
+  const inicial = gesto.info;
+  gesto = null;
+  if (arrastraba) { if (nivel.alArrastrarFin) nivel.alArrastrarFin(info); }
+  else { if (nivel.alTocar) nivel.alTocar(inicial); }
+}
+
+/* ---------- API pública ---------- */
+
+export const Motor = {
+  init(cont, capaDestello) {
+    contenedor = cont;
+    destelloEl = capaDestello || null;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    } catch (e) { return false; }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.domElement.style.touchAction = 'none';
+    cont.appendChild(renderer.domElement);
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(44, 1, 0.1, 40);
+    camera.position.set(...CAM_POR_DEFECTO.pos);
+    camMira.set(...CAM_POR_DEFECTO.mira);
+    camera.lookAt(camMira);
+    camBase.copy(camera.position);
+    clock = new THREE.Clock();
+
+    construirCocina();
+    raiz = new THREE.Group();
+    scene.add(raiz);
+
+    /* el FOV horizontal se mantiene: una pantalla más alta muestra
+       más cocina, nunca menos ancho de mesón (igual que el juego grande) */
+    const HFOV = 47;
+    const ajustar = () => {
+      const w = cont.clientWidth, h = cont.clientHeight;
+      if (!w || !h) return;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(HFOV / 2)) / camera.aspect));
+      camera.updateProjectionMatrix();
+    };
+    new ResizeObserver(ajustar).observe(cont);
+    ajustar();
+
+    const cv = renderer.domElement;
+    cv.addEventListener('pointerdown', onDown);
+    cv.addEventListener('pointermove', onMove);
+    cv.addEventListener('pointerup', onUp);
+    cv.addEventListener('pointercancel', onUp);
+    cv.addEventListener('contextmenu', (e) => e.preventDefault());
+    return true;
+  },
+
+  /* Cada ingrediente se mira distinto. El zapallo se corta sobre el
+     mesón y pide una cámara de mesa; el choclo se sostiene en la mano
+     y pide una cámara de frente, vertical, como el teléfono. Por eso
+     el encuadre es del nivel, no del motor. */
+  encuadre(pos, mira) {
+    if (!camera) return;
+    camera.position.set(...(pos || CAM_POR_DEFECTO.pos));
+    camMira.set(...(mira || CAM_POR_DEFECTO.mira));
+    camera.lookAt(camMira);
+    camBase.copy(camera.position);
+  },
+
+  /* monta un nivel: limpia lo anterior y le entrega el contexto */
+  cargar(mod, api) {
+    this.descargar();
+    this.encuadre(mod.camara && mod.camara.pos, mod.camara && mod.camara.mira);
+    nivel = mod;
+    const ctx = {
+      THREE, raiz, api,
+      MESA_Y, BATEA: BATEA.clone(), COMPOSTA: COMPOSTA.clone(),
+      escena: scene, camara: camera,
+    };
+    llenarRecipiente('batea', 0);
+    llenarRecipiente('composta', 0);
+    nivel.construir(ctx);
+    return nivel;
+  },
+
+  descargar() {
+    if (nivel && nivel.destruir) { try { nivel.destruir(); } catch (e) {} }
+    nivel = null;
+    gesto = null;
+    tweens = [];
+    vuelos.forEach(v => scene.remove(v.obj));
+    vuelos = [];
+    particulas.forEach(p => scene.remove(p));
+    particulas = [];
+    if (raiz) {
+      while (raiz.children.length) raiz.remove(raiz.children[0]);
+    }
+    /* los vuelos reparentan al mundo: barre lo que quedó suelto */
+    scene.children.slice().forEach(o => { if (o.userData && o.userData.suelto) scene.remove(o); });
+  },
+
+  /* ¿qué hay bajo este punto de la pantalla? Devuelve el userData de
+     lo que marcó el nivel. Sirve para pistas dirigidas y para poder
+     probar los niveles sin adivinar coordenadas a ojo. */
+  sondear(clienteX, clienteY) {
+    if (!renderer || !nivel || !nivel.objetivos) return null;
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set(((clienteX - r.left) / r.width) * 2 - 1, -((clienteY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const objetivos = nivel.objetivos() || [];
+    const hits = objetivos.length ? ray.intersectObjects(objetivos, true) : [];
+    const h = hits.find(x => !x.object.userData.ignorar && seVe(x.object));
+    if (!h) return null;
+    let o = h.object;
+    while (o && !(o.userData && o.userData.tipo)) o = o.parent;
+    return o ? Object.assign({}, o.userData) : null;
+  },
+
+  /* mundo → pantalla, para colgar pistas DOM sobre la escena */
+  proyectar(v3) {
+    const v = v3.clone().project(camera);
+    const r = renderer.domElement.getBoundingClientRect();
+    return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+  },
+
+  setActive(on) {
+    activo = on;
+    if (on && raf === null && renderer) { clock.getDelta(); bucle(); }
+  },
+  get reloj() { return clock ? clock.elapsedTime : 0; },
+  get escena() { return scene; },
+  get camara() { return camera; },
+  get lienzo() { return renderer ? renderer.domElement : null; },
+  tween, chispas, volarA, sacudir, destello, raycast, puntoEnPlano,
+  llenarRecipiente, sombraBlob, ojitos,
+  MESA_Y, BATEA, COMPOSTA,
+};
+
+function bucle() {
+  if (!activo) { raf = null; return; }
+  raf = requestAnimationFrame(bucle);
+  const dt = Math.min(0.05, clock.getDelta());
+  const t = clock.elapsedTime;
+
+  pasoTweens();
+  pasoVuelos();
+
+  vapores.forEach(p => {
+    const k = ((t * 0.3) + p.userData.fase) % 1;
+    p.position.y = MESA_Y + 0.68 + k * 0.8;
+    p.position.x = -1.55 + Math.sin(k * 6 + p.userData.fase * 9) * 0.09;
+    p.material.opacity = k < 0.15 ? k / 0.15 * 0.6 : (1 - k) * 0.7;
+    p.scale.setScalar(0.3 + k * 0.45);
+  });
+
+  particulas = particulas.filter(s => {
+    const edad = t - s.userData.nace;
+    if (edad > s.userData.vida) { scene.remove(s); return false; }
+    s.userData.vel.y -= 4.2 * dt;
+    s.position.addScaledVector(s.userData.vel, dt);
+    s.material.opacity = 1 - edad / s.userData.vida;
+    return true;
+  });
+
+  if (sacudida.fuerza > 0) {
+    sacudida.t += dt;
+    const k = Math.max(0, 1 - sacudida.t / 0.45);
+    if (k <= 0) { sacudida.fuerza = 0; camera.position.copy(camBase); }
+    else {
+      camera.position.set(
+        camBase.x + Math.sin(sacudida.t * 62) * 0.09 * k * sacudida.fuerza,
+        camBase.y + Math.sin(sacudida.t * 51) * 0.06 * k * sacudida.fuerza,
+        camBase.z
+      );
+    }
+    camera.lookAt(camMira);
+  }
+
+  if (nivel && nivel.actualizar) { try { nivel.actualizar(dt, t); } catch (e) { console.error(e); } }
+
+  renderer.render(scene, camera);
+}
+
+export default Motor;
