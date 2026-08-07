@@ -14,10 +14,22 @@
    guardada — que es justo lo que hace que funcione sin conexión.
    ============================================================ */
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 
 /* la más reciente primero */
 const NOVEDADES = [
+  {
+    v: '1.1.0',
+    fecha: '2026-08-07',
+    titulo: 'El choclo entero (y dos manos más en la mesa)',
+    cambios: [
+      'El choclo llega con hojas: se deshoja jalando hacia abajo, y van dos por olla — el tierno revienta si pasas el dedo con fuerza; el duro pelea grano a grano.',
+      'Dos niveles nuevos en la fanesca: pelar chochos y escoger la lenteja.',
+      'Más voces en el cuaderno: Tránsito Amaguaña, Dolores Cacuango y Blanca Chancoso.',
+      'La fanesca estrena icono propio: su choclo a medio deshojar.',
+      'Los gusanos ya caminan SOBRE la tabla de picar, no medio hundidos.',
+    ],
+  },
   {
     v: '1.0.0',
     fecha: '2026-08-07',

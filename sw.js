@@ -55,10 +55,16 @@ const PRECACHE = [
   './fanesca/niveles.js',
   './fanesca/nivel-maiz.js',
   './fanesca/nivel-habas.js',
+  './fanesca/nivel-chochos.js',
   './fanesca/nivel-frejol.js',
   './fanesca/nivel-zapallo.js',
+  './fanesca/nivel-escoger.js',
   './fanesca/nivel-bacalao.js',
   './fanesca/manifest.json',
+  './fanesca/icon.svg',
+  './fanesca/icon-180.png',
+  './fanesca/icon-192.png',
+  './fanesca/icon-512.png',
 ];
 
 self.addEventListener('install', (e) => {

@@ -84,13 +84,13 @@ Las dos cocinas son PWA y comparten un solo service worker de raíz:
 
 | Archivo | Rol |
 |---|---|
-| `notas.js` | **La única fuente de verdad de la versión** y sus notas («qué hay de nuevo»). La entrada de arriba es la vigente. |
-| `sw.js` | Caché versionada con todo lo necesario para jugar sin conexión (la cocina, la fanesca y Three.js). El nombre de la caché lleva la versión: subirla en `notas.js` **es** publicar. La versión nueva queda en espera hasta que el jugador acepte. |
-| `actualizador.js` | El mismo módulo en las dos portadas: pinta `v1.2.0 · qué hay de nuevo`, registra el worker y, cuando al reconectarse aparece una versión nueva, muestra el aviso de **Actualizar** — se recarga solo al aceptar y enseña las notas. |
+| `version.js` | **La única fuente de verdad de la versión** (`APP_VERSION`) y su nota de versiones (`NOVEDADES`). La entrada de arriba es la vigente. |
+| `sw.js` | Caché versionada con todo lo necesario para jugar sin conexión (la cocina, la fanesca y Three.js). Importa `version.js` para nombrar su caché: subir `APP_VERSION` **es** publicar. La versión nueva queda en espera hasta que el jugador acepte. |
+| `actualizador.js` | El mismo script en las dos páginas (con `data-sw` para la ruta): registra el worker, revisa si hay versión nueva al volver el foco, **al volver el internet** y cada hora, muestra el botón de **Actualizar** cuando la hay, y estrena la nota de versiones una sola vez por versión. |
 
-**Publicar una actualización** = editar `notas.js` (nueva entrada
-arriba, con su versión) y hacer push. Nada más: la caché se renombra,
-los clientes ven el aviso al volver a tener internet y el que acepta
+**Publicar una actualización** = subir `APP_VERSION` en `version.js`
+con su entrada de `NOVEDADES`, y hacer push. Nada más: la caché se
+renombra, los clientes ven el botón al reconectarse y el que acepta
 queda en la última versión. A nadie se le cambia el juego a mitad de
 partida.
 

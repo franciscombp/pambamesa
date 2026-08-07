@@ -96,10 +96,12 @@
           if (nuevo.state === 'installed' && navigator.serviceWorker.controller) avisarActualizacion(reg);
         });
       });
-      /* revisar al recuperar el foco y cada hora con la app abierta */
+      /* revisar al recuperar el foco, al VOLVER EL INTERNET y cada
+         hora con la app abierta */
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') reg.update().catch(() => {});
       });
+      window.addEventListener('online', () => reg.update().catch(() => {}));
       setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
     }).catch(() => { /* sin sw (http plano, navegador viejo): el juego sigue normal */ });
 
