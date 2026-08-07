@@ -1,790 +1,967 @@
 /* ============================================================
-   PAMBAMESA — styles.css
-   Composición de pantallas SOBRE el sistema de diseño.
-   Aquí no se inventan colores ni sombras: todo sale de los
-   tokens de design-system.css. Si algo se repite en dos
-   pantallas, su lugar es el sistema, no este archivo.
+   PAMBAMESA — cocina cenital
+   styles.css — La pantalla es una encimera vista desde arriba:
+   la hornilla al centro, los ingredientes regados sobre la mesa,
+   el recetario a un lado. Todo se agarra y se suelta con el dedo.
+   Ver ESTILO.md para la guía completa.
    ============================================================ */
+
+:root {
+  /* la encimera: coral cálido, es el fondo dominante */
+  --mesa:       #e8a596;
+  --mesa-clara: #f2bfae;
+  --mesa-honda: #cf8172;
+  --mantel:     #f6d9c8;
+
+  /* el fogón: el único punto oscuro, por eso atrae la mirada */
+  --fogon:       #4a3550;
+  --fogon-2:     #3a2740;
+  --fogon-brasa: #d95f43;
+
+  /* papel del recetario y tinta escrita a mano */
+  --crema:      #fdf0e2;
+  --crema-2:    #f7e3cd;
+  --tinta:      #4a2f3d;
+  --tinta-suave: #8a6472;
+  --line:      rgba(74, 47, 61, .2);
+  --line-soft: rgba(74, 47, 61, .1);
+
+  /* rareza — la comida siempre es lo más saturado de la pantalla.
+     (los ids internos siguen siendo semilla/hallazgo por compatibilidad,
+     pero el jugador los lee como Ingrediente / Preparación) */
+  --semilla:    #d97b5c;
+  --semilla-d:  #b4573a;
+  --hallazgo:   #7ba05b;
+  --hallazgo-d: #5c7d40;
+  --receta:     #e8a33d;
+  --receta-d:   #c07d1c;
+  --tool:       #6d5a7a;
+  --tool-d:     #4f3f5c;
+
+  /* dorado de los sellos y monedas */
+  --brass:   #e8c06a;
+  --brass-d: #b8893a;
+
+  --serif: 'Lora', Georgia, serif;
+  --hand:  'Caveat', 'Segoe Script', cursive;
+  --frame: 480px;
+  --hud-h: 56px;
+
+  /* rebote de algo que cae sobre la madera */
+  --plop: cubic-bezier(.3, 1.6, .4, 1);
+
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.2 0 0 0 0 0.18 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* vetas de la madera pintada de la encimera */
+  --mesa-vetas: repeating-linear-gradient(96deg,
+    rgba(207,129,114,.16) 0 2px, transparent 2px 46px);
+}
+
+/* nombres viejos que aún usan algunas piezas heredadas */
+:root { --ink: var(--tinta); --ink-soft: var(--tinta-suave);
+        --parchment: var(--crema-2); --kraft: var(--mesa);
+        --leather: var(--fogon); --leather-2: var(--fogon-2); --leather-d: #2b1c30; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; font-size: 17px; }
 html, body { height: 100%; }
 
 body {
-  font-family: var(--font-text);
-  color: var(--text);
-  line-height: var(--lead);
-  background: radial-gradient(120% 90% at 50% 0%, #5b7f92 0%, #3e5666 60%, #2c3d49 100%);
+  font-family: var(--serif);
+  color: var(--tinta);
+  line-height: 1.5;
+  /* fuera del marco: la penumbra de la cocina */
+  background: radial-gradient(120% 90% at 50% 0%, #a86a5e 0%, #7d4a45 60%, #4d2c30 100%);
   min-height: 100vh;
-  overflow: hidden;               /* el scroll vive dentro de cada pantalla */
 }
 
 button { font: inherit; color: inherit; cursor: pointer; background: none; border: none; -webkit-tap-highlight-color: transparent; }
 svg { display: block; width: 100%; height: 100%; }
-/* icons.js inyecta su bloque de <defs> como un <svg width="0" height="0">.
-   La regla de arriba le ganaba a esos atributos y lo estiraba a pantalla
-   completa: invisible, pero dejaba el documento del doble de alto y un
-   scroll fantasma que en móvil se siente como que la página "rebota". */
-svg[width="0"] { width: 0; height: 0; }
+.hand { font-family: var(--hand); font-weight: 600; }
+.hidden { display: none !important; }
 
 /* ============================================================
-   EL MUNDO — el marco donde vive el juego
+   EL CUADERNO (marco de juego)
    ============================================================ */
 
+/* la encimera: madera pintada de coral, vista desde arriba */
 #stage {
   position: relative;
-  width: 100%; max-width: var(--frame);
+  width: 100%;
+  max-width: var(--frame);
   margin: 0 auto;
-  height: 100vh; height: 100dvh;
+  min-height: 100vh; min-height: 100dvh;
+  background: var(--mesa);
+  background-image:
+    var(--paper-grain),
+    var(--mesa-vetas),
+    radial-gradient(120% 70% at 50% 0%, var(--mesa-clara) 0%, var(--mesa) 55%, var(--mesa-honda) 100%);
+  box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 40px 90px -30px rgba(0,0,0,.6);
   overflow: hidden;
-  /* neutro a propósito: el fondo lo pone cada pantalla, para que la
-     cocina 3D no parezca un cuadro colgado sobre otra escena */
-  background: var(--pizarra-700);
-  box-shadow: var(--e-4);
+}
+/* luz que entra por la ventana, arriba a la izquierda */
+#stage::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background: radial-gradient(70% 45% at 12% 4%, rgba(255,244,222,.4), transparent 70%);
+  pointer-events: none;
 }
 
-/* --- el mundo del puesto: zócalo de talavera, repisa y cal ---
-   lo comparten las pantallas de papel (recetario, despensa, portada);
-   la cocina no lo lleva porque su fondo ES la escena 3D. */
-.mundo-puesto {
-  position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    var(--patron-mantel),
-    linear-gradient(180deg,
-      transparent 0, transparent 128px,
-      var(--madera-500) 128px, var(--madera-300) 133px, var(--madera-600) 140px,
-      var(--peltre-200) 140px, var(--peltre-200) 100%);
-}
-.mundo-puesto::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 128px;
-  background: var(--patron-talavera);
-  background-size: var(--patron-talavera-size);
-  box-shadow: inset 0 -6px 12px -6px rgba(43,33,41,.35);
-}
-.mundo-puesto::after {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 30px;
-  background: var(--papel-picado) repeat-x top left;
-  background-size: 112px 30px;
-  filter: drop-shadow(0 3px 3px rgba(20,12,18,.35));
-}
-
-.screen { display: none; position: relative; z-index: var(--z-scene); height: 100%; }
-.screen.active { display: block; animation: pantalla-entra var(--dur-slow) var(--ease-pop) both; }
-@keyframes pantalla-entra {
+.screen { display: none; min-height: 100vh; min-height: 100dvh; }
+/* cambiar de pantalla es poner cosas nuevas sobre la mesa, no
+   pasar una página: entran desde abajo y aterrizan */
+.screen.active { display: block; animation: pone-en-mesa .34s var(--plop) both; }
+@keyframes pone-en-mesa {
   from { opacity: 0; transform: translateY(14px) scale(.985); }
   to   { opacity: 1; transform: none; }
 }
+#screen-cover.screen { padding-bottom: 0; }
 
 /* ============================================================
-   HUD
+   BOTONES
    ============================================================ */
 
-.hud-count { font-size: var(--t-sm); }
-.hud-sucres { font-size: var(--t-md); }
+/* botón de barro cocido: grueso, con su borde inferior como relieve */
+.btn-leather {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  padding: .8rem 1.7rem;
+  font-size: 1.08rem; font-weight: 700; color: #fff4ea;
+  background: linear-gradient(180deg, #e08a5f 0%, #cf6d45 55%, #b8552f 100%);
+  border: none; border-bottom: 4px solid #96401f;
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,225,200,.45), 0 8px 18px -8px rgba(120,45,30,.6);
+  text-shadow: 0 1px 1px rgba(120,45,30,.5);
+  transition: transform .1s ease, border-bottom-width .1s ease, filter .12s ease;
+}
+.btn-leather:active { transform: translateY(3px); border-bottom-width: 1px; }
+.btn-leather:disabled { filter: grayscale(.55) brightness(.95); opacity: .6; }
+.btn-leather.wide { width: 100%; padding: .9rem 1rem; font-size: 1.15rem; }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
+  padding: .65rem 1.3rem; font-size: 1rem; font-weight: 600; color: var(--tinta);
+  background: linear-gradient(180deg, var(--crema), var(--crema-2));
+  border: none; border-bottom: 3px solid rgba(184,85,47,.35);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 5px 12px -7px rgba(120,45,30,.5);
+  transition: transform .1s ease, border-bottom-width .1s ease;
+}
+.btn-ghost:active { transform: translateY(2px); border-bottom-width: 1px; }
+.btn-ghost:disabled { opacity: .5; }
+.btn-ghost.wide { width: 100%; }
+.btn-ghost.small { padding: .48rem .9rem; font-size: .88rem; border-radius: 10px; }
 
 /* ============================================================
-   PORTADA
+   HUD — barra de progreso del álbum
    ============================================================ */
 
-.cover {
-  position: relative; height: 100%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: var(--sp-3);
-  padding: var(--sp-8) var(--sp-6) var(--sp-6);
-  text-align: center;
-  overflow: hidden;
+.hud {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: var(--frame); height: var(--hud-h);
+  padding: .55rem 1rem 0 1.6rem;
+  z-index: 50;
+  display: flex; align-items: center; gap: .6rem;
 }
-.cover > * { position: relative; z-index: 1; }
-/* el sol que entra por la ventana */
-.cover-sun {
-  position: absolute; top: -18%; left: 50%; transform: translateX(-50%);
-  width: 160%; aspect-ratio: 1; z-index: 0;
-  background: radial-gradient(46% 46% at 50% 22%, rgba(255,238,190,.6), rgba(255,238,190,.16) 46%, transparent 66%);
-  animation: sol-entra 1.4s var(--ease-out) both;
+.hud-progress { flex: 1; display: flex; align-items: center; gap: .6rem; }
+.hud-sucres {
+  flex-shrink: 0; display: flex; align-items: center; gap: .3rem;
+  font-weight: 700; font-size: .96rem; color: var(--tinta); white-space: nowrap;
+  background: rgba(253,240,226,.9); border-radius: 999px;
+  padding: .2rem .7rem .2rem .32rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 3px 8px -4px rgba(120,50,50,.5);
 }
-@keyframes sol-entra { from { opacity: 0; } to { opacity: 1; } }
+.hud-sucres.gana { animation: sucre-gana .5s var(--plop); }
+@keyframes sucre-gana { 40% { transform: scale(1.22); } }
+.hud-sucres-ic { font-size: 1rem; }
 
-.cover-star {
-  font-size: var(--t-2xl); color: var(--maiz-400);
-  text-shadow: 0 2px 0 var(--maiz-600), 0 0 20px rgba(255,210,77,.85);
-  animation: estrella-late 5s ease-in-out infinite;
+/* la moneda: una monedita de latón grabada con una "S" de sucre */
+.icono-sucre {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.15em; height: 1.15em; border-radius: 50%;
+  background: conic-gradient(from 210deg, var(--brass), var(--brass-d), var(--brass));
+  color: #3a2b12; font-weight: 800; font-size: .74em; line-height: 1; font-family: var(--serif);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 1px 2px rgba(0,0,0,.35);
+  vertical-align: -0.15em;
 }
-@keyframes estrella-late { 50% { transform: rotate(16deg) scale(1.14); } }
-
-.cover-over {
-  font-family: var(--font-display); font-size: var(--t-xs); font-weight: 700;
-  letter-spacing: .3em; text-transform: uppercase; color: var(--talavera-500);
+.hud-count {
+  font-weight: 700; font-size: 1rem; color: var(--tinta); white-space: nowrap;
+  background: rgba(253,240,226,.9); border-radius: 999px;
+  padding: .2rem .7rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 3px 8px -4px rgba(120,50,50,.5);
 }
-.cover-title {
-  font-family: var(--font-display); font-size: var(--t-3xl); font-weight: 800; line-height: 1;
-  color: #fff;
-  text-shadow: 0 3px 0 var(--rosa-600), 0 6px 0 rgba(43,33,41,.22), 0 10px 22px rgba(43,33,41,.35);
+.hud-bar {
+  flex: 1; height: 7px; border-radius: 999px; overflow: hidden;
+  background: rgba(120,50,50,.2); box-shadow: inset 0 1px 3px rgba(90,35,40,.32);
 }
-.cover-sub { font-family: var(--font-display); font-size: var(--t-xl); font-weight: 700; color: var(--rosa-600); }
-
-.cover-peek { display: flex; justify-content: center; gap: var(--sp-4); margin: var(--sp-1) 0 var(--sp-2); }
-.cover-peek .plate {
-  width: 68px; border: var(--ring); box-shadow: var(--e-3);
+.hud-bar-fill {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--semilla), var(--receta));
+  transition: width .4s ease;
 }
-.cover-peek .plate:nth-child(2) { transform: translateY(-10px) scale(1.06); }
-
-.cover-quote { max-width: 34ch; }
-.cover-quote p { font-size: var(--t-md); line-height: var(--lead); }
-.cover-quote p + p { margin-top: var(--sp-2); font-size: var(--t-sm); }
-.cover .btn { max-width: 320px; margin-top: var(--sp-2); }
-
-/* la puerta al minijuego de preparación (fanesca/) */
-.cover-mini {
-  display: flex; align-items: center; gap: var(--sp-3);
-  width: 100%; max-width: 320px; margin-top: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
-  text-align: left; text-decoration: none;
-  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-300));
-  border: 2.5px solid var(--madera-400);
-  border-radius: var(--r-md);
-  box-shadow: var(--e-1);
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-.cover-mini:active { transform: translateY(2px); }
-.cover-mini-ic { font-size: 1.7rem; line-height: 1; }
-.cover-mini span:nth-child(2) {
-  flex: 1; font-size: var(--t-xs); line-height: 1.25; color: var(--text-muted);
-}
-.cover-mini b {
-  display: block; font-family: var(--font-display); font-size: var(--t-sm);
-  color: var(--text);
-}
-.cover-mini-flecha { font-family: var(--font-display); font-size: var(--t-xl); color: var(--madera-500); }
 
 /* ============================================================
-   COCINA — el mesón
+   PORTADA — la tapa de cuero del cuaderno
    ============================================================ */
 
-.hoja--cocina {
-  padding-inline: var(--sp-3);
-  padding-top: calc(var(--hud-h) + var(--sp-1));
-  gap: var(--sp-2);
+/* la mesa servida vista desde arriba: los platos alrededor, el
+   nombre en el mantel del centro */
+.portada {
+  position: relative; z-index: 1;
+  min-height: 100vh; min-height: 100dvh;
+  display: grid; place-items: center;
+  padding: 1.6rem 1.2rem;
 }
 
-.mesa-zona { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-/* la escena ocupa TODO: es el fondo de la pantalla, no un cuadro */
-.cocina3d { position: absolute; inset: 0; z-index: 0; }
-.cocina3d canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
-
-/* los mandos flotan sobre la escena */
-.cocina-ui {
-  position: absolute; inset: 0; z-index: 2; pointer-events: none;
-  display: flex; flex-direction: column;
-  padding-top: calc(var(--hud-h) + var(--sp-1));
-  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-2));
+/* los platos regados por el mantel */
+.portada-mesa { position: absolute; inset: 0; pointer-events: none; }
+.portada-mesa span {
+  position: absolute; width: 54px; height: 54px;
+  filter: saturate(1.15) drop-shadow(0 6px 5px rgba(120,55,60,.4));
+  animation: plato-flota 6s ease-in-out infinite;
 }
-.cocina-ui > * { pointer-events: auto; }
-.mesa3d .hoja--cocina { display: none; }
+/* regados a mano, no en cuadrícula: una mesa de verdad está desordenada */
+.portada-mesa span:nth-child(1)  { top: 5%;  left: 8%;  animation-delay: 0s;   }
+.portada-mesa span:nth-child(2)  { top: 3%;  left: 42%; animation-delay: -1.1s; width: 62px; height: 62px; }
+.portada-mesa span:nth-child(3)  { top: 9%;  right: 7%; animation-delay: -2.3s; }
+.portada-mesa span:nth-child(4)  { top: 20%; left: 22%; animation-delay: -3.4s; width: 46px; height: 46px; }
+.portada-mesa span:nth-child(5)  { top: 18%; right: 20%; animation-delay: -4.2s; }
+.portada-mesa span:nth-child(6)  { top: 30%; left: 4%;  animation-delay: -1.8s; width: 44px; height: 44px; }
+.portada-mesa span:nth-child(7)  { top: 31%; right: 4%; animation-delay: -0.6s; width: 42px; height: 42px; }
+.portada-mesa span:nth-child(8)  { bottom: 22%; left: 7%; animation-delay: -2.9s; width: 46px; height: 46px; }
+.portada-mesa span:nth-child(9)  { bottom: 21%; right: 8%; animation-delay: -3.9s; }
+.portada-mesa span:nth-child(10) { bottom: 10%; left: 26%; animation-delay: -1.4s; }
+.portada-mesa span:nth-child(11) { bottom: 6%; right: 24%; animation-delay: -5s;   width: 48px; height: 48px; }
+.portada-mesa span:nth-child(12) { bottom: 13%; left: 47%; animation-delay: -2.1s; width: 42px; height: 42px; }
+@keyframes plato-flota { 50% { transform: translateY(-7px) rotate(2.5deg); } }
 
-/* flechas del cajón: se posicionan desde JS sobre la fila de casillas */
-.cajon-flecha {
-  position: absolute; z-index: 5;
-  width: 2.3rem; height: 2.3rem;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-size: var(--t-xl); font-weight: 800; line-height: 1;
-  color: var(--rosa-700);
-  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
-  border: 2.5px solid var(--rosa-600);
-  border-bottom-width: 4px;
-  border-radius: 50%;
-  box-shadow: var(--e-2);
-  transition: transform var(--dur-fast) var(--ease-out);
+/* el mantel del centro, donde va el nombre */
+.portada-centro {
+  position: relative; z-index: 2; text-align: center;
+  max-width: 22rem; padding: 1.9rem 1.4rem 1.6rem;
+  background: linear-gradient(178deg, var(--crema), var(--crema-2));
+  border-radius: 20px 26px 22px 24px;
+  box-shadow: 0 26px 60px -22px rgba(80,30,45,.6), inset 0 1px 0 rgba(255,255,255,.6);
+  transform: rotate(-1.2deg);
 }
-.cajon-flecha:active { transform: scale(.9); }
-.cajon-flecha.prev { left: var(--sp-2); }
-.cajon-flecha.next { right: var(--sp-2); }
-
-/* etiquetas de lo que está sobre la tabla */
-.mesa-etiquetas {
-  display: flex; justify-content: center; gap: var(--sp-2);
-  margin-top: var(--sp-2);
+/* el bordado del mantel */
+.portada-centro::before {
+  content: ''; position: absolute; inset: .5rem;
+  border: 2px dashed rgba(217,123,92,.35); border-radius: 14px;
   pointer-events: none;
 }
-.mesa-etiqueta { animation: etiqueta-pop var(--dur) var(--ease-pop) both; }
-@keyframes etiqueta-pop { from { opacity: 0; transform: translateY(-6px) scale(.9); } }
-.mesa-etiqueta.mess { background: linear-gradient(180deg, var(--madera-500), var(--madera-700)); color: var(--text-invert); border-color: var(--maiz-400); }
-
-/* la pista flota sobre la escena: no gasta alto de pantalla */
-.taller-action {
-  margin-top: auto;
-  display: flex; align-items: center; justify-content: center; gap: var(--sp-2); flex-wrap: wrap;
-  padding: 0 var(--sp-3);
-  pointer-events: none;
+.portada-over {
+  font-size: .72rem; letter-spacing: .26em; text-transform: uppercase;
+  color: var(--semilla-d); margin-bottom: .2rem;
 }
-.taller-action > .btn { pointer-events: auto; }
-.taller-hint {
-  font-family: var(--font-display); font-size: var(--t-sm); font-weight: 600; text-align: center;
-  color: var(--text-invert);
-  background: rgba(43,33,41,.75);
-  border: 2px solid rgba(255,255,255,.35);
-  border-radius: var(--r-pill); padding: .2rem .9rem;
-  box-shadow: var(--e-1);
+.portada h1 {
+  font-size: 3rem; font-weight: 700; line-height: 1; color: var(--tinta);
+  text-shadow: 0 2px 0 rgba(255,255,255,.6);
+}
+.portada-sub { font-size: 1.55rem; color: var(--semilla-d); margin: .15rem 0 .9rem; }
+.portada-quote {
+  font-size: .93rem; line-height: 1.6; color: var(--tinta-suave);
+  padding: .9rem .2rem 1.1rem;
+  border-top: 1px solid rgba(217,123,92,.3);
+}
+.portada .btn-leather { max-width: 300px; }
+
+/* ============================================================
+   LA COCINA — encimera cenital: la hornilla al centro, todo lo
+   que tienes regado sobre la mesa. Se agarra y se suelta.
+   ============================================================ */
+
+.cocina {
+  position: relative; z-index: 1;
+  max-width: 460px; margin: 0 auto;
+  padding: calc(var(--hud-h) + .3rem) 4.2rem .8rem 1.1rem;
+  display: flex; flex-direction: column; gap: .2rem;
+  height: 100vh; height: 100dvh;
 }
 
-/* --- fogón 2D: respaldo para navegadores sin WebGL --- */
-.fogon {
+/* ---------- el fogón ---------- */
+
+/* la hornilla se queda centrada en el espacio libre de la encimera */
+.fogon-zona { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+/* la hornilla: el único punto oscuro de la pantalla */
+.hornilla {
   position: relative;
-  display: flex; align-items: center; justify-content: center; gap: var(--sp-3);
-  padding: var(--sp-6) var(--sp-3);
-  background: linear-gradient(180deg, var(--madera-400), var(--madera-500));
-  border: var(--ring); border-radius: var(--r-xl);
-  box-shadow: var(--e-3);
+  width: min(178px, 46vw); aspect-ratio: 1;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, var(--fogon-2) 0 38%, var(--fogon) 38% 72%, #5a4260 72% 100%);
+  box-shadow:
+    inset 0 3px 12px rgba(0,0,0,.5),
+    0 18px 34px -16px rgba(60,30,50,.6);
 }
-.fogon.shake { animation: mesa-shake var(--dur-slow) ease; }
-@keyframes mesa-shake { 25% { transform: translateX(-7px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
-.fusion-plus { font-size: var(--t-2xl); color: #fff; opacity: .9; }
-.carta-slot {
-  width: clamp(102px, 29vw, 130px); aspect-ratio: 5 / 7;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-1);
-  background: rgba(0,0,0,.18);
-  border: 3px dashed rgba(255,255,255,.7);
-  border-radius: var(--r-md);
-}
-.carta-slot .slot-plus { font-size: var(--t-2xl); color: #fff; }
-.carta-slot .slot-txt { font-size: var(--t-xs); color: #fff; text-align: center; padding: 0 var(--sp-1); }
-.carta-slot.filled { border: none; background: none; }
-.ingrediente-mesa {
-  display: flex; flex-direction: column; align-items: center; gap: var(--sp-1);
-  animation: ingrediente-cae var(--dur) var(--ease-pop) both;
-}
-@keyframes ingrediente-cae { from { opacity: 0; transform: translateY(-16px) scale(.7); } }
-.ing-icono { width: 4.8rem; }
-.ing-sombra {
-  display: block; width: 58%; height: 10px; margin-top: -.3rem; border-radius: 50%;
-  background: radial-gradient(50% 100% at 50% 50%, rgba(43,33,41,.45), transparent 75%);
-}
-.ing-nombre { font-family: var(--font-display); font-weight: 700; font-size: var(--t-sm); color: var(--text-invert); background: rgba(43,33,41,.7); border-radius: var(--r-pill); padding: 0 .6rem; }
-
-/* accesos a la despensa (solo modo 2D) */
-.despensa-accesos { display: flex; gap: var(--sp-3); }
-.acceso-btn { flex: 1; flex-direction: column; gap: var(--sp-1); padding: var(--sp-3) var(--sp-2); font-size: var(--t-sm); }
-.acceso-ic { font-size: var(--t-2xl); filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
-
-/* con el mesón 3D el cajón vive dentro de la escena */
-.mesa3d .despensa-accesos, .mesa3d #en-preparacion { display: none !important; }
-
-/* el combo es un aviso, no un botón: va en el flujo y nunca intercepta
-   el toque de las fichas de estación que tiene debajo */
-.combo-indicador {
-  align-self: flex-end;
-  margin: var(--sp-1) var(--sp-3) 0 0;
+/* las parrillas de hierro */
+.hornilla::before {
+  content: ''; position: absolute; inset: 8%;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(0,0,0,.32) 0deg 3deg, transparent 3deg 45deg);
   pointer-events: none;
-  animation: combo-pop var(--dur) var(--ease-pop) both;
+}
+/* la brasa: se enciende cuando lo que hay dentro sí se puede cocinar */
+.hornilla::after {
+  content: ''; position: absolute; inset: -6%;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 58%, rgba(217,95,67,.55) 72%, transparent 84%);
+  opacity: 0; transition: opacity .35s ease;
+  pointer-events: none;
+}
+.hornilla.encendida::after { opacity: 1; animation: brasa-latir 1.6s ease-in-out infinite; }
+@keyframes brasa-latir { 50% { opacity: .55; } }
+.hornilla.shake { animation: fogon-shake .4s ease; }
+@keyframes fogon-shake { 25% { transform: translateX(-8px); } 50% { transform: translateX(7px); } 75% { transform: translateX(-3px); } }
+
+/* la olla: la zona donde se sueltan las cosas */
+.olla {
+  position: relative; z-index: 2;
+  width: 74%; aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center; gap: .3rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 42% 32%, #b9a2c4 0 4%, #8f79a0 26%, #6d5a7a 62%, #4f3f5c 100%);
+  box-shadow:
+    inset 0 6px 14px rgba(255,255,255,.18),
+    inset 0 -10px 18px rgba(0,0,0,.4),
+    0 8px 18px -6px rgba(40,20,40,.55);
+  transition: transform .2s var(--plop), box-shadow .2s ease;
+}
+/* el guiso dentro de la olla */
+.olla::before {
+  content: ''; position: absolute; inset: 11%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 35%, #6a5578, #3f3049 75%);
+  box-shadow: inset 0 4px 12px rgba(0,0,0,.55);
+}
+.olla.tiene-algo { animation: olla-respira 2.8s ease-in-out infinite; }
+@keyframes olla-respira { 50% { transform: scale(1.035); } }
+/* resaltada mientras arrastras algo encima */
+.olla.encima {
+  transform: scale(1.1);
+  box-shadow:
+    inset 0 6px 14px rgba(255,255,255,.25),
+    0 0 0 5px rgba(232,192,106,.6),
+    0 12px 26px -6px rgba(40,20,40,.6);
+}
+.olla.recibe { animation: olla-recibe .42s var(--plop); }
+@keyframes olla-recibe { 40% { transform: scale(.9); } }
+
+/* lo que hay dentro de la olla, flotando sobre el guiso */
+.olla-dentro { position: relative; z-index: 3; display: flex; align-items: center; justify-content: center; gap: .1rem; width: 100%; }
+.olla-item {
+  width: 2.5rem; height: 2.5rem;
+  filter: drop-shadow(0 5px 5px rgba(0,0,0,.5));
+  animation: cae-en-olla .4s var(--plop) both;
+}
+.olla-item.es-utensilio { width: 2.1rem; height: 2.1rem; }
+@keyframes cae-en-olla { from { opacity: 0; transform: translateY(-40px) scale(1.4) rotate(-12deg); } }
+.olla-vacia-txt {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--hand); font-size: .95rem; line-height: 1.1; text-align: center;
+  color: rgba(255,235,215,.55); padding: 22%;
+  pointer-events: none; transition: opacity .15s ease;
+}
+/* con algo encima sobra decir "trae algo" */
+.olla.encima .olla-vacia-txt { opacity: 0; }
+
+/* vapor saliendo de la olla */
+.olla-vapor { position: absolute; left: 50%; top: -6%; z-index: 4; pointer-events: none; }
+.olla-vapor i {
+  position: absolute; bottom: 0; width: 13px; height: 13px; border-radius: 50%;
+  background: rgba(255,248,240,.6); opacity: 0;
+}
+.olla.tiene-algo .olla-vapor i { animation: vapor-sube 2.6s ease-out infinite; }
+.olla-vapor i:nth-child(1) { left: -20px; animation-delay: 0s; }
+.olla-vapor i:nth-child(2) { left: -2px;  animation-delay: .8s; }
+.olla-vapor i:nth-child(3) { left: 16px;  animation-delay: 1.6s; }
+@keyframes vapor-sube {
+  0%   { opacity: 0; transform: translateY(0) scale(.5); }
+  25%  { opacity: .75; }
+  100% { opacity: 0; transform: translateY(-64px) scale(1.9); }
+}
+
+/* fogonazo al cocinar */
+.fogonazo {
+  position: absolute; inset: -20%; z-index: 5; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,226,150,.95), rgba(217,95,67,.5) 45%, transparent 70%);
+  pointer-events: none; animation: fogonazo-flash .55s ease-out both;
+}
+@keyframes fogonazo-flash { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.25); } }
+
+.combo-indicador {
+  position: absolute; top: -.3rem; right: -1.4rem; z-index: 6;
+  font-size: .95rem; font-weight: 700; color: #fff;
+  background: linear-gradient(180deg, #e8763f, #c2492a);
+  border-radius: 999px; padding: .2rem .65rem;
+  box-shadow: 0 3px 10px rgba(90,30,20,.5);
+  animation: combo-pop .3s var(--plop) both;
 }
 @keyframes combo-pop { from { transform: scale(.5); opacity: 0; } }
 
-/* ============================================================
-   CHIPS — ingredientes en fila (preparación, mercado, despensa)
-   ============================================================ */
+.fogon-hint {
+  font-family: var(--hand); font-size: 1.22rem; line-height: 1.15;
+  color: var(--tinta-suave); text-align: center;
+  margin-top: .4rem; min-height: 1.4rem; max-width: 26ch;
+}
+.taller-action { min-height: 0; display: flex; align-items: center; justify-content: center; gap: .6rem; flex-wrap: wrap; margin-top: .35rem; }
+.taller-action:empty { display: none; }
+.combinar-btn { font-size: 1.08rem; padding: .68rem 2rem; }
 
-.en-preparacion { padding: var(--sp-3); }
-.en-preparacion-label {
-  display: block; font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700;
-  letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--nopal-600);
-  margin-bottom: var(--sp-2);
-}
-.en-preparacion-row, .mercado-grid {
-  display: flex; gap: var(--sp-2); overflow-x: auto; -webkit-overflow-scrolling: touch;
-  padding: var(--sp-1) 2px var(--sp-2);
-}
-.en-preparacion-row::-webkit-scrollbar, .mercado-grid::-webkit-scrollbar { height: 0; }
+/* ---------- la encimera: los objetos sobre la mesa ---------- */
 
-.carta-mini {
-  --chip-edge: var(--rarity-tool);
-  position: relative; flex-shrink: 0;
-  display: flex; flex-direction: column; align-items: center; gap: var(--sp-1);
-  width: 72px; padding: var(--sp-2) var(--sp-1);
-  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
-  border: 2px solid var(--hairline);
-  border-bottom: 4px solid var(--chip-edge);
-  border-radius: var(--r-md);
-  box-shadow: var(--e-1);
-  transition: transform var(--dur-fast) var(--ease-out);
+/* lo tuyo queda abajo, al alcance del pulgar; la hornilla arriba.
+   Ojo: nada de justify-content:flex-end aquí — con overflow recorta
+   el principio de la lista y lo deja inalcanzable. La zona del fogón
+   es la que crece y empuja la encimera hacia abajo. */
+.encimera {
+  flex: 0 1 auto; min-height: 0; max-height: 62%; margin-top: .5rem;
+  display: flex; flex-direction: column; gap: .25rem;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
-.carta-mini:active { transform: scale(.94); }
-.carta-mini.rarity-semilla  { --chip-edge: var(--rarity-semilla); }
-.carta-mini.rarity-hallazgo { --chip-edge: var(--rarity-hallazgo); }
-.carta-mini.rarity-receta   { --chip-edge: var(--rarity-receta); }
-.carta-mini.agotado { opacity: .45; filter: grayscale(.65); }
-.mini-icon {
+.encimera::-webkit-scrollbar { width: 0; }
+
+.repisa { position: relative; flex-shrink: 0; }
+.repisa:empty { display: none; }
+.repisa-label {
+  display: block; font-family: var(--hand); font-size: 1.05rem;
+  color: var(--tinta-suave); margin-bottom: .05rem; padding-left: .25rem;
+}
+.repisa-fila {
+  display: flex; gap: .15rem; flex-wrap: wrap;
+  padding: .1rem 0 .3rem;
+}
+/* la repisa de utensilios se lee como una tabla de madera colgada */
+.repisa-utensilios .repisa-fila {
+  background: linear-gradient(180deg, rgba(253,240,226,.5), rgba(246,217,200,.35));
+  border-radius: 14px; padding: .3rem .35rem .4rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 3px 8px -5px rgba(90,40,50,.4);
+}
+
+/* ---------- un objeto sobre la encimera ---------- */
+
+.objeto {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: .02rem;
+  width: 62px; padding: .22rem .05rem .05rem;
+  touch-action: none;                      /* el arrastre lo maneja JS */
+  transition: transform .16s var(--plop), opacity .15s ease, filter .15s ease;
+  animation: objeto-aterriza .34s var(--plop) both;
+}
+@keyframes objeto-aterriza { from { opacity: 0; transform: translateY(-14px) scale(.8); } }
+/* la comida siempre más saturada que la mesa sobre la que descansa */
+.objeto-icono {
+  width: 2.35rem; height: 2.35rem;
+  filter: saturate(1.18) drop-shadow(0 4px 3px rgba(120,60,60,.35));
+  transition: transform .16s var(--plop);
+}
+/* sin sombra elíptica, un objeto cenital se ve pegado como sticker */
+.objeto-sombra {
+  display: block; width: 1.7rem; height: 6px; margin-top: -3px; border-radius: 50%;
+  background: radial-gradient(50% 100% at 50% 50%, rgba(120,55,60,.4), transparent 72%);
+  transition: transform .16s ease, opacity .16s ease;
+}
+.objeto-nombre {
+  font-size: .6rem; line-height: 1.05; color: var(--tinta); text-align: center;
+  margin-top: .08rem;
+}
+.objeto:active .objeto-icono { transform: scale(1.14) translateY(-3px); }
+.objeto:active .objeto-sombra { transform: scale(.82); opacity: .5; }
+.objeto.agotado { opacity: .38; filter: grayscale(.7); }
+
+/* insignia de cuántos te quedan */
+.objeto-cant {
+  position: absolute; top: 0; right: .4rem; z-index: 2;
+  min-width: 1.05rem; height: 1.05rem;
   display: flex; align-items: center; justify-content: center;
-  width: 2.5rem; aspect-ratio: 1; padding: .22rem;
-  background: radial-gradient(circle at 50% 40%, #fff 0%, #fff 52%, var(--peltre-400) 88%);
+  font-size: .6rem; font-weight: 700; color: #fff;
+  background: linear-gradient(180deg, var(--semilla), var(--semilla-d));
+  border: 1.5px solid rgba(255,245,235,.85);
+  border-radius: 999px; padding: 0 .2rem;
+  box-shadow: 0 2px 4px rgba(120,50,40,.4);
+}
+.objeto.rarity-hallazgo .objeto-cant { background: linear-gradient(180deg, var(--hallazgo), var(--hallazgo-d)); }
+.objeto.rarity-receta   .objeto-cant { background: linear-gradient(180deg, var(--receta), var(--receta-d)); }
+/* los utensilios muestran vida útil en una barrita, no en un número */
+.objeto-durab {
+  display: flex; gap: 1.5px; margin-top: .1rem;
+  padding: 2px 3px; border-radius: 999px; background: rgba(109,90,122,.14);
+}
+.objeto-durab i { width: 3px; height: 5px; border-radius: 1px; background: var(--tool); }
+.objeto-durab i.gastado { background: var(--tinta-suave); opacity: .2; }
+
+/* un utensilio que sirve para lo que hay en la olla se ofrece solo */
+.objeto.sugerido .objeto-icono { animation: sugerido-latir 1.4s ease-in-out infinite; }
+.objeto.sugerido::after {
+  content: ''; position: absolute; inset: .1rem .3rem 1rem;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 2px rgba(43,33,41,.05);
+  background: radial-gradient(circle, rgba(232,192,106,.5), transparent 68%);
+  z-index: -1;
 }
-.mini-icon > svg { width: 100%; height: auto; aspect-ratio: 1; }
-.mini-name { font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700; line-height: 1.1; color: var(--text); text-align: center; }
-.mini-cant {
-  position: absolute; top: -.4rem; right: -.35rem;
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 1.35rem; height: 1.35rem; padding: 0 .28rem;
-  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; line-height: 1; color: #fff;
-  background: linear-gradient(180deg, var(--chile-500), var(--chile-600));
-  border: 2px solid var(--peltre-100); border-radius: var(--r-pill);
-  box-shadow: var(--e-1);
+@keyframes sugerido-latir { 50% { transform: scale(1.13) translateY(-4px); } }
+
+/* la copia que sigue al dedo mientras arrastras */
+.objeto-fantasma {
+  position: fixed; z-index: 200; pointer-events: none;
+  width: 4.2rem; height: 4.2rem; margin: -2.1rem 0 0 -2.1rem;
+  filter: drop-shadow(0 12px 10px rgba(80,30,40,.5));
+  animation: fantasma-alza .16s var(--plop) both;
 }
-.mini-durab { font-size: .55rem; letter-spacing: .04em; color: var(--metal-600); line-height: 1; }
-.mini-costo {
-  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; color: var(--maiz-800);
-  background: linear-gradient(180deg, var(--maiz-300), var(--maiz-400));
-  border-radius: var(--r-pill); padding: 0 .4rem;
+@keyframes fantasma-alza { from { transform: scale(.7); } to { transform: scale(1.15); } }
+
+.encimera-vacio {
+  font-family: var(--hand); font-size: 1.2rem; color: var(--tinta-suave);
+  text-align: center; padding: 1rem .6rem;
 }
 
 /* ============================================================
-   LA CARTA — el coleccionable
+   LA CARTA (componente TCG compartido)
    ============================================================ */
 
 .carta {
-  --carta-edge: var(--rarity-tool-d);
   position: relative; overflow: hidden;
-  width: clamp(102px, 29vw, 130px); aspect-ratio: 5 / 7;
+  width: clamp(108px, 30vw, 136px); aspect-ratio: 5 / 7;
   display: flex; flex-direction: column;
-  background: linear-gradient(180deg, var(--peltre-100) 0%, var(--peltre-200) 100%);
-  border: 3px solid var(--carta-edge);
-  border-radius: var(--r-md);
-  box-shadow: var(--e-2);
+  border-radius: 14px;
+  border: 2.5px solid var(--tool-d);
+  background: linear-gradient(180deg, #fffcf6 0%, var(--crema-2) 100%);
+  box-shadow: 0 1px 2px rgba(90,40,50,.15), 0 8px 18px -10px rgba(90,40,50,.5);
 }
-.carta.rarity-semilla  { --carta-edge: var(--rarity-semilla); }
-.carta.rarity-hallazgo { --carta-edge: var(--rarity-hallazgo); }
-.carta.rarity-receta   { --carta-edge: var(--rarity-receta); box-shadow: var(--e-2), 0 0 14px -2px rgba(242,179,31,.6); }
+.carta.rarity-semilla  { border-color: var(--semilla-d); }
+.carta.rarity-hallazgo { border-color: var(--hallazgo-d); }
+.carta.rarity-receta   { border-color: var(--receta-d); }
 
 .carta-art {
   flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
-  padding: 11%;
-  background: radial-gradient(66% 66% at 50% 46%, #fff 0%, #fff 54%, rgba(236,217,180,.5) 74%, transparent 80%);
+  padding: 12%;
+  background: radial-gradient(75% 75% at 50% 38%, rgba(255,255,255,.6), transparent 70%);
 }
-.carta-art svg, .carta-art > span { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(43,33,41,.22)); }
-.carta-plate { flex-shrink: 0; text-align: center; padding: var(--sp-1) var(--sp-1) .35rem; border-top: 2px dashed var(--hairline); }
-.carta-nombre { display: block; font-family: var(--font-display); font-size: var(--t-sm); font-weight: 700; line-height: var(--lead-tight); color: var(--text); }
-.carta-rareza { display: block; font-size: .55rem; font-weight: 800; letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--carta-edge); margin-top: .1rem; }
-.rarity-semilla  .carta-plate { background: linear-gradient(180deg, transparent, rgba(185,126,60,.16)); }
-.rarity-hallazgo .carta-plate { background: linear-gradient(180deg, transparent, rgba(108,191,90,.16)); }
-.rarity-receta   .carta-plate { background: linear-gradient(180deg, transparent, rgba(242,179,31,.22)); }
+.carta-art svg, .carta-art > span { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(58,47,34,.2)); }
+.carta-plate {
+  flex-shrink: 0; text-align: center; padding: .3rem .3rem .4rem;
+  border-top: 1px solid var(--line-soft);
+}
+.rarity-semilla .carta-plate  { background: linear-gradient(180deg, transparent, rgba(217,123,92,.18)); }
+.rarity-hallazgo .carta-plate { background: linear-gradient(180deg, transparent, rgba(123,160,91,.2)); }
+.rarity-receta .carta-plate   { background: linear-gradient(180deg, transparent, rgba(232,163,61,.24)); }
+.carta-nombre { display: block; font-size: .8rem; font-weight: 700; line-height: 1.12; color: var(--tinta); }
+.carta-rareza {
+  display: block; font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--tinta-suave); margin-top: .12rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rarity-semilla .carta-rareza  { color: var(--semilla-d); }
+.rarity-hallazgo .carta-rareza { color: var(--hallazgo-d); }
+.rarity-receta .carta-rareza   { color: var(--receta-d); }
 
+/* barniz dorado que recorre las cartas "receta" */
 .carta-foil {
   position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(115deg, transparent 35%, rgba(255,236,180,.6) 48%, rgba(255,255,255,.85) 52%, transparent 65%);
+  background: linear-gradient(115deg, transparent 35%, rgba(255,244,200,.55) 48%, rgba(255,255,255,.75) 52%, transparent 65%);
   background-size: 260% 100%; background-position: 130% 0;
   animation: foil-sweep 3.2s ease-in-out infinite;
   mix-blend-mode: soft-light;
 }
 @keyframes foil-sweep { 0%, 30% { background-position: 130% 0; } 65%, 100% { background-position: -60% 0; } }
 
-/* el reverso: plato tapado, rayas de caramelo */
+/* carta al revés: no descubierta — el tejido del mantel andino */
 .carta.back {
-  background: repeating-linear-gradient(45deg, var(--rosa-400) 0 12px, var(--rosa-500) 12px 24px);
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(-45deg, rgba(90,40,50,.1) 0 8px, transparent 8px 16px),
+    linear-gradient(160deg, #d99381, #c47a69 55%, #b96a5c);
+  background-color: #cd8271;
 }
-.carta.back.rarity-semilla  { --carta-edge: var(--rarity-semilla); }
-.carta.back.rarity-hallazgo { --carta-edge: var(--rarity-hallazgo); }
-.carta.back.rarity-receta   { --carta-edge: var(--rarity-receta); }
+.carta.back.rarity-semilla  { border-color: var(--semilla); }
+.carta.back.rarity-hallazgo { border-color: var(--hallazgo); }
+.carta.back.rarity-receta   { border-color: var(--receta); }
+.carta.back.rarity-tool     { border-color: var(--tool); }
 .carta-textura { position: absolute; inset: 0; }
-.carta-textura::after {
-  content: '✦'; position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%);
-  font-size: var(--t-lg); color: var(--maiz-300); text-shadow: 0 1px 2px rgba(0,0,0,.3);
-}
 .carta-interrogante {
-  position: absolute; inset: 0; display: grid; place-items: center;
-  font-family: var(--font-display); font-weight: 800; font-size: 2.6rem; color: #fff;
-  text-shadow: 0 3px 0 var(--rosa-700), 0 6px 10px rgba(0,0,0,.25);
-}
-.carta-cant {
-  position: absolute; top: var(--sp-1); right: var(--sp-1); z-index: 2;
-  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; color: #fff;
-  background: rgba(43,33,41,.8); border: 2px solid var(--peltre-100);
-  border-radius: var(--r-pill); padding: 0 .38rem;
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-weight: 700; font-size: 2.6rem; color: rgba(255,245,235,.6);
+  text-shadow: 0 2px 3px rgba(90,35,45,.4);
 }
 
 /* ============================================================
-   RECETARIO
+   ÁLBUM (Colección)
    ============================================================ */
 
-.region-seccion { margin-bottom: var(--sp-6); }
-.region-head {
-  --region-acento: var(--maiz-400);
+.coleccion-wrap { max-width: 520px; margin: 0 auto; padding: calc(var(--hud-h) + .8rem) 4.2rem 2.4rem 1.1rem; }
+.coleccion-head { text-align: center; margin-bottom: .9rem; }
+.coleccion-head h2 { font-size: 1.95rem; font-weight: 700; color: var(--tinta); }
+.coleccion-progress { font-family: var(--hand); font-size: 1.3rem; color: var(--tinta-suave); margin-top: .05rem; }
+.coleccion-progress .progress-count { font-weight: 700; color: var(--semilla-d); }
+
+/* cada región es una hoja del recetario puesta sobre la mesa */
+.region-seccion {
   position: relative;
-  display: flex; align-items: center; gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
-  margin-bottom: var(--sp-3);
-  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
-  border: 2px solid var(--hairline);
-  border-left: 7px solid var(--region-acento);
-  border-radius: var(--r-md);
-  box-shadow: var(--e-1);
+  margin-bottom: 1.3rem; padding: 1rem .8rem 1.1rem;
+  background-image: var(--paper-grain), linear-gradient(178deg, var(--crema), var(--crema-2));
+  border-radius: 8px 16px 10px 14px;
+  box-shadow: 0 12px 26px -14px rgba(90,40,50,.55), inset 0 1px 0 rgba(255,255,255,.6);
 }
-.region-nombre { min-width: 0; }
-.region-head h3 { font-family: var(--font-display); font-size: var(--t-xl); font-weight: 800; line-height: 1; color: var(--text); }
-.region-tagline { font-size: var(--t-xs); color: var(--text-muted); line-height: 1.3; }
-.region-progress--lock { background: var(--hairline-strong); }
+.region-seccion:nth-child(even) { transform: rotate(.5deg); }
+.region-seccion:nth-child(odd)  { transform: rotate(-.4deg); }
+/* la pestaña de color que marca la región, asomando por arriba */
+.region-seccion::before {
+  content: ''; position: absolute; top: -6px; left: 1.2rem; width: 62px; height: 12px;
+  background: var(--region-acento, var(--semilla));
+  border-radius: 6px 6px 0 0;
+  box-shadow: 0 -2px 5px -2px rgba(90,40,50,.4);
+}
+.region-head { position: relative; margin-bottom: .8rem; }
+.region-head h3 { font-size: 1.45rem; font-weight: 700; color: var(--tinta); line-height: 1.1; }
+.region-tagline { font-family: var(--hand); font-size: 1.2rem; color: var(--tinta-suave); margin-top: .05rem; }
 .region-progress {
-  margin-left: auto; flex-shrink: 0;
-  font-family: var(--font-display); font-size: var(--t-xs); font-weight: 800; color: #fff;
-  background: var(--region-acento); border: 2px solid var(--peltre-100);
-  border-radius: var(--r-pill); padding: .1rem .55rem;
-  box-shadow: var(--e-1);
+  position: absolute; top: 0; right: 0; font-size: .8rem; font-weight: 700;
+  color: #fff; background: var(--region-acento, var(--semilla));
+  border-radius: 999px; padding: .18rem .6rem;
+  box-shadow: 0 2px 5px -1px rgba(90,40,50,.4);
 }
 .region-locked {
-  display: block; font-size: var(--t-sm); color: var(--text-muted); text-align: center;
-  padding: var(--sp-4) var(--sp-3);
-  background: rgba(43,33,41,.06);
-  border: 2px dashed var(--hairline);
-  border-radius: var(--r-md);
+  font-family: var(--hand); font-size: 1.22rem; line-height: 1.25; color: var(--tinta-suave);
+  padding: .8rem .9rem; text-align: center;
+  background: rgba(217,123,92,.09); border: 2px dashed rgba(217,123,92,.3); border-radius: 12px;
 }
-.album-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
-.album-grid .carta { width: 100%; transition: transform var(--dur-fast) var(--ease-out); }
-.album-grid .carta:active { transform: scale(.95); }
-.coleccion-footnote { font-size: var(--t-sm); color: var(--text-muted); text-align: center; padding: var(--sp-2) 0 var(--sp-4); }
+.album-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .55rem; }
+.album-grid .carta { width: 100%; }
+.carta-cant {
+  position: absolute; top: .25rem; right: .25rem; z-index: 2;
+  font-size: .66rem; font-weight: 700; color: #fff;
+  background: rgba(74,47,61,.8); border-radius: 999px; padding: .05rem .38rem;
+}
+
+.coleccion-footnote {
+  font-family: var(--hand); text-align: center; font-size: 1.2rem;
+  color: var(--tinta-suave); margin-top: 1rem;
+}
 
 /* ============================================================
-   DESPENSA
+   NAVEGACIÓN — la cinta lateral del cuaderno
    ============================================================ */
 
-.caja-box {
-  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
-  margin-bottom: var(--sp-5);
+/* las pestañas son separadores de recetario asomando por el borde */
+.tabs {
+  position: fixed; right: 0; top: 50%; transform: translateY(-50%);
+  z-index: 55; display: flex; flex-direction: column; gap: .5rem;
 }
-.caja-visual {
-  width: 92px; aspect-ratio: 5 / 7;
-  display: grid; place-items: center;
-  background: linear-gradient(160deg, var(--madera-200), var(--madera-400) 60%, var(--madera-500));
-  border: var(--ring); border-radius: var(--r-md);
-  box-shadow: var(--gloss), var(--e-3);
-  animation: caja-flota 3.2s ease-in-out infinite;
+.tab-btn {
+  writing-mode: vertical-rl;
+  display: flex; align-items: center; gap: .45rem;
+  padding: .95rem .45rem;
+  font-size: .9rem; font-weight: 700; color: var(--tinta);
+  background: linear-gradient(270deg, var(--crema) 60%, var(--crema-2));
+  border: none;
+  border-radius: 12px 0 0 12px;
+  box-shadow: -4px 3px 12px -5px rgba(100,40,50,.55), inset 0 0 0 1px rgba(255,255,255,.5);
+  transition: transform .16s var(--plop), padding-right .16s ease;
 }
-@keyframes caja-flota { 50% { transform: translateY(-5px) rotate(-2deg); } }
-.caja-sello {
-  width: 40px; height: 40px; display: grid; place-items: center;
-  font-size: var(--t-lg); color: var(--maiz-800);
-  background: conic-gradient(from 210deg, var(--maiz-300), var(--maiz-600), var(--maiz-300));
-  border-radius: 50%;
-  box-shadow: var(--e-2);
+.tab-btn.active {
+  background: linear-gradient(270deg, #e08a5f 60%, #cf6d45);
+  color: #fff4ea; padding-right: .85rem;
+  box-shadow: -5px 4px 14px -4px rgba(120,45,30,.6);
 }
-.caja-stash { font-family: var(--font-display); font-size: var(--t-md); font-weight: 700; }
-.sobre-count { font-size: var(--t-xl); font-weight: 800; color: var(--maiz-300); }
-.caja-timer { font-size: var(--t-xs); opacity: .9; text-align: center; }
+.tab-ic { width: 1.25rem; height: 1.25rem; }
+.tab-btn:active { transform: translateX(2px); }
 
-.seccion { margin-bottom: var(--sp-5); }
-.seccion .label { margin: 0 0 var(--sp-2) var(--sp-1); }
-.seccion-panel { display: flex; flex-direction: column; gap: var(--sp-2); }
-.seccion-nota { font-size: var(--t-sm); color: var(--text-muted); text-align: center; line-height: 1.45; }
-.seccion-acciones { display: flex; gap: var(--sp-2); justify-content: center; flex-wrap: wrap; }
-.regalos-num { font-family: var(--font-display); font-weight: 800; color: var(--accent-ink); }
-.regalos-empty, .despensa-vacio {
-  grid-column: 1 / -1; font-size: var(--t-sm); color: var(--text-muted); text-align: center; padding: var(--sp-3);
+/* ============================================================
+   LA FERIA — sobres y regalos
+   ============================================================ */
+
+.feria-wrap { max-width: 460px; margin: 0 auto; padding: calc(var(--hud-h) + 1rem) 4.4rem 2.4rem 1.4rem; }
+.feria-head { text-align: center; margin-bottom: 1.1rem; }
+.feria-head h2 { font-size: 2rem; font-weight: 700; color: var(--leather); }
+.feria-sub { font-size: 1.3rem; color: var(--ink-soft); margin-top: .1rem; }
+
+/* la canasta de mimbre: se toca directamente, sin botón intermedio */
+.canasta-box { display: flex; flex-direction: column; align-items: center; gap: .5rem; margin-bottom: 1.7rem; }
+/* el área que se toca se queda quieta; lo que flota es el dibujo */
+.canasta {
+  position: relative; width: 132px; height: 118px;
+  display: block; padding: 0;
+  transition: transform .16s var(--plop), filter .16s ease;
 }
-.regalo-mini { width: 100%; transition: transform var(--dur-fast) var(--ease-out); }
+.canasta-asa, .canasta-cuerpo { animation: canasta-flota 3.4s ease-in-out infinite; }
+@keyframes canasta-flota { 50% { translate: 0 -6px; } }
+.canasta:active { transform: scale(.93); }
+.canasta:disabled { filter: grayscale(.65) brightness(.97); opacity: .55; }
+.canasta:disabled .canasta-asa, .canasta:disabled .canasta-cuerpo { animation: none; }
+
+/* el asa */
+.canasta-asa {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 74px; height: 46px;
+  border: 9px solid #b9834e; border-bottom: none;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  box-shadow: inset 0 2px 0 rgba(255,225,190,.4);
+}
+/* el cuerpo tejido */
+.canasta-cuerpo {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 78px;
+  border-radius: 10px 10px 26px 26px / 8px 8px 34px 34px;
+  background:
+    repeating-linear-gradient(90deg, rgba(90,45,20,.16) 0 4px, transparent 4px 13px),
+    repeating-linear-gradient(0deg, rgba(255,230,195,.35) 0 3px, transparent 3px 11px),
+    linear-gradient(180deg, #d5a06a 0%, #b9834e 60%, #97652f 100%);
+  background-color: #c08a52;
+  box-shadow: inset 0 4px 8px rgba(255,230,195,.3), inset 0 -8px 14px rgba(80,40,15,.35),
+              0 10px 20px -10px rgba(90,45,30,.6);
+}
+/* el borde de arriba, más grueso */
+.canasta-cuerpo::before {
+  content: ''; position: absolute; top: -5px; left: -3px; right: -3px; height: 15px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e0b17d, #b9834e);
+  box-shadow: inset 0 1px 0 rgba(255,240,215,.55), 0 2px 4px rgba(80,40,15,.3);
+}
+.canasta-cuenta {
+  position: absolute; top: 40px; right: -6px; z-index: 3;
+  min-width: 1.7rem; height: 1.7rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .98rem; font-weight: 700; color: #fff4ea;
+  background: linear-gradient(180deg, #e08a5f, #b8552f);
+  border: 2px solid var(--crema);
+  border-radius: 999px; padding: 0 .3rem;
+  box-shadow: 0 3px 8px -2px rgba(120,45,30,.55);
+}
+.sobre-timer { font-family: var(--hand); font-size: 1.18rem; color: var(--tinta-suave); text-align: center; }
+
+.mercado-section { text-align: center; margin-bottom: 1.8rem; }
+.mercado-title { font-size: 1.3rem; font-weight: 700; color: var(--leather); margin-bottom: .3rem; }
+.mercado-blurb { font-size: .94rem; color: var(--ink-soft); line-height: 1.55; margin-bottom: .9rem; }
+.mercado-grid { display: flex; gap: .3rem; overflow-x: auto; padding: .2rem .1rem .6rem; -webkit-overflow-scrolling: touch; }
+.mercado-grid::-webkit-scrollbar { height: 0; }
+.mercado-chip { flex-shrink: 0; touch-action: auto; }
+.objeto-precio {
+  font-size: .64rem; font-weight: 700; color: var(--receta-d);
+  background: rgba(232,163,61,.2); border-radius: 999px; padding: .05rem .42rem; margin-top: .16rem;
+}
+.mercado-acciones { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
+.pregon-timer { font-size: .92rem; color: var(--ink-soft); margin-top: .5rem; }
+
+.regalos-section { text-align: center; }
+.regalos-title { font-size: 1.3rem; font-weight: 700; color: var(--leather); margin-bottom: .3rem; }
+.regalos-blurb { font-size: .94rem; color: var(--ink-soft); line-height: 1.55; margin-bottom: 1rem; }
+#regalos-restantes { font-weight: 700; color: var(--ink); }
+.regalos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
+.regalo-mini { width: 100%; transition: transform .15s ease; }
 .regalo-mini:active { transform: scale(.94); }
+.regalos-empty { grid-column: 1 / -1; font-size: 1rem; color: var(--ink-soft); font-style: italic; }
 
 /* ============================================================
-   MODALES ESPECÍFICOS
+   MODALES
    ============================================================ */
 
-.sheet--wide { max-width: 400px; }
-.despensa-grid { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; width: 100%; max-height: 46vh; overflow-y: auto; }
+.modal {
+  position: fixed; inset: 0; z-index: 90;
+  display: none; align-items: center; justify-content: center;
+  padding: 1.4rem;
+  background: rgba(20, 14, 8, .68);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.modal.open { display: flex; animation: modal-in .3s ease both; }
+@keyframes modal-in { from { opacity: 0; } }
 
-.detalle-art { width: 128px; border: var(--ring); box-shadow: var(--e-2); }
-.detalle-art.rarity-semilla  { box-shadow: var(--e-2), 0 0 0 3px var(--rarity-semilla); }
-.detalle-art.rarity-hallazgo { box-shadow: var(--e-2), 0 0 0 3px var(--rarity-hallazgo); }
-.detalle-art.rarity-receta   { box-shadow: var(--e-2), 0 0 0 3px var(--rarity-receta); }
-.pista-carta { width: 108px; pointer-events: none; }
-.pista-texto { font-family: var(--font-display); font-size: var(--t-lg); font-weight: 600; line-height: 1.35; color: var(--text); }
-.racha-ic { font-size: var(--t-3xl); }
-.racha-recompensa { font-family: var(--font-display); font-size: var(--t-2xl); font-weight: 800; color: var(--maiz-600); }
-
-/* --- Revelación de carta --- */
-.reveal-wrap { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); max-width: 320px; width: 100%; }
-.reveal-stage { position: relative; width: 200px; aspect-ratio: 5 / 7; perspective: 1100px; touch-action: none; cursor: grab; }
-.reveal-stage::before {
-  content: ''; position: absolute; left: 50%; top: -60%; transform: translateX(-50%);
-  width: 300%; height: 200%; z-index: 0; pointer-events: none;
-  background: radial-gradient(42% 42% at 50% 32%, rgba(255,238,190,.18), transparent 68%);
+/* ---------- Revelación: giro 3D + swipe, al estilo de un sobre TCG ---------- */
+.reveal-wrap { display: flex; flex-direction: column; align-items: center; gap: .9rem; max-width: 320px; width: 100%; }
+.reveal-stage {
+  position: relative;
+  width: 200px; aspect-ratio: 5 / 7;
+  margin-bottom: 28px;                /* deja sitio a la pila que asoma por debajo */
+  perspective: 1100px;
+  touch-action: none;                 /* el gesto lo maneja JS, no el scroll del navegador */
+  cursor: grab;
 }
 .carta-flip {
   position: relative; z-index: 3; width: 100%; height: 100%;
   transform-style: preserve-3d;
-  transition: transform .5s var(--ease-out);
+  transition: transform .5s cubic-bezier(.2, .85, .25, 1);
   will-change: transform;
 }
-.reveal-stack-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; transition: transform var(--dur) var(--ease-out); }
+
+/* pila detrás de la carta actual: se nota que hay más esperando su turno */
+.reveal-stack-layer {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0;
+  pointer-events: none;
+  transition: transform .3s ease, opacity .3s ease;
+}
 #reveal-stack-2 { z-index: 2; transform: translate(7px, 14px) rotate(3deg); }
 #reveal-stack-3 { z-index: 1; transform: translate(-8px, 24px) rotate(-4deg); }
-.reveal-restantes { position: absolute; top: -.7rem; right: -.5rem; z-index: 4; font-size: var(--t-xs); }
-.carta-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.reveal-restantes {
+  position: absolute; top: -.7rem; right: -.5rem; z-index: 4;
+  font-size: .8rem; font-weight: 700; color: #3a2b12;
+  background: conic-gradient(from 210deg, var(--brass), var(--brass-d), var(--brass));
+  border-radius: 999px; padding: .2rem .55rem;
+  box-shadow: 0 3px 8px rgba(0,0,0,.4);
+}
+.reveal-restantes.hidden { display: none; }
+.carta-face {
+  position: absolute; inset: 0;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+}
 .carta-face-front { transform: rotateY(180deg); }
-.carta-face .carta { width: 100%; height: 100%; }
+.carta-face .carta { width: 100%; height: 100%; margin: 0; }
+
+/* halo bajo la carta, más marcado cuando ya se reveló una "receta" */
 .reveal-stage::after {
   content: ''; position: absolute; left: 50%; bottom: -14%; width: 70%; height: 18%;
-  transform: translateX(-50%); z-index: -1;
-  background: radial-gradient(50% 100% at 50% 50%, rgba(0,0,0,.55), transparent 75%);
-  filter: blur(3px); opacity: .5; transition: opacity var(--dur) var(--ease-out);
+  transform: translateX(-50%);
+  background: radial-gradient(50% 100% at 50% 50%, rgba(0,0,0,.35), transparent 75%);
+  filter: blur(3px); z-index: -1; opacity: .4; transition: opacity .3s ease;
 }
-.reveal-stage:has(.carta-flip.is-front)::after { opacity: .9; }
-.reveal-hint { font-family: var(--font-display); font-size: var(--t-md); font-weight: 600; color: var(--maiz-300); text-align: center; animation: hint-bob 1.6s ease-in-out infinite; }
+.reveal-stage:has(.carta-flip.is-front)::after { opacity: .8; }
+
+.reveal-hint { font-size: 1.15rem; color: #e6d4ae; text-align: center; animation: hint-bob 1.6s ease-in-out infinite; }
+.reveal-hint.hidden { display: none; }
 @keyframes hint-bob { 50% { transform: translateY(-5px); } }
+
 .reveal-banner {
-  min-height: 2rem;
-  font-family: var(--font-display); font-size: var(--t-xl); font-weight: 700; text-align: center;
-  color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.45);
+  min-height: 1.9rem;
+  font-family: var(--hand); font-size: 1.55rem; text-align: center; color: #f3e6cd;
+  text-shadow: 0 1px 3px rgba(0,0,0,.5);
   opacity: 0; transform: translateY(6px);
-  transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+  transition: opacity .3s ease, transform .3s ease;
 }
 .reveal-banner.visible { opacity: 1; transform: none; }
-.reveal-banner.is-new { color: var(--maiz-300); }
-.carta-face-front .carta.rarity-receta { box-shadow: 0 0 50px -6px rgba(255,210,77,.85), var(--e-3); }
+.reveal-banner.is-new { color: #ffd97a; }
 
+.carta-face-front .carta.rarity-receta { box-shadow: 0 0 50px -6px rgba(201,152,47,.65), 0 10px 22px -12px rgba(0,0,0,.5); }
+
+/* estallido de celebración al revelar una receta nueva */
 .reveal-burst { position: fixed; z-index: 119; pointer-events: none; }
-.reveal-burst i { position: absolute; width: 7px; height: 10px; border-radius: 2px; animation: burst-fly .85s ease-out both; }
-@keyframes burst-fly { to { transform: translate(var(--dx), var(--dy)) rotate(220deg); opacity: 0; } }
+.reveal-burst i {
+  position: absolute; width: 7px; height: 10px; border-radius: 2px;
+  animation: reveal-burst-fly .85s ease-out both;
+}
+@keyframes reveal-burst-fly { to { transform: translate(var(--dx), var(--dy)) rotate(220deg); opacity: 0; } }
 
-/* --- Banner de anuncio grande --- */
+/* banner grande: para lo que sí importa (abrir una región nueva) */
 .banner {
   position: fixed; left: 50%; transform: translateX(-50%) translateY(-140%);
-  top: calc(env(safe-area-inset-top) + var(--sp-2)); z-index: var(--z-banner);
-  width: min(360px, calc(100% - var(--sp-6)));
-  display: flex; align-items: center; gap: var(--sp-3);
-  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
-  border: var(--ring); border-left: 6px solid var(--chile-500);
-  border-radius: var(--r-lg);
-  box-shadow: var(--e-4);
-  padding: var(--sp-3);
-  font-family: var(--font-display); font-size: var(--t-md); font-weight: 700; line-height: 1.3; color: var(--text);
+  top: calc(env(safe-area-inset-top) + 8px); z-index: 97;
+  width: min(360px, calc(100% - 1.6rem));
+  display: flex; align-items: center; gap: .7rem;
+  background: linear-gradient(180deg, var(--crema), var(--crema-2));
+  border-left: 6px solid var(--semilla);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 18px 44px -14px rgba(90,40,50,.6);
+  padding: .75rem .95rem;
+  font-size: 1.05rem; font-weight: 700; line-height: 1.35; color: var(--tinta);
   pointer-events: none; opacity: 0;
-  transition: transform var(--dur-slow) var(--ease-pop), opacity var(--dur) var(--ease-out);
+  transition: transform .38s cubic-bezier(.2, 1.15, .35, 1), opacity .3s ease;
 }
 .banner.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-.banner-ic {
-  flex-shrink: 0; width: 2.2rem; height: 2.2rem; display: grid; place-items: center;
-  font-size: var(--t-lg); color: var(--maiz-800);
-  background: conic-gradient(from 210deg, var(--maiz-300), var(--maiz-600), var(--maiz-300));
-  border-radius: 50%; box-shadow: var(--e-1);
+.banner .banner-ic {
+  flex-shrink: 0; width: 2.1rem; height: 2.1rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem; color: #fff4ea;
+  background: linear-gradient(180deg, #e08a5f, #b8552f);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(120,45,30,.45);
 }
+.banner .banner-txt { min-width: 0; }
+
+/* las fichas son hojas del recetario: papel crema con los bordes
+   irregulares, como una página arrancada y puesta sobre la mesa */
+.detalle-panel, .pista-panel {
+  position: relative;
+  width: 100%; max-width: 340px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: .55rem;
+  background: linear-gradient(178deg, var(--crema), var(--crema-2));
+  background-image: var(--paper-grain), linear-gradient(178deg, var(--crema), var(--crema-2));
+  border-radius: 6px 14px 8px 12px;
+  box-shadow: 0 24px 60px -20px rgba(60,25,40,.65), 0 2px 0 rgba(255,255,255,.5) inset;
+  padding: 1.7rem 1.4rem 1.4rem;
+  animation: panel-in .4s var(--plop) both;
+  transform: rotate(-.7deg);
+}
+/* la cinta roja del recetario, arriba */
+.detalle-panel::before, .pista-panel::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 7px;
+  background: repeating-linear-gradient(90deg, #d9584f 0 16px, #e8756a 16px 30px);
+  border-radius: 6px 14px 0 0;
+}
+@keyframes panel-in { from { opacity: 0; transform: translateY(18px) rotate(-.7deg) scale(.96); } }
+.detalle-art { width: 150px; margin-bottom: .2rem; }
+.detalle-art .carta-art { border-radius: 12px; }
+/* la rareza ya se dice bajo el nombre; en la ficha sobra repetirla */
+.detalle-art .carta-plate { display: none; }
+.detalle-nombre { font-size: 1.6rem; font-weight: 700; color: var(--tinta); line-height: 1.15; }
+.detalle-rareza { font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--tinta-suave); }
+/* la receta escrita a mano, con la palabra clave subrayada en rojo */
+.detalle-lore {
+  font-family: var(--hand); font-size: 1.32rem; line-height: 1.35; color: var(--tinta);
+  margin: .35rem 0 .6rem; padding: 0 .2rem;
+}
+
+.pista-carta { width: 120px; margin-bottom: .2rem; pointer-events: none; }
+.pista-label { font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--tinta-suave); }
+.pista-texto { font-family: var(--hand); font-size: 1.55rem; line-height: 1.3; color: var(--tinta); margin-bottom: .4rem; }
+
+/* racha diaria: un premio pequeño por volver */
+.racha-panel { max-width: 300px; }
+.racha-ic { font-size: 2.6rem; }
+.racha-titulo { font-size: 1.4rem; font-weight: 700; color: var(--ink); }
+.racha-sub { font-size: .92rem; color: var(--ink-soft); }
+.racha-recompensa { font-family: var(--hand); font-size: 1.9rem; color: var(--receta-d); margin: .2rem 0; }
 
 /* ============================================================
-   ADAPTABLE
+   TOAST
    ============================================================ */
 
-@media (max-height: 700px) {
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%) translateY(16px);
+  bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 95;
+  max-width: min(360px, 86vw);
+  font-size: .96rem; font-weight: 600; color: var(--tinta); text-align: center;
+  background: var(--crema);
+  border-radius: 999px; padding: .55rem 1.15rem;
+  box-shadow: 0 12px 28px -10px rgba(90,40,50,.55), inset 0 1px 0 rgba(255,255,255,.7);
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+}
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ============================================================
+   ADAPTABLE — celular corto, tablet
+   ============================================================ */
+
+/* celular corto: la hornilla cede sitio a la encimera */
+@media (max-height: 720px) {
   html { font-size: 16px; }
-  :root { --hud-h: 48px; --nav-h: 58px; }
-  .cover-peek .plate { width: 56px; }
-  .cocina3d { min-height: 240px; }
+  .carta { width: clamp(92px, 26vw, 116px); }
+  .hornilla { width: min(146px, 40vw); }
+  .fogon-hint { font-size: 1.1rem; margin-top: .25rem; }
+  .encimera { max-height: 68%; }
 }
+
 @media (min-width: 640px) {
-  #stage { height: calc(100dvh - 40px); margin: 20px auto; border-radius: var(--r-xl); }
-  .tabbar { border-radius: 0 0 var(--r-xl) var(--r-xl); }
+  #stage { min-height: calc(100dvh - 40px); margin: 20px auto; border-radius: 22px; }
 }
+/* tablet: la encimera se ensancha y caben más cosas por fila */
 @media (min-width: 768px) {
   :root { --frame: 720px; }
   html { font-size: 18px; }
-  .scroll, .hoja-head { padding-inline: var(--sp-6); }
+  .cocina, .coleccion-wrap, .feria-wrap { padding-left: 2.4rem; padding-right: 5.2rem; }
+  .cocina { max-width: 640px; }
   .album-grid { grid-template-columns: repeat(4, 1fr); }
-  .carta-slot, .reveal-wrap .carta { width: 150px; }
+  .hornilla { width: 230px; }
+  .repisa-fila { gap: .35rem; }
+  .objeto { width: 78px; }
+  .objeto-icono { width: 3rem; height: 3rem; }
+  .objeto-nombre { font-size: .72rem; }
+  .reveal-wrap .carta { width: 150px; }
 }
 @media (min-width: 1080px) {
   :root { --frame: 920px; }
   .album-grid { grid-template-columns: repeat(5, 1fr); }
 }
 
-:focus-visible { outline: 3px solid var(--maiz-400); outline-offset: 2px; border-radius: var(--r-sm); }
+:focus-visible { outline: 2.5px solid var(--hallazgo-d); outline-offset: 2px; border-radius: 6px; }
 button:focus:not(:focus-visible) { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01s !important; transition-duration: .01s !important; }
 }
-
-/* ============================================================
-   COCINA — la fila de estaciones (nivel 1)
-   ============================================================ */
-
-.estacion-fichas {
-  flex-shrink: 0;
-  display: flex; gap: .35rem; justify-content: center;
-  overflow-x: auto; padding: 0 var(--sp-2) var(--sp-1);
-  scroll-snap-type: x proximity;
-}
-.estacion-fichas > * { scroll-snap-align: center; }
-.estacion-fichas::-webkit-scrollbar { height: 0; }
-.estacion-ficha {
-  flex-shrink: 0;
-  display: flex; flex-direction: column; align-items: center; gap: .1rem;
-  width: 54px; padding: .3rem .2rem .28rem;
-  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
-  border: 2px solid var(--hairline);
-  border-bottom: 4px solid var(--madera-400);
-  border-radius: var(--r-md);
-  box-shadow: var(--e-1);
-  transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur) var(--ease-out);
-}
-.estacion-ficha:active { transform: scale(.94); }
-.estacion-ficha.activa {
-  border-color: var(--maiz-400);
-  border-bottom-color: var(--maiz-600);
-  background: linear-gradient(180deg, #fff8e2, var(--maiz-300));
-  box-shadow: var(--e-2), 0 0 0 3px rgba(255,201,60,.35);
-}
-.estacion-ic {
-  display: flex; align-items: center; justify-content: center;
-  width: 1.65rem; aspect-ratio: 1;
-}
-.estacion-ic > svg { width: 100%; height: auto; aspect-ratio: 1; }
-.estacion-txt { font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700; color: var(--text); }
-
-/* flechas de paginación de cada nivel del mesón */
-.nivel-flecha {
-  position: absolute; z-index: 5; transform: translateY(-50%);
-  width: 2rem; height: 2rem;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-size: var(--t-lg); font-weight: 800; line-height: 1;
-  color: var(--madera-600);
-  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
-  border: 2px solid var(--madera-500);
-  border-bottom-width: 3px;
-  border-radius: 50%;
-  box-shadow: var(--e-2);
-}
-.nivel-flecha:active { transform: translateY(-50%) scale(.9); }
-.nivel-flecha.prev { left: var(--sp-2); }
-.nivel-flecha.next { right: var(--sp-2); }
-
-/* ============================================================
-   DESPENSA — canasta y estantería
-   ============================================================ */
-
-.chip-grid { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; }
-.canasta-cuenta {
-  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800;
-  color: var(--maiz-800); background: linear-gradient(180deg, var(--maiz-300), var(--maiz-400));
-  border-radius: var(--r-pill); padding: 0 .45rem; letter-spacing: 0;
-}
-/* el chip que ya está en la canasta se marca con una palomita */
-.carta-mini.activo {
-  border-color: var(--nopal-500);
-  border-bottom-color: var(--nopal-600);
-  background: linear-gradient(180deg, #f4fbee, #e4f4d8);
-}
-.carta-mini.activo::after {
-  content: '✓'; position: absolute; top: -.4rem; left: -.35rem;
-  width: 1.25rem; height: 1.25rem;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 800; color: #fff;
-  background: linear-gradient(180deg, var(--nopal-400), var(--nopal-600));
-  border: 2px solid var(--peltre-100); border-radius: 50%;
-  box-shadow: var(--e-1);
-}
-
-/* ============================================================
-   RECETARIO — subtítulos de sección
-   ============================================================ */
-
-.sub-label {
-  font-family: var(--font-display); font-size: var(--t-2xs); font-weight: 700;
-  letter-spacing: var(--track-caps); text-transform: uppercase;
-  color: var(--text-muted);
-  margin: var(--sp-3) 0 var(--sp-2) var(--sp-1);
-}
-.album-grid--sm { grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); }
-.album-grid--sm .carta-nombre { font-size: var(--t-2xs); }
-.album-grid--sm .carta-rareza { display: none; }
-
-/* cómo se hace, en el detalle de una carta */
-.detalle-paso {
-  display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
-  flex-wrap: wrap; width: 100%;
-  padding: var(--sp-2); margin-top: var(--sp-1);
-  background: rgba(43,33,41,.05);
-  border: 2px dashed var(--hairline);
-  border-radius: var(--r-md);
-}
-.paso-item { font-family: var(--font-display); font-size: var(--t-sm); font-weight: 700; color: var(--text); }
-.paso-mas { font-family: var(--font-display); font-size: var(--t-lg); font-weight: 800; color: var(--accent); }
-
-@media (min-width: 768px) {
-  .album-grid--sm { grid-template-columns: repeat(6, 1fr); }
-}
-
-/* ============================================================
-   IDENTIDAD PROPIA DE CADA PANTALLA
-   ============================================================ */
-
-/* --- LA DESPENSA: una alacena de verdad --- */
-.seccion-panel .chip-grid { justify-content: flex-start; }
-.despensa-estante {
-  display: flex; flex-wrap: wrap; gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-3) var(--sp-2);
-}
-.despensa-estante .carta-mini {
-  background: linear-gradient(180deg, var(--peltre-100), var(--peltre-200));
-}
-/* la canasta se distingue del estante: mimbre, no tabla */
-.panel--canasta {
-  --panel-face: var(--madera-300);
-  --panel-face-2: var(--madera-500);
-  color: var(--text-invert);
-  background-image:
-    repeating-linear-gradient(90deg, rgba(0,0,0,.09) 0 6px, transparent 6px 14px),
-    repeating-linear-gradient(180deg, rgba(255,255,255,.14) 0 5px, transparent 5px 13px);
-}
-.panel--canasta .seccion-nota { color: rgba(255,246,238,.9); }
-
-/* --- EL RECETARIO: páginas de libreta de cocina --- */
-.region-seccion { margin-bottom: var(--sp-6); }
-.region-head {
-  background: linear-gradient(180deg, var(--pizarra-500), var(--pizarra-700));
-  border: 3px solid var(--madera-500);
-  border-left-width: 7px;
-  border-left-color: var(--region-acento, var(--maiz-400));
-  color: var(--text-invert);
-}
-.region-head h3 { color: #fff; }
-.region-tagline { color: var(--maiz-300); }
-.region-progress { border-color: var(--pizarra-700); }
-/* el subtítulo lleva su línea de puntos, como una carta de menú */
-.sub-label {
-  display: flex; align-items: center; gap: var(--sp-2);
-  margin: var(--sp-3) 0 var(--sp-2);
-}
-.sub-label::after {
-  content: ''; flex: 1; height: 0;
-  border-bottom: 2px dotted var(--hairline);
-}
-
-/* ============================================================
-   UN FONDO PROPIO POR PANTALLA
-   Cada pantalla trae el suyo, así nunca se ve "una escena sobre
-   otra escena": en la Cocina el fondo ES el mesón 3D.
-   ============================================================ */
-
-.screen > .hoja, .screen > .cover { position: relative; z-index: 1; }
-
-/* el recetario es papel: la pared de cal se tiñe de libreta */
-.screen--recetario .mundo-puesto {
-  background:
-    repeating-linear-gradient(180deg, transparent 0 29px, rgba(27,95,170,.07) 29px 30px),
-    linear-gradient(180deg,
-      transparent 0, transparent 128px,
-      var(--madera-500) 128px, var(--madera-300) 133px, var(--madera-600) 140px,
-      #fffdf7 140px, var(--peltre-200) 100%);
-}
-/* la despensa es alacena: tablones de madera bajo la repisa */
-.screen--despensa .mundo-puesto {
-  background:
-    repeating-linear-gradient(180deg, rgba(114,55,19,.16) 0 2px, transparent 2px 54px),
-    linear-gradient(180deg,
-      transparent 0, transparent 128px,
-      var(--madera-600) 128px, var(--madera-300) 133px, var(--madera-600) 140px,
-      var(--madera-200) 140px, var(--madera-300) 100%);
-}
-.screen--despensa .seccion-nota { color: var(--madera-700); }
-.screen--despensa .sign { border-color: var(--madera-600); }
-
-/* el HUD se apoya en un velo suave para leerse sobre la escena 3D */
-.hud::before {
-  content: ''; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(180deg, rgba(20,12,18,.5), transparent);
-  opacity: 0; transition: opacity var(--dur) var(--ease-out);
-}
-.mesa3d.en-cocina .hud::before { opacity: 1; }

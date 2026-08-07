@@ -3,182 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-  <title>Pambamesa — tu cocinita</title>
-  <meta name="description" content="Entra a tu cocina, arrastra los ingredientes que tienes y descubre platillos nuevos. Sin jueces, sin reloj: solo tú y el fuego.">
+  <title>Pambamesa — la cocina de los sabores por descubrir</title>
+  <meta name="description" content="Cocina en tu fogón, junta ingredientes y descubre platos para coleccionar, al estilo Little Alchemy y un álbum de cartas.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Pambamesa">
-  <meta name="theme-color" content="#1b5faa">
+  <meta name="theme-color" content="#e8a596">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="apple-touch-icon" href="icon.svg">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="design-system.css">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script type="importmap">
-    { "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
-  </script>
 </head>
 <body>
 <div id="stage">
 
-  <!-- HUD: progreso del recetario y sucres -->
+  <!-- HUD: progreso del álbum -->
   <header id="hud" class="hud hidden">
-    <span class="pill hud-count progress-count"></span>
-    <div class="meter"><span class="meter-fill progress-fill"></span></div>
-    <span class="pill pill--maiz hud-sucres">
-      <span class="icono-sucre" aria-hidden="true">S</span><span class="hud-sucres-count">0</span>
-    </span>
+    <div class="hud-progress">
+      <span class="progress-count hud-count"></span>
+      <div class="hud-bar"><span class="progress-fill hud-bar-fill"></span></div>
+    </div>
+    <div class="hud-sucres" aria-label="Sucres">
+      <span class="hud-sucres-ic icono-sucre" aria-hidden="true">S</span><span class="hud-sucres-count">0</span>
+    </div>
   </header>
 
-  <!-- ================= Portada ================= -->
-  <main id="screen-cover" class="screen screen--portada active">
-    <span class="mundo-puesto" aria-hidden="true"></span>
-    <div class="cover">
-      <span class="cover-sun" aria-hidden="true"></span>
-      <span class="cover-star" aria-hidden="true">✦</span>
-      <p class="cover-over">tu cocinita</p>
-      <h1 class="cover-title">Pambamesa</h1>
-      <p class="cover-sub">prepara, prueba, descubre</p>
-      <div class="cover-peek" aria-hidden="true">
-        <span class="plate" data-icon="verde"></span>
-        <span class="plate" data-icon="bolon"></span>
-        <span class="plate" data-icon="tigrillo"></span>
+  <!-- ================= Portada: la mesa servida ================= -->
+  <main id="screen-cover" class="screen active">
+    <div class="portada">
+      <!-- los platos regados por la mesa, como en una pambamesa de verdad -->
+      <div class="portada-mesa" aria-hidden="true">
+        <span data-icon="bolon"></span><span data-icon="humita"></span>
+        <span data-icon="tigrillo"></span><span data-icon="llapingacho"></span>
+        <span data-icon="encebollado"></span><span data-icon="cafe_pasado"></span>
+        <span data-icon="verde"></span><span data-icon="maiz"></span>
+        <span data-icon="queso"></span><span data-icon="papa"></span>
+        <span data-icon="chicharron"></span><span data-icon="huevo"></span>
       </div>
-      <div class="panel cover-quote">
-        <p>Entra el sol por la ventana y la cocina es toda tuya.</p>
-        <p class="muted">Arrastra ingredientes a la tabla, júntalos y descubre platillos nuevos. Sin jueces, sin reloj.</p>
+
+      <div class="portada-centro">
+        <p class="portada-over">una mesa servida entre todos</p>
+        <h1>Pambamesa</h1>
+        <p class="portada-sub hand">de sabores por descubrir</p>
+        <p class="portada-quote">En una pambamesa cada quien trae lo suyo y se come de todo un poco. Empieza tu canasta en la Costa, prende el fogón, y descubre qué sale de juntar dos cosas que nunca habías juntado.</p>
+        <button type="button" id="btn-abrir" class="btn-leather wide">Poner la mesa</button>
       </div>
-      <button type="button" id="btn-abrir" class="btn btn--lg btn--block">Ponerse el delantal</button>
-      <a class="cover-mini" href="fanesca/">
-        <span class="cover-mini-ic" aria-hidden="true">🌽</span>
-        <span>
-          <b>Minijuego: la fanesca</b>
-          desgrana, desvaina y pica con los dedos
-        </span>
-        <span class="cover-mini-flecha" aria-hidden="true">›</span>
-      </a>
-      <p class="version-tag" data-version></p>
     </div>
   </main>
 
-  <!-- ================= Cocina: el mesón (a pantalla completa) ================= -->
-  <main id="screen-taller" class="screen screen--cocina">
-    <!-- el mesón 3D ocupa toda la pantalla: es el fondo, no un cuadro -->
-    <div id="cocina3d" class="cocina3d hidden"></div>
-
-    <!-- capa de mandos, flotando sobre la escena -->
-    <div class="cocina-ui">
-      <div id="estacion-fichas" class="estacion-fichas"></div>
-      <span id="combo-indicador" class="pill pill--rosa combo-indicador hidden"></span>
-      <div id="mesa-etiquetas" class="mesa-etiquetas hidden"></div>
-      <div id="taller-action" class="taller-action"></div>
-    </div>
-
-    <!-- respaldo 2D para navegadores sin WebGL -->
-    <div class="hoja hoja--cocina">
-      <div id="fogon" class="fogon">
-        <button type="button" id="slot-a" class="carta-slot" aria-label="Primer ingrediente"></button>
-        <span class="fusion-plus" aria-hidden="true">+</span>
-        <button type="button" id="slot-b" class="carta-slot" aria-label="Segundo ingrediente"></button>
-      </div>
-      <div id="en-preparacion" class="panel panel--sunken en-preparacion hidden"></div>
-    </div>
-  </main>
-
-  <!-- ================= Recetario ================= -->
-  <main id="screen-coleccion" class="screen screen--recetario">
-    <span class="mundo-puesto" aria-hidden="true"></span>
-    <div class="hoja">
-      <header class="hoja-head">
-        <div class="sign">
-          <h2 class="sign-title">El recetario</h2>
-          <p class="sign-sub"><span class="progress-count"></span> descubiertos</p>
+  <!-- ================= La cocina: encimera cenital ================= -->
+  <main id="screen-taller" class="screen">
+    <div class="cocina">
+      <div class="fogon-zona">
+        <div id="hornilla" class="hornilla">
+          <span id="combo-indicador" class="combo-indicador hidden"></span>
+          <div id="olla" class="olla" role="button" tabindex="0" aria-label="La olla: suelta aquí los ingredientes">
+            <div class="olla-vapor" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div id="olla-dentro" class="olla-dentro"></div>
+          </div>
         </div>
+        <p id="fogon-hint" class="fogon-hint"></p>
+        <div id="taller-action" class="taller-action"></div>
+      </div>
+
+      <div class="encimera">
+        <div id="repisa-utensilios" class="repisa repisa-utensilios"></div>
+        <div id="repisa-prep" class="repisa repisa-prep"></div>
+        <div id="repisa-ingredientes" class="repisa repisa-ingredientes"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= Colección: el álbum ================= -->
+  <main id="screen-coleccion" class="screen">
+    <div class="coleccion-wrap">
+      <header class="coleccion-head">
+        <h2>El álbum</h2>
+        <p class="coleccion-progress"><span class="progress-count"></span> cartas descubiertas</p>
       </header>
-      <div id="coleccion-body" class="scroll"></div>
+      <div id="coleccion-body"></div>
+      <p class="coleccion-footnote">Toca una página en blanco: el recetario ya tiene escrita su pista.</p>
     </div>
   </main>
 
-  <!-- ================= Despensa ================= -->
-  <main id="screen-feria" class="screen screen--despensa">
-    <span class="mundo-puesto" aria-hidden="true"></span>
-    <div class="hoja">
-      <header class="hoja-head">
-        <div class="sign">
-          <h2 class="sign-title">La despensa</h2>
-          <p class="sign-sub">cajas, mercado y antojos</p>
-        </div>
+  <!-- ================= Feria: canastas, mercado y regalos ================= -->
+  <main id="screen-feria" class="screen">
+    <div class="feria-wrap">
+      <header class="feria-head">
+        <h2>La feria</h2>
+        <p class="feria-sub hand">canastas para reponer la despensa</p>
       </header>
 
-      <div class="scroll">
-        <!-- La caja del mercado -->
-        <section class="panel panel--rosa caja-box">
-          <div class="caja-visual" aria-hidden="true"><span class="caja-sello">✦</span></div>
-          <p class="caja-stash"><span class="sobre-count">0</span> caja(s) por abrir</p>
-          <button type="button" id="feria-abrir-btn" class="btn btn--maiz btn--block">Abrir una caja</button>
-          <p id="feria-timer" class="caja-timer"></p>
-        </section>
-
-        <!-- La canasta: lo que me llevo al mesón -->
-        <section class="seccion">
-          <p class="label">tu canasta <span id="canasta-cuenta" class="canasta-cuenta">0/8</span></p>
-          <div class="panel panel--canasta seccion-panel">
-            <p class="seccion-nota">Solo esto estará al alcance en el mesón. Toca para sacarlo.</p>
-            <div id="canasta-grid" class="chip-grid"></div>
-          </div>
-        </section>
-
-        <!-- Todo lo que tengo guardado -->
-        <section class="seccion">
-          <p class="label">en la despensa</p>
-          <div class="panel panel--repisa seccion-panel">
-            <p class="seccion-nota">Toca un ingrediente para llevarlo a la canasta.</p>
-            <div id="despensa-grid" class="chip-grid"></div>
-          </div>
-        </section>
-
-        <!-- El mercado -->
-        <section class="seccion">
-          <p class="label">el mercado</p>
-          <div class="panel seccion-panel">
-            <p class="seccion-nota">Cocinar te da sucres <span class="icono-sucre">S</span>. Cámbialos por lo que te falte.</p>
-            <div id="mercado-semillas" class="mercado-grid"></div>
-            <div class="seccion-acciones">
-              <button type="button" id="mercado-sobre-btn" class="btn btn--peltre btn--sm">Caja · 20 <span class="icono-sucre">S</span></button>
-              <button type="button" id="pregon-btn" class="btn btn--peltre btn--sm">📣 El pregón</button>
-            </div>
-            <p id="pregon-timer" class="seccion-nota"></p>
-          </div>
-        </section>
-
-        <!-- Compartir -->
-        <section class="seccion">
-          <p class="label">invitar a probar</p>
-          <div class="panel seccion-panel">
-            <p class="seccion-nota">Regala un plato a alguien — a ti no te cuesta nada. Te quedan <span id="regalos-restantes" class="regalos-num">3</span> hoy.</p>
-            <div id="regalos-grid" class="album-grid"></div>
-          </div>
-        </section>
+      <!-- la canasta se toca directamente: sin botón intermedio -->
+      <div class="canasta-box">
+        <button type="button" id="feria-abrir-btn" class="canasta" aria-label="Abrir una canasta">
+          <span class="canasta-asa" aria-hidden="true"></span>
+          <span class="canasta-cuerpo" aria-hidden="true"></span>
+          <span class="canasta-cuenta sobre-count">0</span>
+        </button>
+        <p id="feria-timer" class="sobre-timer"></p>
       </div>
+
+      <section class="mercado-section">
+        <h3 class="mercado-title">El mercado</h3>
+        <p class="mercado-blurb">Cocinar en el fogón te da <strong>sucres</strong> <span class="icono-sucre">S</span>. Cámbialos aquí si te quedaste sin ingredientes.</p>
+        <div id="mercado-semillas" class="mercado-grid"></div>
+        <div class="mercado-acciones">
+          <button type="button" id="mercado-sobre-btn" class="btn-ghost">Comprar canasta · 20 <span class="icono-sucre">S</span></button>
+          <button type="button" id="pregon-btn" class="btn-ghost">📣 Escuchar el pregón</button>
+        </div>
+        <p id="pregon-timer" class="pregon-timer"></p>
+      </section>
+
+      <section class="regalos-section">
+        <h3 class="regalos-title">Compartir con alguien</h3>
+        <p class="regalos-blurb">Toca una carta de tu álbum para regalársela a un vecino — a ti no te cuesta nada, y a él le llega una copia de verdad. Te quedan <span id="regalos-restantes">3</span> regalos hoy.</p>
+        <div id="regalos-grid" class="regalos-grid"></div>
+      </section>
     </div>
   </main>
 
-  <!-- Navegación -->
-  <nav id="tabs" class="tabbar hidden">
-    <button type="button" class="tab-btn" data-tab="taller"><span class="tab-ic" data-icon="mezclar"></span>Cocina</button>
-    <button type="button" class="tab-btn" data-tab="coleccion"><span class="tab-ic" data-icon="cuaderno"></span>Recetario</button>
-    <button type="button" class="tab-btn" data-tab="feria"><span class="tab-ic" data-icon="tab_mercado"></span>Despensa</button>
+  <!-- Navegación: los separadores del recetario -->
+  <nav id="tabs" class="tabs hidden">
+    <button type="button" class="tab-btn" data-tab="taller"><span class="tab-ic" data-icon="olla"></span>Cocina</button>
+    <button type="button" class="tab-btn" data-tab="coleccion"><span class="tab-ic" data-icon="cuaderno"></span>Álbum</button>
+    <button type="button" class="tab-btn" data-tab="feria"><span class="tab-ic" data-icon="tab_mercado"></span>Feria</button>
   </nav>
 
-  <!-- Modal: revelación -->
+  <!-- Modal: revelación (apertura de carta, giro 3D + swipe) -->
   <div id="modal-reveal" class="modal reveal-modal" role="dialog" aria-modal="true">
     <div class="reveal-wrap">
       <div id="reveal-stage" class="reveal-stage">
-        <span id="reveal-restantes" class="pill pill--maiz reveal-restantes hidden"></span>
+        <span id="reveal-restantes" class="reveal-restantes hidden"></span>
         <div id="reveal-stack-3" class="carta back reveal-stack-layer hidden" aria-hidden="true"><div class="carta-textura"></div></div>
         <div id="reveal-stack-2" class="carta back reveal-stack-layer hidden" aria-hidden="true"><div class="carta-textura"></div></div>
         <div id="reveal-flip" class="carta-flip">
@@ -190,44 +150,43 @@
           </div>
         </div>
       </div>
-      <p id="reveal-hint" class="reveal-hint">↑ desliza para revelar</p>
+      <p id="reveal-hint" class="reveal-hint hand">↑ desliza para revelar</p>
       <p id="reveal-banner" class="reveal-banner"></p>
-      <button type="button" id="reveal-ok" class="btn btn--lg btn--block">Revelar</button>
+      <button type="button" id="reveal-ok" class="btn-leather wide">Revelar</button>
     </div>
   </div>
 
-  <!-- Modal: detalle de una carta -->
+  <!-- Modal: detalle de una carta descubierta -->
   <div id="modal-detalle" class="modal" role="dialog" aria-modal="true">
-    <div class="sheet">
+    <div class="detalle-panel">
       <div id="detalle-art" class="detalle-art"></div>
-      <p id="detalle-rareza" class="sheet-eyebrow"></p>
-      <h3 id="detalle-nombre" class="sheet-title"></h3>
-      <p id="detalle-lore" class="sheet-body"></p>
-      <div id="detalle-paso" class="detalle-paso hidden"></div>
-      <button type="button" id="detalle-close" class="btn btn--peltre btn--block">Cerrar</button>
+      <h3 id="detalle-nombre" class="detalle-nombre"></h3>
+      <p id="detalle-rareza" class="detalle-rareza"></p>
+      <p id="detalle-lore" class="detalle-lore"></p>
+      <button type="button" id="detalle-close" class="btn-ghost wide">Cerrar</button>
     </div>
   </div>
 
-  <!-- Modal: pista -->
+  <!-- Modal: pista de una página aún en blanco -->
   <div id="modal-pista" class="modal" role="dialog" aria-modal="true">
-    <div class="sheet">
+    <div class="detalle-panel pista-panel">
       <div class="carta back rarity-hallazgo pista-carta" aria-hidden="true">
         <div class="carta-textura"></div><span class="carta-interrogante">?</span>
       </div>
-      <p class="sheet-eyebrow">la cocina murmura…</p>
+      <p class="pista-label">el recetario murmura…</p>
       <p id="pista-texto" class="pista-texto"></p>
-      <button type="button" id="pista-close" class="btn btn--peltre btn--block">Cerrar</button>
+      <button type="button" id="pista-close" class="btn-ghost wide">Cerrar</button>
     </div>
   </div>
 
   <!-- Modal: racha diaria -->
   <div id="modal-racha" class="modal" role="dialog" aria-modal="true">
-    <div class="sheet">
+    <div class="detalle-panel racha-panel">
       <span class="racha-ic" aria-hidden="true">🔥</span>
-      <p class="sheet-eyebrow">volviste a la cocina</p>
-      <h3 class="sheet-title">Racha de <span id="racha-dias">1</span> día(s)</h3>
+      <h3 class="racha-titulo"><span id="racha-dias">1</span> días seguidos</h3>
+      <p class="racha-sub">Volviste a prender el fogón</p>
       <p id="racha-recompensa" class="racha-recompensa"></p>
-      <button type="button" id="racha-reclamar-btn" class="btn btn--maiz btn--block">Reclamar</button>
+      <button type="button" id="racha-reclamar-btn" class="btn-leather wide">Reclamar</button>
     </div>
   </div>
 
@@ -235,11 +194,8 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 </div>
-  <script src="version.js"></script>
   <script src="icons.js"></script>
   <script src="recetario.js"></script>
-  <script type="module" src="escena3d.js"></script>
   <script src="app.js"></script>
-  <script src="actualizador.js" data-sw="sw.js"></script>
 </body>
 </html>
