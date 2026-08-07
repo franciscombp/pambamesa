@@ -7,7 +7,10 @@
    ============================================================ */
 
 :root {
-  --prep-hud-h: 62px;              /* la barra del nivel */
+  /* 62px es el alto de contenido; el safe-area-inset-top se SUMA
+     aparte (ver .juego-hud) — si no, en un iPhone con notch o
+     Dynamic Island la cabecera del nivel queda debajo de esa zona. */
+  --prep-hud-h: calc(62px + env(safe-area-inset-top));
   --prep-ctrl-h: 74px;             /* la fila de botones del nivel */
 }
 
@@ -78,8 +81,13 @@ svg[width="0"] { width: 0; height: 0; }
   to   { opacity: 1; transform: none; }
 }
 
-/* la .hoja del sistema asume barra de navegación abajo; aquí no hay */
-.hoja { padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
+/* la .hoja del sistema asume barra de navegación abajo; aquí no hay,
+   pero igual hay que respetar el notch/isla arriba y la barra de
+   gestos abajo — si no, "La mesa de prep" queda debajo del reloj. */
+.hoja {
+  padding-top: calc(env(safe-area-inset-top) + var(--sp-4));
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--sp-4));
+}
 
 /* ============================================================
    PORTADA
@@ -229,7 +237,8 @@ svg[width="0"] { width: 0; height: 0; }
   position: absolute; top: 0; left: 0; right: 0; z-index: 4;
   height: var(--prep-hud-h);
   display: flex; align-items: center; gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3) 0;
+  /* mismo var(--sp-2) de siempre, sumado al inset del notch/isla */
+  padding: calc(env(safe-area-inset-top) + var(--sp-2)) var(--sp-3) 0;
   /* la barra es casi toda aire: si capturara el dedo, se comería los
      toques sobre lo alto del ingrediente, que con el choclo de pie
      llega hasta arriba. Solo los controles reciben el dedo. */

@@ -14,10 +14,18 @@
    guardada — que es justo lo que hace que funcione sin conexión.
    ============================================================ */
 
-const APP_VERSION = '1.1.1';
+const APP_VERSION = '1.1.2';
 
 /* la más reciente primero */
 const NOVEDADES = [
+  {
+    v: '1.1.2',
+    fecha: '2026-08-07',
+    titulo: 'La cabecera ya no se esconde tras el notch',
+    cambios: [
+      'Arreglado: en iPhone con notch o Dynamic Island, la barra de arriba (progreso, título del nivel, reloj) quedaba parcialmente tapada. Ahora respeta el área segura en las dos cocinas.',
+    ],
+  },
   {
     v: '1.1.1',
     fecha: '2026-08-07',

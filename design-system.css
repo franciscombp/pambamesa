@@ -161,7 +161,11 @@
 
   /* --- Medidas del marco --- */
   --frame: 480px;
-  --hud-h: 78px;   /* deja libre la guirnalda de papel picado */
+  /* 78px es el alto de contenido (deja libre la guirnalda de papel
+     picado); el safe-area-inset-top se SUMA aparte, nunca lo
+     reemplaza — si no, en un iPhone con notch/Dynamic Island la
+     cabecera queda debajo del reloj/cámara en vez de debajo de ella. */
+  --hud-h: calc(78px + env(safe-area-inset-top));
   --nav-h: 66px;
 }
 
@@ -445,7 +449,9 @@
 .hud {
   position: fixed; top: 0; left: 50%; transform: translateX(-50%);
   width: 100%; max-width: var(--frame); height: var(--hud-h);
-  padding: 34px var(--sp-4) 0;
+  /* mismo 34px de siempre, sumado al inset — así el área de
+     contenido (78px - 34px) queda igual en cualquier dispositivo */
+  padding: calc(env(safe-area-inset-top) + 34px) var(--sp-4) 0;
   z-index: var(--z-hud);
   display: flex; align-items: center; gap: var(--sp-2);
 }

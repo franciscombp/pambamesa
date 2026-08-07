@@ -570,7 +570,7 @@ svg[width="0"] { width: 0; height: 0; }
 
 @media (max-height: 700px) {
   html { font-size: 16px; }
-  :root { --hud-h: 48px; --nav-h: 58px; }
+  :root { --hud-h: calc(48px + env(safe-area-inset-top)); --nav-h: 58px; }
   .cover-peek .plate { width: 56px; }
   .cocina3d { min-height: 240px; }
 }
