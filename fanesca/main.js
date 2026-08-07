@@ -20,7 +20,7 @@ const SAVE_KEY = 'pambamesa_fanesca_v1';
 /* ---------- estado ---------- */
 
 function nuevoEstado() {
-  return { mejores: {}, vistoPortada: false, intentos: 0, arruinadas: 0, leidos: [], cuadernoVisto: true };
+  return { mejores: {}, vistoPortada: false, intentos: 0, arruinadas: 0, leidos: [], cuadernoVisto: true, devMode: false };
 }
 let estado = nuevoEstado();
 function guardar() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(estado)); } catch (e) {} }
@@ -37,8 +37,10 @@ const estaListo = (id) => !!estado.mejores[id];
 const listos = () => NIVELES.filter(n => estaListo(n.id)).length;
 
 /* el siguiente se abre cuando el anterior ya fue a la olla; los
-   ya hechos quedan siempre abiertos para bajarse el tiempo */
-function desbloqueado(i) { return i === 0 || estaListo(NIVELES[i - 1].id); }
+   ya hechos quedan siempre abiertos para bajarse el tiempo. En modo
+   dev, todo está abierto: para probar una mecánica no hace falta
+   jugarse los ingredientes anteriores primero. */
+function desbloqueado(i) { return estado.devMode || i === 0 || estaListo(NIVELES[i - 1].id); }
 
 /* ---------- sonido y vibración (mismo lenguaje que el juego grande) ---------- */
 
@@ -102,6 +104,15 @@ function mostrar(pantalla) {
   Motor.setActive(pantalla === 'juego');
   if (pantalla === 'mesa') { renderMesa(); marcaCuaderno(); }
   if (pantalla === 'cuaderno') { renderCuaderno(); estado.cuadernoVisto = true; guardar(); }
+}
+
+/* ---------- modo dev: todos los niveles abiertos, para probar mecánicas ---------- */
+
+function pintarDev() {
+  const b = $('#btn-dev');
+  if (!b) return;
+  b.textContent = estado.devMode ? '🛠 modo dev: todo abierto' : '🛠 modo dev';
+  b.classList.toggle('activo', !!estado.devMode);
 }
 
 /* ---------- la mesa de prep ---------- */
@@ -457,6 +468,16 @@ function bindEventos() {
     mostrar('mesa');
   });
 
+  const btnDev = $('#btn-dev');
+  if (btnDev) btnDev.addEventListener('click', () => {
+    sfx('tab');
+    estado.devMode = !estado.devMode;
+    guardar();
+    pintarDev();
+    toast(estado.devMode ? 'Modo dev: todos los niveles abiertos 🛠' : 'Modo dev desactivado');
+    if ($('#screen-mesa').classList.contains('active')) renderMesa();
+  });
+
   $('#brief-ok').addEventListener('click', () => {
     cerrarModales();
     if (nivelPendiente) jugar(nivelPendiente);
@@ -542,6 +563,7 @@ function init() {
   }
 
   bindEventos();
+  pintarDev();
   mostrar(estado.vistoPortada ? 'mesa' : 'portada');
 }
 

@@ -277,8 +277,8 @@ function despertarGusano(w) {
   api.tween(w.obj.scale, 'x', 1, 0.3); api.tween(w.obj.scale, 'y', 1, 0.3); api.tween(w.obj.scale, 'z', 1, 0.3);
   giroObjetivo = acercarAngulo(giro.rotation.y, FRENTE - (w.a / A) * Math.PI * 2);
   api.sfx('crack'); api.buzz([25, 30, 25]);
-  api.aviso('🪱 ¡Un gusanito! Arrástralo a la composta — no lo aplastes');
-  api.pista('Arrastra <b>desde el gusanito</b> hasta la composta verde de la izquierda.', 4200);
+  api.aviso('🪱 ¡Un gusanito! Llévalo a la composta — no lo aplastes');
+  api.pista('<b>Pellízcalo con dos dedos</b> y llévalo a la composta verde de la izquierda (o arrástralo con uno).', 5200);
 }
 
 /* el giro más corto hacia un ángulo: la mazorca no da vueltas de más */
@@ -465,6 +465,22 @@ function aplastado(w) {
   return true;
 }
 const gusanoDe = (raizTocada) => gusanos.find(x => x.obj === raizTocada && x.estado !== 'ido') || null;
+
+/* la versión pantalla, para el pellizco: el gusanito vive en la
+   jerarquía girada de la mazorca, así que su posición de pantalla
+   sale de getWorldPosition, no de .position (que es local al giro). */
+function gusanoMasCercaEnPantalla(clienteX, clienteY, radioPx = 70) {
+  let mejor = null, mejorD = radioPx;
+  const mundo = new THREE.Vector3();
+  for (const w of gusanos) {
+    if (w.estado !== 'fuera') continue;
+    w.obj.getWorldPosition(mundo);
+    const p = api.proyectar(mundo);
+    const d = Math.hypot(p.x - clienteX, p.y - clienteY);
+    if (d < mejorD) { mejorD = d; mejor = w; }
+  }
+  return mejor;
+}
 
 function intentarGrano(raizGrano, esArrastre) {
   const { a, p } = raizGrano.userData;
@@ -810,6 +826,25 @@ export default {
     modo = null;
     hojaActiva = null;
   },
+
+  /* pellizcar con dos dedos: agarra el gusanito más cercano EN
+     PANTALLA (no exige que el primer dedo caiga justo en su malla,
+     chiquita y a veces girando con la mazorca), y de ahí en más
+     reusa el mismo ciclo de "cargar" que el arrastre de un dedo. */
+  alPellizcarInicio(info) {
+    if (terminado || fase === 'transicion') return;
+    const w = gusanoMasCercaEnPantalla(info.cliente.x, info.cliente.y);
+    if (!w) return;
+    modo = 'cargar';
+    cargado = w;
+    w.estado = 'cargado';
+    raiz.attach(w.obj);
+    w.aro.visible = false;
+    api.sfx('tab'); api.buzz(12);
+    api.aviso('Llévalo a la composta 🌿');
+  },
+  alPellizcarMover(info) { this.alArrastrar(info); },
+  alPellizcarFin(info) { this.alArrastrarFin(info); },
 
   alControl(id, fase2) {
     if (fase2 === 'abajo') { girando = id === 'izq' ? -1 : 1; giroObjetivo = null; }

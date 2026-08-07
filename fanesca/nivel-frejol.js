@@ -35,6 +35,7 @@ let plaga = null;
 let hechos = 0, TOTAL = VAINAS * POR_VAINA;
 let modo = null;
 let apretando = null;            /* { rec, t0 } */
+let pellizcando = false;
 let terminado = false;
 
 let matVaina, matVainaInt, matGrano, matMota;
@@ -162,7 +163,7 @@ export default {
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
     construirMateriales();
-    vainas = []; granos = []; hechos = 0; terminado = false; modo = null; apretando = null;
+    vainas = []; granos = []; hechos = 0; terminado = false; modo = null; apretando = null; pellizcando = false;
 
     const tabla = new THREE.Mesh(
       new THREE.BoxGeometry(3.1, 0.1, 1.7),
@@ -242,6 +243,23 @@ export default {
     modo = null; apretando = null;
   },
 
+  alPellizcarInicio(info) {
+    apretando = null;
+    if (terminado) return;
+    const rec = plaga.masCercaEnPantalla(info.cliente.x, info.cliente.y);
+    if (rec && plaga.agarrar(rec)) pellizcando = true;
+  },
+  alPellizcarMover() {
+    if (!pellizcando) return;
+    plaga.mover(api.puntoEnPlano(api.MESA_Y));
+  },
+  alPellizcarFin() {
+    if (!pellizcando) return;
+    pellizcando = false;
+    plaga.soltarMano();
+    revisarFinal();
+  },
+
   actualizar(dt, t) {
     if (plaga && plaga.actualizar(dt, t)) return;
 
@@ -266,6 +284,6 @@ export default {
     if (plaga) plaga.destruir();
     vainas = []; granos = []; plaga = null;
     vainasGrupo = granosGrupo = null;
-    modo = null; apretando = null; terminado = false;
+    modo = null; apretando = null; pellizcando = false; terminado = false;
   },
 };

@@ -24,16 +24,31 @@
        alArrastrarInicio(info),   pasó el umbral de movimiento
        alArrastrar(info),         cada cuadro con el dedo abajo
        alArrastrarFin(info),      dedo arriba tras arrastrar
+       alPellizcarInicio(info),   dos dedos abajo a la vez (opcional)
+       alPellizcarMover(info),    cada cuadro con los dos dedos abajo
+       alPellizcarFin(info),      se levantó uno de los dos dedos
        controles: [{id, txt, tip}] botones DOM del nivel (opcional)
        alControl(id, fase),       'abajo' | 'arriba'
        destruir(),
      }
 
-   `info` = { objeto, raiz, punto, ndc, cliente, dx, dy, arrastre }
+   `info` = { objeto, raiz, punto, ndc, cliente, dx, dy, arrastre, pellizco }
      objeto  malla exacta que pegó el rayo
      raiz    su ancestro con userData.tipo (lo que el nivel marcó)
      punto   Vector3 del impacto en el mundo
      dx, dy  desplazamiento en píxeles desde que empezó el gesto
+     pellizco true si esto vino del gesto de dos dedos
+
+   EL PELLIZCO. Agarrar un bicho por raycast exacto es pedirle al dedo
+   una puntería que un bicho de un par de centímetros no da — sobre
+   todo si además camina. Por eso, además del arrastre-desde-el-bicho
+   de un dedo (que sigue funcionando, sobre todo para mouse), hay un
+   segundo canal: poner DOS dedos a la vez es un gesto tan deliberado
+   que se puede juzgar por cercanía EN PANTALLA (`info.cliente`) en
+   vez de por acierto exacto de rayo — así "pellizcar" es agarrar de
+   verdad, con el margen que un pellizco real tiene. Un nivel que
+   quiera esto implementa los tres hooks `alPellizcar*`; el que no,
+   simplemente no los declara y el pellizco no hace nada en él.
 
    `ctx.api` — lo que el nivel le pide al juego:
      progreso(hechos, total)   pinta la barra del HUD
@@ -402,6 +417,20 @@ export function destello(color = 'rgba(230,57,70,.55)') {
 let gesto = null;   /* { x0, y0, arrastrando, infoInicial } */
 let ultimoPtr = { clientX: 0, clientY: 0 };
 
+/* el pellizco: dos punteros a la vez. `punteros` vive independiente
+   de `gesto` porque son dos lenguajes de gesto distintos que pueden
+   estar en el aire al mismo tiempo (un dedo bajó primero, solo, y
+   todavía no se convierte en arrastre cuando baja el segundo). */
+const punteros = new Map();       /* pointerId -> {x, y} */
+let pellizco = null;              /* { ids:[id,id], x0, y0 } */
+
+function medioDePellizco() {
+  if (!pellizco) return null;
+  const a = punteros.get(pellizco.ids[0]), b = punteros.get(pellizco.ids[1]);
+  if (!a || !b) return null;
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
 function actualizarRayo(e) {
   ultimoPtr = { clientX: e.clientX, clientY: e.clientY };
   const r = renderer.domElement.getBoundingClientRect();
@@ -444,6 +473,28 @@ function leerInfo(e) {
     dx: gesto ? e.clientX - gesto.x0 : 0,
     dy: gesto ? e.clientY - gesto.y0 : 0,
     arrastre: !!(gesto && gesto.arrastrando),
+    pellizco: false,
+  };
+}
+
+/* la misma forma de `info`, pero para el punto medio de dos dedos.
+   Llama primero a `actualizarRayo({clientX, clientY})` con ese medio:
+   el rayo (y por tanto `raiz`/`punto`) queda centrado ahí. */
+function leerInfoPellizco(midX, midY) {
+  const objetivos = (nivel && nivel.objetivos) ? nivel.objetivos() : [];
+  const hits = objetivos.length ? ray.intersectObjects(objetivos, true) : [];
+  const hit = hits.find(h => !h.object.userData.ignorar && seVe(h.object)) || null;
+  return {
+    objeto: hit ? hit.object : null,
+    raiz: hit ? raizMarcada(hit.object) : null,
+    punto: hit ? hit.point.clone() : null,
+    distancia: hit ? hit.distance : Infinity,
+    ndc: ndc.clone(),
+    cliente: { x: midX, y: midY },
+    dx: pellizco ? midX - pellizco.x0 : 0,
+    dy: pellizco ? midY - pellizco.y0 : 0,
+    arrastre: true,
+    pellizco: true,
   };
 }
 
@@ -463,17 +514,54 @@ export function raycast(objetos, recursivo = true) {
     .filter(h => !h.object.userData.ignorar && seVe(h.object));
 }
 
+/* dos dedos a la vez: se acaba cualquier gesto de uno solo a medias
+   (nunca dragueó, así que no hay nada que cerrarle) y arranca el
+   pellizco centrado en el punto medio de los dos. */
+function iniciarPellizco() {
+  gesto = null;
+  const ids = [...punteros.keys()];
+  const a = punteros.get(ids[0]), b = punteros.get(ids[1]);
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  pellizco = { ids, x0: mx, y0: my };
+  actualizarRayo({ clientX: mx, clientY: my });
+  const info = leerInfoPellizco(mx, my);
+  if (nivel.alPellizcarInicio) nivel.alPellizcarInicio(info);
+}
+
 function onDown(e) {
   if (!nivel) return;
   e.preventDefault();
+  try { renderer.domElement.setPointerCapture(e.pointerId); } catch (err) {}
+  punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  /* el pellizco solo arranca si el primer dedo TODAVÍA no se convirtió
+     en arrastre: dos dedos que llegan juntos, como un pellizco de
+     verdad. Si ya venías arrastrando algo (a mitad de un corte, de una
+     cascada), un segundo dedo — palma, descuido — no te lo interrumpe. */
+  if (punteros.size === 2 && !pellizco && !(gesto && gesto.arrastrando)) { iniciarPellizco(); return; }
+  if (punteros.size >= 2) return;   /* tercer dedo, o segundo con algo ya en curso: no hace nada */
+
   actualizarRayo(e);
   gesto = { x0: e.clientX, y0: e.clientY, arrastrando: false, info: null };
   gesto.info = leerInfo(e);
-  try { renderer.domElement.setPointerCapture(e.pointerId); } catch (err) {}
   if (nivel.alPresionar) nivel.alPresionar(gesto.info);
 }
 function onMove(e) {
-  if (!gesto || !nivel) return;
+  if (!nivel) return;
+  if (punteros.has(e.pointerId)) punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if (pellizco) {
+    if (!pellizco.ids.includes(e.pointerId)) return;
+    e.preventDefault();
+    const medio = medioDePellizco();
+    if (!medio) return;
+    actualizarRayo({ clientX: medio.x, clientY: medio.y });
+    const info = leerInfoPellizco(medio.x, medio.y);
+    if (nivel.alPellizcarMover) nivel.alPellizcarMover(info);
+    return;   /* con el pellizco activo, el gesto de un dedo no corre */
+  }
+
+  if (!gesto) return;
   e.preventDefault();
   actualizarRayo(e);
   const info = leerInfo(e);
@@ -486,6 +574,21 @@ function onMove(e) {
   else if (nivel.alMover) nivel.alMover(info);
 }
 function onUp(e) {
+  const id = e ? e.pointerId : null;
+  if (id !== null) punteros.delete(id);
+
+  if (pellizco && id !== null && pellizco.ids.includes(id)) {
+    const otroId = pellizco.ids.find(x => x !== id);
+    const otro = punteros.get(otroId);
+    const mx = otro ? otro.x : pellizco.x0, my = otro ? otro.y : pellizco.y0;
+    pellizco = null;
+    if (!nivel) return;
+    actualizarRayo({ clientX: mx, clientY: my });
+    const info = leerInfoPellizco(mx, my);
+    if (nivel.alPellizcarFin) nivel.alPellizcarFin(info);
+    return;
+  }
+
   if (!gesto || !nivel) { gesto = null; return; }
   actualizarRayo(e || ultimoPtr);
   const info = leerInfo(e || ultimoPtr);
@@ -577,6 +680,8 @@ export const Motor = {
     if (nivel && nivel.destruir) { try { nivel.destruir(); } catch (e) {} }
     nivel = null;
     gesto = null;
+    pellizco = null;
+    punteros.clear();
     tweens = [];
     vuelos.forEach(v => scene.remove(v.obj));
     vuelos = [];

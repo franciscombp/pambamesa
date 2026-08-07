@@ -34,6 +34,7 @@ let hechos = 0;
 let TOTAL = 0;
 let modo = null;                            /* 'barrer' | 'cargar' */
 let ultimoPunto = null;
+let pellizcando = false;
 let terminado = false;
 
 let matVaina, matVainaInt, matHaba, matHilo;
@@ -199,7 +200,7 @@ export default {
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
     construirMateriales();
-    vainas = []; hechos = 0; terminado = false; modo = null; ultimoPunto = null;
+    vainas = []; hechos = 0; terminado = false; modo = null; ultimoPunto = null; pellizcando = false;
 
     const tabla = new THREE.Mesh(
       new THREE.BoxGeometry(3.1, 0.1, 1.7),
@@ -296,6 +297,24 @@ export default {
     modo = null; ultimoPunto = null;
   },
 
+  /* pellizcar con dos dedos: agarra el bicho más cercano EN PANTALLA,
+     sin exigirle al primer dedo que caiga justo sobre su malla */
+  alPellizcarInicio(info) {
+    if (terminado) return;
+    const rec = plaga.masCercaEnPantalla(info.cliente.x, info.cliente.y);
+    if (rec && plaga.agarrar(rec)) pellizcando = true;
+  },
+  alPellizcarMover() {
+    if (!pellizcando) return;
+    plaga.mover(api.puntoEnPlano(api.MESA_Y));
+  },
+  alPellizcarFin() {
+    if (!pellizcando) return;
+    pellizcando = false;
+    plaga.soltarMano();
+    revisarFinal();
+  },
+
   actualizar(dt, t) {
     if (plaga) plaga.actualizar(dt, t);
   },
@@ -303,6 +322,6 @@ export default {
   destruir() {
     if (plaga) plaga.destruir();
     vainas = []; plaga = null; vainasGrupo = null;
-    modo = null; ultimoPunto = null; terminado = false;
+    modo = null; ultimoPunto = null; pellizcando = false; terminado = false;
   },
 };

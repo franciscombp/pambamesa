@@ -40,6 +40,7 @@ let recogidas = 0;               /* lentejas buenas en la batea */
 let perdidas = 0;
 let fase = 'escoger';            /* 'escoger' | 'barrer' */
 let modo = null;
+let pellizcando = false;
 let terminado = false;
 
 const SUCIAS = () => PIEDRAS + PICADOS;
@@ -180,7 +181,7 @@ export default {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
     construirMateriales();
     granos = []; sacados = 0; recogidas = 0; perdidas = 0;
-    fase = 'escoger'; modo = null; terminado = false;
+    fase = 'escoger'; modo = null; pellizcando = false; terminado = false;
 
     const tabla = new THREE.Mesh(
       new THREE.BoxGeometry(3.1, 0.1, 1.7),
@@ -266,6 +267,23 @@ export default {
     modo = null;
   },
 
+  alPellizcarInicio(info) {
+    if (terminado) return;
+    const rec = plaga.masCercaEnPantalla(info.cliente.x, info.cliente.y);
+    if (rec && plaga.agarrar(rec)) pellizcando = true;
+  },
+  alPellizcarMover() {
+    if (!pellizcando) return;
+    plaga.mover(api.puntoEnPlano(api.MESA_Y));
+  },
+  alPellizcarFin() {
+    if (!pellizcando) return;
+    pellizcando = false;
+    plaga.soltarMano();
+    revisarFase();
+    revisarFinal();
+  },
+
   actualizar(dt, t) {
     if (plaga) plaga.actualizar(dt, t);
   },
@@ -273,6 +291,6 @@ export default {
   destruir() {
     if (plaga) plaga.destruir();
     granos = []; plaga = null; granosGrupo = null;
-    modo = null; terminado = false;
+    modo = null; pellizcando = false; terminado = false;
   },
 };

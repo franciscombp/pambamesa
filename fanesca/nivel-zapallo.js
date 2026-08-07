@@ -236,6 +236,24 @@ export default {
     }
   },
 
+  /* pellizcar con dos dedos: el gusano se pasea encima del zapallo y
+     un raycast exacto de un dedo solo lo pierde fácil; en pantalla,
+     con un radio generoso, es mucho más fácil de agarrar. */
+  alPellizcarInicio(info) {
+    if (terminado || !bicho || bicho.estado !== 'suelto') return;
+    const mundo = new THREE.Vector3();
+    bicho.nodo.getWorldPosition(mundo);
+    const p = api.proyectar(mundo);
+    if (Math.hypot(p.x - info.cliente.x, p.y - info.cliente.y) > 70) return;
+    modo = 'cargar'; cargado = true;
+    bicho.estado = 'cargado';
+    bicho.gus.aro.visible = false;
+    api.sfx('tab'); api.buzz(12);
+    api.aviso('Llévalo a la composta 🌿');
+  },
+  alPellizcarMover(info) { this.alArrastrar(info); },
+  alPellizcarFin(info) { this.alArrastrarFin(info); },
+
   alArrastrarFin() {
     if (terminado) { modo = null; return; }
 

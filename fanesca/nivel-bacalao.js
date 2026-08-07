@@ -156,7 +156,7 @@ function soltarMosca() {
   moscasGrupo.add(nodo);
   moscas.push({ obj: nodo, m, presa, t0: api.reloj, estado: 'posada' });
   api.sfx('resist'); api.buzz([12, 12, 12]);
-  api.aviso('🪰 ¡Una mosca en el bacalao! Espántala arrastrando desde ella');
+  api.aviso('🪰 ¡Una mosca en el bacalao! Pellízcala o arrastra desde ella para espantarla');
 }
 
 function espantar(rec) {
@@ -297,6 +297,25 @@ export default {
       while (rec.frote >= FROTE && rec.sal.length) { rec.frote -= FROTE; quitarSal(rec); }
     }
   },
+
+  /* pellizcar con dos dedos: espanta la mosca más cercana en pantalla.
+     Igual que el arrastre-desde-ella, nunca aplasta — el pellizco es
+     la forma sin riesgo de sacarla de encima. */
+  alPellizcarInicio(info) {
+    if (terminado) return;
+    let mejor = null, mejorD = 70;
+    const mundo = new THREE.Vector3();
+    for (const rec of moscas) {
+      if (rec.estado !== 'posada') continue;
+      rec.obj.getWorldPosition(mundo);
+      const p = api.proyectar(mundo);
+      const d = Math.hypot(p.x - info.cliente.x, p.y - info.cliente.y);
+      if (d < mejorD) { mejorD = d; mejor = rec; }
+    }
+    if (mejor) espantar(mejor);
+  },
+  alPellizcarMover() {},
+  alPellizcarFin() {},
 
   alArrastrarFin() {
     if (terminado) { modo = null; return; }

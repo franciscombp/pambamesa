@@ -110,12 +110,24 @@ otra cara: una tajada solo cae cuando quedó suelta por los dos lados.
 
 - **tocarlo** → lo aplastas → se arruina la olla y se empieza de nuevo
 - **rozarlo barriendo** → lo mismo
-- **arrastrar DESDE él** → lo cargas, y lo sueltas en la composta
+- **arrastrar DESDE él, o pellizcarlo con dos dedos** → lo cargas, y lo sueltas en la composta
 - **dejarlo llegar a la batea** → se mezcló con lo bueno → también se arruina
 
 Eso es lo que hace que el atajo rápido sea una decisión y no un botón:
 barrer la vaina sin mirar es exactamente cómo se te va el gusanito
 adentro.
+
+**El pellizco.** Agarrar un bicho por raycast exacto le exige al dedo
+una puntería que un bicho de un par de centímetros —y que a veces
+camina— no da. Por eso, además de arrastrar desde él (que sigue
+funcionando, sobre todo con mouse), poner **dos dedos a la vez** es un
+gesto tan deliberado que se puede juzgar por cercanía *en pantalla* en
+vez de por acierto exacto de rayo: se agarra el bicho suelto más
+cercano al punto medio de los dos dedos, con un margen generoso —un
+pellizco de verdad tiene ese margen. El motor lo resuelve solo
+(rastrea los dos punteros, calcula el punto medio); cada nivel solo
+implementa `alPellizcarInicio/Mover/Fin`, casi siempre delegando en
+`plaga.masCercaEnPantalla()`.
 
 ## Arquitectura
 
@@ -126,7 +138,7 @@ adentro.
 | `niveles.js` | Los datos: qué ingredientes, en qué orden, con qué copy y en cuántos segundos son 3 cucharas. |
 | `historia.js` | Lo que el plato cuenta: capítulos del cuaderno, tarjetas por ingrediente, la cita de Cacuango y las fuentes. Texto, no código. |
 | `bichos.js` | Gusanito, gorgojo y mosca: su forma, su aro rojo de alarma y su meneo. Uno solo para todos, para que la regla sea *una* regla. |
-| `plaga.js` | El drama compartido de habas/fréjol/zapallo: el bicho camina hacia la batea, se carga y se bota a la composta. |
+| `plaga.js` | El drama compartido de habas/fréjol/chochos/escoger: el bicho camina hacia la batea, se carga (a mano o a pellizco) y se bota a la composta. Zapallo y bacalao llevan su propio bicho (uno solo, o una mosca que se posa) y repiten el mismo patrón a mano. |
 | `nivel-*.js` | Un archivo por ingrediente. Solo arma sus mallas y responde gestos; todo lo demás se lo pide a `ctx.api`. |
 | `fanesca.css` | Composición de pantallas sobre `../design-system.css`. Aquí no se inventan colores. |
 
@@ -136,11 +148,17 @@ motor ni la app.
 
 ## Depurar
 
+En la portada, el botón discreto **🛠 modo dev** desbloquea los siete
+niveles de una vez (se guarda en el mismo `localStorage` del progreso).
+Sirve para probar la mecánica de un ingrediente sin tener que
+completar los anteriores primero — pensado para probar, no para jugar.
+
 `window.Fanesca` queda expuesto, como `window.Escena3D` en la cocina
 grande:
 
 ```js
 Fanesca.jugar('zapallo')      // saltar directo a un nivel
+Fanesca.estado.devMode = true // atajo directo, sin tocar el botón
 Fanesca.sondear(x, y)         // qué hay bajo ese punto de la pantalla
 Fanesca.estado                // progreso guardado
 ```

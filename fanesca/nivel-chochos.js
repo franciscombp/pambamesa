@@ -36,6 +36,7 @@ let chochos = [];                /* {obj, piel, pepa, ido} */
 let plaga = null;
 let hechos = 0;
 let modo = null;
+let pellizcando = false;
 let terminado = false;
 
 let matPiel, matPepa, matOjo;
@@ -128,7 +129,7 @@ export default {
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
     construirMateriales();
-    chochos = []; hechos = 0; terminado = false; modo = null;
+    chochos = []; hechos = 0; terminado = false; modo = null; pellizcando = false;
 
     const tabla = new THREE.Mesh(
       new THREE.BoxGeometry(3.1, 0.1, 1.7),
@@ -192,6 +193,22 @@ export default {
     modo = null;
   },
 
+  alPellizcarInicio(info) {
+    if (terminado) return;
+    const rec = plaga.masCercaEnPantalla(info.cliente.x, info.cliente.y);
+    if (rec && plaga.agarrar(rec)) pellizcando = true;
+  },
+  alPellizcarMover() {
+    if (!pellizcando) return;
+    plaga.mover(api.puntoEnPlano(api.MESA_Y));
+  },
+  alPellizcarFin() {
+    if (!pellizcando) return;
+    pellizcando = false;
+    plaga.soltarMano();
+    revisarFinal();
+  },
+
   actualizar(dt, t) {
     if (plaga && plaga.actualizar(dt, t)) return;
 
@@ -217,6 +234,6 @@ export default {
   destruir() {
     if (plaga) plaga.destruir();
     chochos = []; plaga = null; chochosGrupo = null;
-    modo = null; terminado = false;
+    modo = null; pellizcando = false; terminado = false;
   },
 };

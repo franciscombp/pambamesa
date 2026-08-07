@@ -70,7 +70,7 @@ export function nuevaPlaga(THREE, api, raiz, opts = {}) {
     lista.push(rec);
     api.sfx('crack'); api.buzz([25, 30, 25]);
     if (!avisados++) {
-      api.pista('Arrastra <b>desde el bicho</b> hasta la composta verde. Si lo tocas, lo aplastas.', 4600);
+      api.pista('<b>Pellízcalo con dos dedos</b> y llévalo a la composta verde (o arrástralo con uno). Si lo tocas, lo aplastas.', 5200);
     }
     api.aviso(`🪱 ¡Un ${nombre}! Llévalo a la composta — no lo aplastes`);
     return rec;
@@ -102,6 +102,24 @@ export function nuevaPlaga(THREE, api, raiz, opts = {}) {
     cercaDe(punto, r) {
       return lista.find(x => x.estado === 'suelto'
         && Math.hypot(x.nodo.position.x - punto.x, x.nodo.position.z - punto.z) < r) || null;
+    },
+
+    /* la versión pantalla de `cercaDe`, para el pellizco: en vez de
+       medir en el mundo (y exigir que el dedo caiga sobre el mesón
+       exactamente donde está el bicho), mide en píxeles de pantalla
+       contra dónde se VE el bicho — que es justo lo que el pellizco
+       puede juzgar con generosidad sin volverse trampa. */
+    masCercaEnPantalla(clienteX, clienteY, radioPx = 70) {
+      let mejor = null, mejorD = radioPx;
+      for (const rec of lista) {
+        if (rec.estado !== 'suelto') continue;
+        const mundo = rec.nodo.position.clone();
+        mundo.y += ALTO + 0.03;
+        const p = api.proyectar(mundo);
+        const d = Math.hypot(p.x - clienteX, p.y - clienteY);
+        if (d < mejorD) { mejorD = d; mejor = rec; }
+      }
+      return mejor;
     },
 
     agarrar(rec) {

@@ -120,6 +120,23 @@ svg[width="0"] { width: 0; height: 0; }
   font-family: var(--font-display); font-size: var(--t-sm); font-weight: 700;
   color: var(--madera-700); text-decoration: none;
 }
+/* modo dev: discreto a propósito — es una herramienta de prueba, no
+   una opción del juego. Cuando está activo, se marca claro. */
+.portada-dev {
+  margin-top: var(--sp-2);
+  padding: .2rem .7rem;
+  font-family: var(--font-text); font-size: var(--t-2xs); font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(0,0,0,.06);
+  border: 1.5px dashed var(--hairline);
+  border-radius: var(--r-pill);
+  opacity: .7;
+}
+.portada-dev.activo {
+  color: #fff; opacity: 1;
+  background: linear-gradient(180deg, var(--rosa-400), var(--rosa-600));
+  border-style: solid; border-color: var(--rosa-700);
+}
 
 /* ============================================================
    LA MESA DE PREP (mapa de ingredientes)

@@ -14,10 +14,19 @@
    guardada — que es justo lo que hace que funcione sin conexión.
    ============================================================ */
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 
 /* la más reciente primero */
 const NOVEDADES = [
+  {
+    v: '1.1.1',
+    fecha: '2026-08-07',
+    titulo: 'Pellízcalos: cuesta menos atrapar al bicho',
+    cambios: [
+      'Nuevo gesto en la fanesca: pellizca el bicho con dos dedos (o arrástralo con uno, como antes) para cargarlo hasta la composta. El pellizco perdona más: agarra al más cercano aunque el dedo no caiga justo encima.',
+      'Botón de modo dev en la portada de la fanesca, para abrir los siete niveles de una vez y probar cualquier mecánica sin jugarse los anteriores.',
+    ],
+  },
   {
     v: '1.1.0',
     fecha: '2026-08-07',
