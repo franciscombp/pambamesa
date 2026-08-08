@@ -16,13 +16,12 @@
    partas en dos sin verlo, porque estaba justo sobre tu línea.
    ============================================================ */
 
-import { nuevoGusano, ARRUINADO } from './bichos.js';
+import { nuevoGusano } from './modelos/bichos.js';
+import { ARRUINADO } from './arruinado.js';
+import { N, GRUESO, R, xDeTajada, xDeFrontera } from './modelos/zapallo.js';
 
 let THREE, raiz, api;
 
-const N = 8;                    /* tajadas */
-const GRUESO = 0.29;            /* ancho de cada tajada */
-const R = 0.44;                 /* radio del zapallo */
 const TABLA_Z = 0.24;
 const TOL_X = 0.19;             /* cuánto puede desviarse el corte */
 const LARGO_MIN = 0.42;         /* profundidad mínima del trazo, en el mundo */
@@ -34,49 +33,27 @@ let guias = [];                 /* {grupo, b} — b = frontera 1..N-1 */
 let cortes = new Set();         /* fronteras ya cortadas */
 let bicho = null;               /* {nodo, gus, x, estado} */
 let hechos = 0;
-let modo = null, cargado = false;
+let modo = null, cargado = false, pellizcando = false;
 let p0 = null;                  /* dónde empezó el trazo, en el mundo */
 let terminado = false;
 
-let matPiel, matPulpa, matGuia, matPepa;
+/* La tajada, la guía punteada y las pepas viven en
+   modelos/zapallo.js — junto con las medidas (N, GRUESO, R) que
+   este nivel usa para saber dónde cae cada corte. */
 
-const xDeTajada = (i) => (i - (N - 1) / 2) * GRUESO;
-const xDeFrontera = (b) => (b - N / 2) * GRUESO;
+/* a qué altura descansa el zapallo: sobre la tabla, no sobre el mesón */
 const ALTO = () => api.MESA_Y + 0.1;
 
-function construirMateriales() {
-  matPiel = new THREE.MeshLambertMaterial({ color: '#d98b2b' });
-  matPulpa = new THREE.MeshLambertMaterial({ color: '#f6b957' });
-  matGuia = new THREE.MeshLambertMaterial({ color: '#5b3b1c' });
-  matPepa = new THREE.MeshLambertMaterial({ color: '#f3e6bc' });
-}
-
 function nuevaTajada(i) {
-  /* medio cilindro tumbado: el zapallo partido a lo largo, cara abajo */
-  const g = new THREE.Mesh(
-    new THREE.CylinderGeometry(R, R, GRUESO * 0.97, 22, 1, false, 0, Math.PI),
-    [matPiel, matPulpa, matPulpa]
-  );
-  g.rotation.z = Math.PI / 2;          /* eje a lo largo de X, panza arriba */
+  const g = api.pieza('tajada-zapallo');
   g.position.set(xDeTajada(i), ALTO(), TABLA_Z);
   g.userData = { tipo: 'zapallo', i };
   return g;
 }
 
-/* la línea punteada por donde va el cuchillo */
 function nuevaGuia(b) {
-  const g = new THREE.Group();
+  const g = api.pieza('guia-zapallo');
   g.position.set(xDeFrontera(b), ALTO(), TABLA_Z);
-  const trozos = 9;
-  for (let i = 0; i <= trozos; i++) {
-    if (i % 2) continue;
-    const a = (i / trozos) * Math.PI;
-    const d = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.03, 0.055), matGuia);
-    d.position.set(0, Math.sin(a) * (R + 0.012), -Math.cos(a) * (R + 0.012));
-    d.rotation.x = -a;
-    d.userData.ignorar = true;
-    g.add(d);
-  }
   return { grupo: g, b };
 }
 
@@ -133,7 +110,7 @@ function cortar(b) {
 /* ---------- el gusano paseandero ---------- */
 
 function nacerBicho() {
-  const gus = nuevoGusano(THREE, api, { eje: 'z', escala: 1.9, color: '#c4e076', color2: '#9dc24f', segmentos: 6 });
+  const gus = nuevoGusano(THREE, { eje: 'z', escala: 1.9, color: '#c4e076', color2: '#9dc24f', segmentos: 6 });
   const nodo = new THREE.Group();
   nodo.userData = { tipo: 'bicho' };
   nodo.add(gus.obj);
@@ -154,14 +131,10 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
-    construirMateriales();
     tajadas = []; guias = []; cortes = new Set(); hechos = 0;
-    terminado = false; modo = null; cargado = false; bicho = null;
+    terminado = false; modo = null; cargado = false; pellizcando = false; bicho = null;
 
-    const tabla = new THREE.Mesh(
-      new THREE.BoxGeometry(3.2, 0.1, 1.5),
-      new THREE.MeshLambertMaterial({ color: '#ecc287' })
-    );
+    const tabla = api.pieza('tabla', { ancho: 3.2, hondo: 1.5 });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);
@@ -177,12 +150,10 @@ export default {
     /* las pepas asomando por la cara abierta de las puntas */
     [-1, 1].forEach(s => {
       for (let i = 0; i < 5; i++) {
-        const p = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), matPepa);
-        p.scale.set(1, 0.45, 1.3);
+        const p = api.pieza('pepa-zapallo');
         const a = 0.4 + Math.random() * 2.3;
         p.position.set(s * (N * GRUESO / 2 - 0.01), ALTO() + Math.sin(a) * R * 0.45, TABLA_Z - Math.cos(a) * R * 0.45);
         p.rotation.set(Math.random(), Math.random(), Math.random());
-        p.userData.ignorar = true;
         zapallo.add(p);
       }
     });
@@ -240,19 +211,31 @@ export default {
      un raycast exacto de un dedo solo lo pierde fácil; en pantalla,
      con un radio generoso, es mucho más fácil de agarrar. */
   alPellizcarInicio(info) {
+    pellizcando = false;
+    modo = null;          /* que un modo viejo no siga vivo bajo el pellizco */
     if (terminado || !bicho || bicho.estado !== 'suelto') return;
     const mundo = new THREE.Vector3();
     bicho.nodo.getWorldPosition(mundo);
     const p = api.proyectar(mundo);
     if (Math.hypot(p.x - info.cliente.x, p.y - info.cliente.y) > 70) return;
+    pellizcando = true;
     modo = 'cargar'; cargado = true;
     bicho.estado = 'cargado';
     bicho.gus.aro.visible = false;
     api.sfx('tab'); api.buzz(12);
     api.aviso('Llévalo a la composta 🌿');
   },
-  alPellizcarMover(info) { this.alArrastrar(info); },
-  alPellizcarFin(info) { this.alArrastrarFin(info); },
+  /* Solo si el pellizco DE VERDAD agarró el gusano se sigue el ciclo
+     de cargar. Si no agarró nada, el gesto no hace nada — antes
+     delegaba igual y podía ejecutar un corte con el `modo` que había
+     quedado de un gesto anterior, partiendo al gusano sin que el
+     jugador hubiera cortado nada. */
+  alPellizcarMover(info) { if (pellizcando) this.alArrastrar(info); },
+  alPellizcarFin(info) {
+    if (!pellizcando) { modo = null; return; }
+    pellizcando = false;
+    this.alArrastrarFin(info);
+  },
 
   alArrastrarFin() {
     if (terminado) { modo = null; return; }
@@ -328,6 +311,6 @@ export default {
   destruir() {
     tajadas = []; guias = []; cortes = new Set();
     zapallo = null; bicho = null; p0 = null;
-    modo = null; cargado = false; terminado = false;
+    modo = null; cargado = false; pellizcando = false; terminado = false;
   },
 };

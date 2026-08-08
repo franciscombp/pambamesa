@@ -39,37 +39,16 @@ let modo = null;
 let pellizcando = false;
 let terminado = false;
 
-let matPiel, matPepa, matOjo;
-
-function construirMateriales() {
-  matPiel = new THREE.MeshLambertMaterial({ color: '#efe7cd', transparent: true, opacity: 0.5 });
-  matPepa = new THREE.MeshLambertMaterial({ color: '#f5cf58' });
-  matOjo = new THREE.MeshLambertMaterial({ color: '#c9b184' });
-}
+/* La forma del chocho vive en modelos/chochos.js: piel traslúcida
+   con la pepa amarilla adentro. Aquí solo se pide y se coloca. */
 
 function nuevoChocho(x, z) {
-  const g = new THREE.Group();
+  const g = api.pieza('chocho');
   g.position.set(x, api.MESA_Y + 0.16, z);
   g.rotation.y = Math.random() * Math.PI;
   g.userData = { tipo: 'chocho' };
-
-  /* la pepa: amarilla, achatada, con su ombliguito */
-  const pepa = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 9), matPepa);
-  pepa.scale.set(0.1, 0.062, 0.088);
-  const ombligo = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), matOjo);
-  ombligo.position.set(0.086, 0.012, 0);
-  ombligo.scale.set(0.5, 0.7, 1);
-  ombligo.userData.ignorar = true;
-
-  /* la piel: un pelín más grande y traslúcida, para que se vea que
-     hay algo adentro esperando salir */
-  const piel = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 9), matPiel);
-  piel.scale.set(0.112, 0.072, 0.098);
-  piel.userData.ignorar = true;
-
-  g.add(pepa, ombligo, piel);
   g.add(api.sombraBlob(0.3, -0.15));
-  return { obj: g, piel, pepa, ido: false, x, z };
+  return { obj: g, piel: api.parte(g, 'piel'), pepa: api.parte(g, 'pepa'), ido: false, x, z };
 }
 
 function reventar(rec) {
@@ -128,13 +107,9 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
-    construirMateriales();
     chochos = []; hechos = 0; terminado = false; modo = null; pellizcando = false;
 
-    const tabla = new THREE.Mesh(
-      new THREE.BoxGeometry(3.1, 0.1, 1.7),
-      new THREE.MeshLambertMaterial({ color: '#ecc287' })
-    );
+    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: 1.7 });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);

@@ -12,7 +12,8 @@
    regla. Vive aquí una sola vez.
    ============================================================ */
 
-import { nuevoGusano, nuevoGorgojo, ARRUINADO } from './bichos.js';
+import { nuevoGusano, nuevoGorgojo } from './modelos/bichos.js';
+import { ARRUINADO } from './arruinado.js';
 
 export function nuevaPlaga(THREE, api, raiz, opts = {}) {
   const nombre = opts.nombre || 'gusanito';
@@ -47,8 +48,8 @@ export function nuevaPlaga(THREE, api, raiz, opts = {}) {
 
   function soltar(clase, pos) {
     const bicho = clase === 'gorgojo'
-      ? nuevoGorgojo(THREE, api, { escala: 1 })
-      : nuevoGusano(THREE, api, { eje: 'z' });
+      ? nuevoGorgojo(THREE, { escala: 1 })
+      : nuevoGusano(THREE, { eje: 'z' });
     const nodo = new THREE.Group();
     nodo.userData = { tipo: 'bicho' };
     nodo.add(bicho.obj);

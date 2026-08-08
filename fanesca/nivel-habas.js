@@ -17,13 +17,13 @@
    ============================================================ */
 
 import { nuevaPlaga } from './plaga.js';
+import { POR_VAINA, PASO_HABA } from './modelos/habas.js';
 
 let THREE, raiz, api;
 
 const FILAS = [-0.3, 0.3];                  /* dos hileras de vainas */
 const COLS = [-0.96, 0, 0.96];
 const TABLA_Z = 0.28;
-const POR_VAINA = 5;
 const CON_GUSANO = 2;                       /* cuántas vainas traen sorpresa */
 const ABRIR = 0.16;                         /* mundo que recorre el dedo para abrir la vaina */
 
@@ -37,92 +37,30 @@ let ultimoPunto = null;
 let pellizcando = false;
 let terminado = false;
 
-let matVaina, matVainaInt, matHaba, matHilo;
-
-function construirMateriales() {
-  matVaina = new THREE.MeshLambertMaterial({ color: '#86b45c' });
-  matVainaInt = new THREE.MeshLambertMaterial({ color: '#e8f0cd', side: THREE.DoubleSide });
-  matHaba = new THREE.MeshLambertMaterial({ color: '#cfe09b' });
-  matHilo = new THREE.MeshLambertMaterial({ color: '#5f8a3e' });
-}
-
-/* media cáscara: un casquete alargado, hueco por dentro */
-function mediaVaina(arriba) {
-  const g = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 18, 10, 0, Math.PI * 2, arriba ? 0 : Math.PI / 2, Math.PI / 2),
-    matVaina
-  );
-  g.scale.set(0.44, 0.13, 0.115);
-  /* forro interior: la cáscara es una superficie, y sin esto la vaina
-     abierta se vería hueca por dentro (las caras traseras se descartan) */
-  const forro = new THREE.Mesh(
-    new THREE.SphereGeometry(0.96, 18, 10, 0, Math.PI * 2, arriba ? 0 : Math.PI / 2, Math.PI / 2),
-    matVainaInt
-  );
-  forro.userData.ignorar = true;
-  g.add(forro);
-  return g;
-}
+/* La forma de la vaina y del haba vive en modelos/habas.js.
+   Aquí solo se pide la pieza y se la pone donde va. */
 
 function nuevaVaina(x, z, conGusano) {
-  const v = new THREE.Group();
+  const v = api.pieza('vaina-haba');
   v.position.set(x, api.MESA_Y + 0.22, z);
   v.rotation.y = (Math.random() - 0.5) * 0.5;
   v.userData = { tipo: 'vaina', abierta: false };
 
-  const abajo = mediaVaina(false);
-  v.add(abajo);
-
-  /* la tapa cuelga de una bisagra al fondo: al abrirse se echa
-     para atrás como una vaina de verdad, no se desvanece */
-  const bisagra = new THREE.Group();
-  bisagra.position.z = -0.1;
-  const tapa = mediaVaina(true);
-  tapa.position.z = 0.1;
-  /* los bultos: se adivina cuántas habas hay antes de abrirla */
-  for (let i = 0; i < POR_VAINA; i++) {
-    const b = new THREE.Mesh(new THREE.SphereGeometry(0.058, 8, 6), matVaina);
-    b.position.set((i - (POR_VAINA - 1) / 2) * 0.168, 0.052, 0.1);
-    b.scale.set(1, 0.55, 0.85);
-    b.userData.ignorar = true;
-    bisagra.add(b);
-  }
-  bisagra.add(tapa);
-  v.add(bisagra);
-
-  /* la costura, que es por donde se pasa el dedo */
-  const costura = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.012, 0.02), matHilo);
-  costura.position.set(0, 0.005, 0.112);
-  costura.userData.ignorar = true;
-  v.add(costura);
-
-  /* el rabito */
-  const rabo = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.018, 0.1, 6), matHilo);
-  rabo.rotation.z = Math.PI / 2.3;
-  rabo.position.set(-0.5, 0.02, 0);
-  rabo.userData.ignorar = true;
-  v.add(rabo);
+  const bisagra = api.parte(v, 'bisagra');
 
   /* las habas van DENTRO de la vaina: así se inclinan con ella y,
      cuando la cáscara vacía se va a la composta, no queda nada suelto */
   const habas = [];
-  const matOmbligo = new THREE.MeshLambertMaterial({ color: '#9bb069' });
   for (let i = 0; i < POR_VAINA; i++) {
-    const h = new THREE.Group();
-    h.position.set((i - (POR_VAINA - 1) / 2) * 0.168, -0.008, 0);
+    const h = api.pieza('haba');
+    h.position.set((i - (POR_VAINA - 1) / 2) * PASO_HABA, -0.008, 0);
     h.userData = { tipo: 'haba' };
-    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 9), matHaba);
-    m.scale.set(0.068, 0.052, 0.06);
-    const ombligo = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.008, 0.012), matOmbligo);
-    ombligo.position.set(0, 0.05, 0.045);
-    ombligo.userData.ignorar = true;
-    h.add(m, ombligo);
     h.visible = false;
     habas.push(h);
     v.add(h);
   }
 
-  return { obj: v, bisagra, tapa, habas, conGusano, abierta: false, vaciada: false };
+  return { obj: v, bisagra, habas, conGusano, abierta: false, vaciada: false };
 }
 
 function abrirVaina(rec) {
@@ -199,13 +137,9 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
-    construirMateriales();
     vainas = []; hechos = 0; terminado = false; modo = null; ultimoPunto = null; pellizcando = false;
 
-    const tabla = new THREE.Mesh(
-      new THREE.BoxGeometry(3.1, 0.1, 1.7),
-      new THREE.MeshLambertMaterial({ color: '#ecc287' })
-    );
+    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: 1.7 });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);

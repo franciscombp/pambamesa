@@ -64,6 +64,10 @@
    ============================================================ */
 
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { pieza, parte, cargarGLB, token } from './modelos/index.js';
+import { construirCocina } from './modelos/cocina.js';
+import { sombraBlob as _sombraBlob, ojitos as _ojitos } from './modelos/utileria.js';
 
 /* ---------- geografía compartida del mesón ---------- */
 export const MESA_Y = 0.96;                              /* cara del mesón */
@@ -88,95 +92,23 @@ let bateaGrupo = null, compostaGrupo = null;
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 
-/* ---------- utilidades de dibujo ---------- */
+/* ---------- curvas de animación ---------- */
 
 const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 const easePop = (t) => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2);
 
-function texturaCanvas(dibuja, size = 256) {
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  dibuja(c.getContext('2d'), size);
-  const tx = new THREE.CanvasTexture(c);
-  tx.colorSpace = THREE.SRGBColorSpace;
-  return tx;
-}
-/* La escena no tiene colores propios: los lee del sistema de diseño,
-   igual que escena3d.js en el juego grande. Si mañana cambia la
-   paleta, esta cocina se repinta sola en vez de quedarse con los
-   colores de una versión anterior — que es exactamente lo que pasó
-   cuando la paleta pasó de crema a la del barrio. */
-let _raiz = null;
-function token(nombre, respaldo) {
-  if (!_raiz) _raiz = getComputedStyle(document.documentElement);
-  return (_raiz.getPropertyValue(nombre) || '').trim() || respaldo;
-}
-const mat = (color, opts = {}) => new THREE.MeshLambertMaterial({ color, ...opts });
-const matT = (nombre, respaldo, opts = {}) => mat(token(nombre, respaldo), opts);
-
-function texturaAzulejos() {
-  return texturaCanvas((ctx, S) => {
-    const T = S / 4;
-    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
-      ctx.fillStyle = (x + y) % 2 ? token('--talavera-500', '#1b5faa') : token('--talavera-300', '#5f97d8');
-      ctx.fillRect(x * T, y * T, T, T);
-      ctx.fillStyle = 'rgba(255,255,255,.28)';
-      ctx.fillRect(x * T + 4, y * T + 4, T - 8, T * 0.28);
-      ctx.strokeStyle = token('--talavera-700', '#123f74');
-      ctx.lineWidth = 4;
-      ctx.strokeRect(x * T + 2, y * T + 2, T - 4, T - 4);
-    }
-  });
-}
-function texturaMadera(base, veta) {
-  return texturaCanvas((ctx, S) => {
-    ctx.fillStyle = base; ctx.fillRect(0, 0, S, S);
-    ctx.strokeStyle = veta; ctx.lineWidth = 3; ctx.globalAlpha = .5;
-    for (let i = 0; i < 9; i++) {
-      ctx.beginPath();
-      const y = (i + .5) * S / 9;
-      ctx.moveTo(0, y);
-      ctx.bezierCurveTo(S * .3, y - 8, S * .6, y + 8, S, y);
-      ctx.stroke();
-    }
-  });
-}
-
-let sombraTex = null;
-export function sombraBlob(size = 0.8, alto = 0.012) {
-  if (!sombraTex) sombraTex = texturaCanvas((ctx, S) => {
-    const g = ctx.createRadialGradient(S / 2, S / 2, 2, S / 2, S / 2, S / 2);
-    g.addColorStop(0, 'rgba(60,30,10,.42)');
-    g.addColorStop(1, 'rgba(60,30,10,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
-  }, 64);
-  const m = new THREE.Mesh(
-    new THREE.PlaneGeometry(size, size),
-    new THREE.MeshBasicMaterial({ map: sombraTex, transparent: true, depthWrite: false })
-  );
-  m.rotation.x = -Math.PI / 2;
-  m.position.y = alto;
-  return m;
-}
-
-/* dos ojitos de caricatura: los bichos del juego los usan todos */
-export function ojitos(sep = 0.06, y = 0.05, z = 0.09, r = 0.028) {
-  const g = new THREE.Group();
-  const blanco = new THREE.MeshBasicMaterial({ color: '#fffdf6' });
-  const negro = new THREE.MeshBasicMaterial({ color: '#3a2a20' });
-  [-1, 1].forEach(s => {
-    const o = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), blanco);
-    o.position.set(sep * s, y, z);
-    const p = new THREE.Mesh(new THREE.SphereGeometry(r * 0.55, 8, 6), negro);
-    p.position.set(sep * s, y, z + r * 0.62);
-    g.add(o, p);
-  });
-  return g;
-}
+/* La forma de las cosas vive en modelos/, no aquí. El motor arma la
+   escena y lee los dedos; qué aspecto tiene un grano de choclo es
+   asunto de modelos/choclo.js — y puede venir de un .glb esculpido
+   en Blender sin que este archivo se entere. */
 
 let chispaTex = null;
 function texturaChispa() {
-  if (!chispaTex) chispaTex = texturaCanvas((ctx, S) => {
+  if (!chispaTex) {
+    const S = 64;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d');
     ctx.fillStyle = '#fff';
     ctx.translate(S / 2, S / 2);
     ctx.beginPath();
@@ -186,151 +118,56 @@ function texturaChispa() {
       ctx[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r);
     }
     ctx.closePath(); ctx.fill();
-  }, 64);
+    chispaTex = new THREE.CanvasTexture(c);
+    chispaTex.colorSpace = THREE.SRGBColorSpace;
+  }
   return chispaTex;
 }
 
-/* ---------- la cocina de fondo (idéntica en todos los niveles) ---------- */
+/* re-exportadas para los niveles, que las piden por `ctx.api` */
+export const sombraBlob = (size, alto) => _sombraBlob(THREE, size, alto);
+export const ojitos = (sep, y, z, r) => _ojitos(THREE, sep, y, z, r);
 
-function construirCocina() {
-  const tiles = texturaAzulejos();
-  tiles.wrapS = tiles.wrapT = THREE.RepeatWrapping;
-  tiles.repeat.set(4, 3.4);
-  const pared = new THREE.Mesh(new THREE.PlaneGeometry(11, 9), new THREE.MeshLambertMaterial({ map: tiles }));
-  pared.position.set(0, 3.4, -1.9);
-  scene.add(pared);
+/* ---------- el puesto ---------- */
 
-  const pisoTex = texturaCanvas((ctx, S) => {
-    const T = S / 2;
-    for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
-      ctx.fillStyle = (x + y) % 2 ? token('--madera-200', '#e8a469') : token('--peltre-300', '#e3dfd6');
-      ctx.fillRect(x * T, y * T, T, T);
-    }
-  }, 128);
-  pisoTex.wrapS = pisoTex.wrapT = THREE.RepeatWrapping;
-  pisoTex.repeat.set(7, 5);
-  const piso = new THREE.Mesh(new THREE.PlaneGeometry(16, 12), new THREE.MeshLambertMaterial({ map: pisoTex }));
-  piso.rotation.x = -Math.PI / 2;
-  piso.position.set(0, -0.02, 3);
-  scene.add(piso);
+let vapores = [];
+let modelosListos = Promise.resolve();
 
-  /* el mesón: ancho y hondo, porque aquí se trabaja con las manos */
-  const woodTop = texturaMadera(token('--madera-300', '#d07c3f'), token('--madera-500', '#93491c'));
-  const meson = new THREE.Mesh(new THREE.BoxGeometry(9, 0.24, 3.9), new THREE.MeshLambertMaterial({ map: woodTop }));
-  meson.position.set(0, MESA_Y - 0.12, 0.15);
-  scene.add(meson);
+function armarCocina() {
+  const { grupo, vapores: v } = construirCocina(THREE, MESA_Y);
+  scene.add(grupo);
+  vapores = v;
 
-  /* frente del gabinete, para que el mesón no flote */
-  const gabinete = new THREE.Mesh(new THREE.BoxGeometry(9, 2.6, 0.1), matT('--rosa-500', '#e01b6a'));
-  gabinete.position.set(0, -0.46, 2.05);
-  scene.add(gabinete);
-  [-2.9, 0, 2.9].forEach(x => {
-    const tir = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.5, 4, 10), matT('--maiz-400', '#f5a623'));
-    tir.rotation.z = Math.PI / 2;
-    tir.position.set(x, 0.56, 2.12);
-    scene.add(tir);
+  bateaGrupo = pieza('cuenco', THREE, {
+    radio: 0.44,
+    colorA: token('--madera-300', '#d07c3f'),
+    colorB: token('--madera-500', '#93491c'),
+    relleno: token('--maiz-300', '#ffc93c'),
   });
+  bateaGrupo.position.copy(BATEA);
 
-  /* repisa con frascos: la misma que en la cocina grande */
-  const repisa = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.09, 0.42), matT('--madera-400', '#b4632c'));
-  repisa.position.set(1.6, 2.42, -1.78);
-  scene.add(repisa);
-  const frascoM = matT('--peltre-200', '#f3f1ec');
-  [[0.85, token('--rosa-400', '#f53d8a')], [1.35, token('--nopal-400', '#8cc63f')], [1.85, token('--maiz-400', '#f5a623')], [2.35, token('--talavera-300', '#5f97d8')]].forEach(([x, tapa]) => {
-    const f = new THREE.Mesh(new THREE.CylinderGeometry(.11, .12, .3, 14), frascoM);
-    f.position.set(x, 2.62, -1.78);
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .06, 14), mat(tapa));
-    t.position.set(x, 2.79, -1.78);
-    scene.add(f, t);
+  compostaGrupo = pieza('cuenco', THREE, {
+    radio: 0.4,
+    colorA: token('--nopal-600', '#4c7c1f'),
+    colorB: token('--nopal-600', '#4c7c1f'),
+    relleno: token('--nopal-600', '#4c7c1f'),
   });
+  compostaGrupo.position.copy(COMPOSTA);
 
-  /* la olla grande de la fanesca, al fondo a la izquierda, humeando:
-     todo lo que preparas termina ahí, y se ve mientras trabajas */
-  const olla = new THREE.Group();
-  olla.add(new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.42, 0.56, 24), matT('--chile-500', '#ce2029')));
-  const borde = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.048, 8, 24), matT('--peltre-100', '#ffffff'));
-  borde.rotation.x = Math.PI / 2; borde.position.y = 0.28;
-  olla.add(borde);
-  [-1, 1].forEach(s => {
-    const asa = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.033, 8, 14, Math.PI), matT('--peltre-100', '#ffffff'));
-    asa.position.set(0.48 * s, 0.11, 0);
-    asa.rotation.z = s > 0 ? -Math.PI / 2 : Math.PI / 2;
-    olla.add(asa);
-  });
-  const caldo = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.04, 24), matT('--maiz-300', '#ffc93c'));
-  caldo.position.y = 0.24;
-  olla.add(caldo);
-  olla.position.set(-1.55, MESA_Y + 0.28, -1.35);
-  scene.add(olla);
-
-  const vaporTex = texturaCanvas((ctx, S) => {
-    const g = ctx.createRadialGradient(S / 2, S / 2, 4, S / 2, S / 2, S / 2);
-    g.addColorStop(0, 'rgba(255,255,255,.85)');
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
-  }, 64);
-  for (let i = 0; i < 3; i++) {
-    const p = new THREE.Sprite(new THREE.SpriteMaterial({ map: vaporTex, transparent: true, opacity: 0 }));
-    p.position.set(-1.55, MESA_Y + 0.8, -1.35);
-    p.userData.fase = i / 3;
-    p.userData.vapor = true;
-    scene.add(p);
-    vapores.push(p);
-  }
-
-  bateaGrupo = construirRecipiente(BATEA, token('--madera-300', '#d07c3f'), token('--madera-500', '#93491c'), 0.44, 'batea');
-  compostaGrupo = construirRecipiente(COMPOSTA, token('--nopal-600', '#4c7c1f'), token('--nopal-600', '#4c7c1f'), 0.4, 'composta');
   scene.add(bateaGrupo, compostaGrupo);
-
-  scene.add(new THREE.HemisphereLight('#fff6e6', token('--madera-300', '#d07c3f'), 1.2));
-  const sol = new THREE.DirectionalLight('#fff2d8', 1.45);
-  sol.position.set(-2.5, 5.5, 4);
-  scene.add(sol);
-}
-
-const vapores = [];
-
-/* una batea de madera: cuenco abierto con un fondo que se llena */
-function construirRecipiente(pos, colorA, colorB, r, tipo) {
-  const g = new THREE.Group();
-  const cuerpo = new THREE.Mesh(
-    new THREE.CylinderGeometry(r, r * 0.72, r * 0.62, 22, 1, true),
-    new THREE.MeshLambertMaterial({ color: colorA, side: THREE.DoubleSide })
-  );
-  cuerpo.position.y = r * 0.31;
-  const fondo = new THREE.Mesh(new THREE.CircleGeometry(r * 0.72, 22), mat(colorB));
-  fondo.rotation.x = -Math.PI / 2;
-  fondo.position.y = 0.012;
-  const labio = new THREE.Mesh(new THREE.TorusGeometry(r, r * 0.075, 8, 24), mat(colorB));
-  labio.rotation.x = Math.PI / 2;
-  labio.position.y = r * 0.62;
-  g.add(cuerpo, fondo, labio);
-  /* el contenido: un disco que sube conforme se llena */
-  const relleno = new THREE.Mesh(
-    new THREE.CylinderGeometry(r * 0.86, r * 0.72, 0.06, 22),
-    mat(tipo === 'batea' ? token('--maiz-300', '#ffc93c') : token('--nopal-600', '#4c7c1f'))
-  );
-  relleno.position.y = 0.04;
-  relleno.scale.setScalar(0.001);
-  relleno.visible = false;
-  g.add(relleno);
-  g.userData.relleno = relleno;
-  g.userData.r = r;
-  g.position.copy(pos);
-  g.add(sombraBlob(r * 2.4, 0.008));
-  return g;
 }
 
 /* sube el nivel del cuenco: se ve que lo que sacaste fue a algún lado */
 export function llenarRecipiente(cual, k) {
   const g = cual === 'composta' ? compostaGrupo : bateaGrupo;
   if (!g) return;
-  const r = g.userData.relleno;
+  const r = parte(g, 'relleno');
+  if (!r) return;
   const t = Math.max(0, Math.min(1, k));
   if (t <= 0.001) { r.visible = false; return; }
   r.visible = true;
   r.scale.set(1, 1, 1);
-  r.position.y = 0.04 + t * g.userData.r * 0.5;
+  r.position.y = 0.04 + t * (g.userData.r || 0.44) * 0.5;
 }
 
 /* ---------- tweens y partículas ---------- */
@@ -621,9 +458,18 @@ export const Motor = {
     camBase.copy(camera.position);
     clock = new THREE.Clock();
 
-    construirCocina();
+    armarCocina();
     raiz = new THREE.Group();
     scene.add(raiz);
+
+    /* Se buscan los .glb de modelos/glb/ mientras el jugador todavía
+       está en la portada: para cuando arranque un nivel ya están. Si
+       no hay ninguno (el caso normal), esto es un solo 404 y el juego
+       usa sus modelos de código. `jugar()` espera esta promesa antes
+       de montar el primer nivel, así nunca se arma medio a medias. */
+    modelosListos = cargarGLB(THREE, GLTFLoader, './modelos/glb/')
+      .then(n => { if (n) console.info('[fanesca] modelos .glb cargados:', n); })
+      .catch(() => {});
 
     /* el FOV horizontal se mantiene: una pantalla más alta muestra
        más cocina, nunca menos ancho de mesón (igual que el juego grande) */
@@ -728,6 +574,12 @@ export const Motor = {
   get lienzo() { return renderer ? renderer.domElement : null; },
   tween, chispas, volarA, sacudir, destello, raycast, puntoEnPlano,
   llenarRecipiente, sombraBlob, ojitos,
+  /* el catálogo de modelos, para que un nivel pida sus piezas sin
+     saber si vienen de código o de un .glb hecho en Blender */
+  pieza: (id, opts) => pieza(id, THREE, opts),
+  parte,
+  /* la espera de los .glb, para que nadie monte un nivel a medias */
+  modelosListos: () => modelosListos,
   MESA_Y, BATEA, COMPOSTA,
 };
 

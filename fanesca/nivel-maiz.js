@@ -35,16 +35,20 @@
    batea también. La única salida es cargarlo a la composta.
    ============================================================ */
 
-import { nuevoGusano, ARRUINADO } from './bichos.js';
+import { nuevoGusano } from './modelos/bichos.js';
+import { ARRUINADO } from './arruinado.js';
 import { AMAGUANA_MAZORCA } from './historia.js';
+import {
+  A, P, R, PASO, LARGO, perfil, uDe, posicionDe,
+  MADUREZ, HOJAS, LARGO_HOJA, BASE_HOJA,
+} from './modelos/choclo.js';
 
 let THREE, raiz, api;
 
-/* ---------- la rejilla ---------- */
-const A = 14;              /* hileras alrededor de la tusa */
-const P = 9;               /* granos a lo largo de cada hilera */
-const R = 0.46;            /* radio de la mazorca */
-const PASO = 0.208;        /* separación entre granos a lo largo */
+/* ---------- la rejilla ----------
+   A, P, R, PASO y posicionDe() vienen de modelos/choclo.js: la
+   forma y las posiciones son lo mismo, y tienen que vivir juntas
+   o un día dejan de coincidir. */
 const CENTRO = [0, 1.78, 0.12];  /* el choclo en alto, relativo al mesón */
 /* La cámara está en x=0 mirando de frente: el ángulo que da la cara
    es 0. (El -0.42 heredado del choclo acostado sesgaba el "frente"
@@ -53,8 +57,6 @@ const CENTRO = [0, 1.78, 0.12];  /* el choclo en alto, relativo al mesón */
 const FRENTE = 0;
 
 const CHOCLOS = 2;         /* choclos por partida */
-const HOJAS = 7;           /* hojas de la envoltura */
-const CASCADA_MS = { tierno: 0.038, duro: 0.08 };
 const GUSANOS_POR = [1, 2];/* bichos escondidos en cada choclo */
 const GUSANO_VEL = 0.52;   /* posiciones por segundo que BAJA el bicho */
 /* px/s: más rápido que esto es "con fuerza", y el tierno lo cobra */
@@ -64,26 +66,6 @@ const FUERZA = 1600;
    sin poder reaccionar. */
 const GRACIA = 1.0;
 
-/* los dos temperamentos del choclo */
-const MADUREZ = {
-  tierno: {
-    id: 'tierno', resistencia: 2, escala: 1.06,
-    paleta: ['#f8d267', '#f6c94b', '#fae09a', '#f3c352', '#fbe084'],
-    punta: '#fbe9b4', tusa: '#f8efd6',
-    presenta: 'Está <b>tierno</b>: cede solito, pero con fuerza el grano revienta.',
-  },
-  duro: {
-    id: 'duro', resistencia: 5, escala: 0.94,
-    paleta: ['#eaa92e', '#e09d24', '#efb84a', '#d99a20', '#f0c25e'],
-    punta: '#f3cf7f', tusa: '#efe3c0',
-    presenta: 'Este está <b>duro</b>: no revienta, pero los trabados pelean.',
-  },
-};
-
-/* la mazorca es más gorda al medio que en las puntas */
-const perfil = (u) => 0.80 + 0.20 * Math.sin(Math.PI * u);
-const uDe = (p) => (p + 0.5) / P;
-const LARGO = P * PASO;
 const TOTAL = CHOCLOS * A * P;
 
 let mazorca = null;        /* el choclo de pie: su eje es +Y */
@@ -103,6 +85,7 @@ let fase = 'deshojar';     /* 'deshojar' | 'desgranar' | 'transicion' */
 let modo = null;           /* 'peinar' | 'girar' | 'cargar' | 'hoja' */
 let giro0 = 0, dx0 = 0, dyPrev = 0, dirActual = 1;
 let hojaActiva = null;
+let pellizcando = false;
 let cargado = null;        /* gusano en la mano */
 let giroObjetivo = null;   /* a dónde lleva la cámara al bicho */
 let girando = 0;           /* botones de girar mantenidos */
@@ -115,140 +98,44 @@ let compostaN = 0;         /* cuánto ha caído a la composta (para pintarla) */
 let velT = 0, velX = 0, velY = 0;   /* medir la fuerza del dedo */
 let transToken = 0;
 
-/* ---------- materiales ---------- */
-let matGrano = [], matGranoPunta = null, matTusa = null;
-let matHoja = [], matPelo = [], matPapilla = null;
+/* ---------- las piezas ----------
+   La forma del grano, la tusa, la hoja y los pelos vive en
+   modelos/choclo.js. Aquí solo se piden y se colocan en la
+   rejilla — que es lo único que este archivo tiene que saber. */
 
-function construirMaterialesFijos() {
-  matHoja = ['#7fa851', '#6f9c47', '#8bb15f'].map(c =>
-    new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }));
-  matPelo = ['#d9b06a', '#c59a55'].map(c => new THREE.MeshLambertMaterial({ color: c }));
-  matPapilla = new THREE.MeshLambertMaterial({ color: '#eeddA0' });
-}
-
-function construirMaterialesDelChoclo() {
-  /* Phong y no Lambert: el grano tierno brilla, y ese brillito es la
-     mitad de las ganas de reventarlo */
-  matGrano = madurez.paleta.map(c => new THREE.MeshPhongMaterial({ color: c, shininess: 24, specular: '#5c4a12' }));
-  matGranoPunta = new THREE.MeshPhongMaterial({ color: madurez.punta, shininess: 18, specular: '#5c4a12' });
-  matTusa = new THREE.MeshLambertMaterial({ color: madurez.tusa });
-}
-
-/* ---------- geometría de la mazorca ---------- */
-
-const geoGrano = () => new THREE.SphereGeometry(1, 9, 7);
-
-function posicionDe(a, p) {
-  const th = (a / A) * Math.PI * 2;
-  const r = R * perfil(uDe(p));
-  const h = (p - (P - 1) / 2) * PASO;
-  return { th, r, h };
-}
-
-function nuevoGrano(a, p, geo) {
+function nuevoGrano(a, p) {
   const { th, r, h } = posicionDe(a, p);
   const punta = (p === 0 || p === P - 1);
-  const g = new THREE.Group();
+  const g = api.pieza('grano-choclo', {
+    madurez: madurez.id, punta, variante: a * 7 + p * 3,
+  });
   /* apenas asomados: el grano se sienta EN la tusa, no flota sobre ella */
   g.position.set(Math.sin(th) * (r + 0.03), h, Math.cos(th) * (r + 0.03));
   g.rotation.y = th;
   g.userData = { tipo: 'grano', a, p, golpes: 0 };
-  const m = new THREE.Mesh(geo, punta ? matGranoPunta : matGrano[(a * 7 + p * 3) % matGrano.length]);
-  /* un pelo más anchos que el paso de la rejilla, y cada uno con su
-     genio: ni dos granos de un choclo real son iguales */
-  const e = madurez.escala * (0.96 + Math.random() * 0.08);
-  m.scale.set(0.115 * e, (punta ? 0.115 : 0.135) * e, (punta ? 0.09 : 0.108) * e);
-  m.rotation.z = (Math.random() - 0.5) * 0.14;
-  g.add(m);
   return g;
 }
 
 function construirTusa() {
-  const pts = [];
-  const N = 26;
-  const largo = LARGO + PASO * 0.9;
-  /* un tallito corto abajo: de choclo, no de mango de escoba */
-  pts.push(new THREE.Vector2(0.004, -largo / 2 - 0.5));
-  pts.push(new THREE.Vector2(0.1, -largo / 2 - 0.46));
-  pts.push(new THREE.Vector2(0.125, -largo / 2 - 0.12));
-  for (let i = 0; i <= N; i++) {
-    const u = i / N;
-    let r = R * perfil(u) * 0.90;
-    if (u < 0.07) r = 0.125 + (r - 0.125) * (u / 0.07);
-    if (u > 0.93) r *= (1 - u) / 0.07;
-    pts.push(new THREE.Vector2(Math.max(0.004, r), (u - 0.5) * largo));
-  }
-  const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 22), matTusa);
+  const m = api.pieza('tusa', { madurez: madurez.id });
   m.userData = { tipo: 'tusa' };
   return m;
 }
 
-/* ---------- las hojas ---------- */
-
-const LARGO_HOJA = LARGO + 1.15;
-const BASE_HOJA = -LARGO / 2 - 0.42;   /* de dónde nace la hoja (local al giro) */
-
-/* la hoja sigue la panza del choclo, se abre en faldón abajo y se
-   cierra en punta arriba: un cilindro parcial con el radio editado */
-function geoHoja(arc) {
-  const g = new THREE.CylinderGeometry(1, 1, LARGO_HOJA, 7, 12, true, -arc / 2, arc);
-  g.translate(0, LARGO_HOJA / 2, 0);
-  const pos = g.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    const u = Math.max(0, Math.min(1, y / LARGO_HOJA));
-    const len = Math.hypot(x, z) || 1;
-    const r = radioHoja(u);
-    pos.setX(i, x / len * r);
-    pos.setZ(i, z / len * r);
-  }
-  g.computeVertexNormals();
-  return g;
-}
-
-function radioHoja(u) {
-  /* dónde cae este punto de la hoja sobre el cuerpo del choclo.
-     El grano asoma hasta R·perfil + ~0.14: la hoja va POR FUERA de
-     eso, o los granos la atraviesan y el choclo nunca se ve cerrado */
-  const yLocal = BASE_HOJA + u * LARGO_HOJA;
-  const uCob = Math.max(0, Math.min(1, (yLocal + LARGO / 2) / LARGO));
-  const cuerpo = R * perfil(uCob) + 0.19;
-  const faldon = u < 0.16 ? (0.16 - u) / 0.16 * 0.13 : 0;      /* abierta abajo */
-  const cierre = u > 0.76 ? (u - 0.76) / 0.24 : 0;             /* punta arriba */
-  return (cuerpo + faldon) * (1 - cierre * 0.92) + 0.05 * cierre;
-}
-
 function nuevaHoja(i) {
   const th = (i / HOJAS) * Math.PI * 2;
-  const arc = (Math.PI * 2 / HOJAS) * 1.32;   /* con traslape: se tapan entre sí */
   const pivot = new THREE.Group();
   pivot.rotation.y = th;
   pivot.position.y = BASE_HOJA;
-  /* la geo nace en la base y rodea el eje central: el pivote solo
-     aporta la altura de la base y el ángulo de esta hoja */
-  const mesh = new THREE.Mesh(geoHoja(arc), matHoja[i % matHoja.length]);
+  const mesh = api.pieza('hoja-choclo', { indice: i });
   mesh.userData = { tipo: 'hoja', idx: i };
   pivot.add(mesh);
   return { pivot, mesh, th, ida: false };
 }
 
 function construirPelos() {
-  /* largos: nacen del choclo y ASOMAN por la punta del cono de hojas
-     (la hoja cierra en BASE_HOJA + LARGO_HOJA ≈ LARGO/2 + 0.7) */
-  const g = new THREE.Group();
+  const g = api.pieza('pelos-choclo');
   g.userData = { tipo: 'pelos' };
-  for (let i = 0; i < 20; i++) {
-    const largo = 0.7 + Math.random() * 0.25;
-    const h = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.006, 0.014, largo, 4),
-      matPelo[i % 2]
-    );
-    const th = (i / 20) * Math.PI * 2;
-    const rr = 0.02 + Math.random() * 0.06;
-    h.position.set(Math.sin(th) * rr, LARGO / 2 + 0.4 + Math.random() * 0.08, Math.cos(th) * rr);
-    h.rotation.set(Math.cos(th) * (0.14 + Math.random() * 0.2), 0, -Math.sin(th) * (0.14 + Math.random() * 0.2));
-    g.add(h);
-  }
   return g;
 }
 
@@ -367,7 +254,7 @@ function sacarGrano(a, p, conCascada, dir) {
   api.progreso(hechos, TOTAL);
 
   if (conCascada && dir) {
-    cascadas.push({ a, p: p + dir, dir, t: api.reloj + CASCADA_MS[madurez.id] });
+    cascadas.push({ a, p: p + dir, dir, t: api.reloj + madurez.cascada });
     /* La cita llega justo cuando el jugador acaba de comprobarlo con
        los dedos: se soltó uno de la orilla y se fue la hilera entera. */
     corridaActual++;
@@ -390,9 +277,7 @@ function reventarGrano(a, p) {
   g.userData.tipo = 'papilla';
   while (g.children.length) g.remove(g.children[0]);
   /* el splat SÍ recibe el dedo: limpiarlo es tocarlo */
-  const splat = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), matPapilla);
-  splat.scale.set(0.135, 0.04, 0.115);
-  g.add(splat);
+  g.add(api.pieza('papilla-choclo'));
   const mundo = new THREE.Vector3();
   g.getWorldPosition(mundo);
   api.chispas(mundo, '#f3e2a0', 9, 0.8);
@@ -562,18 +447,16 @@ function armarChoclo() {
   while (giro.children.length) giro.remove(giro.children[0]);
   giro.rotation.y = FRENTE;
 
-  construirMaterialesDelChoclo();
   tusa = construirTusa();
   granosGrupo = new THREE.Group();
   gusanosGrupo = new THREE.Group();
   hojasGrupo = new THREE.Group();
   giro.add(tusa, granosGrupo, gusanosGrupo, hojasGrupo);
 
-  const geo = geoGrano();
   for (let a = 0; a < A; a++) {
     granos[a] = [];
     for (let p = 0; p < P; p++) {
-      const g = nuevoGrano(a, p, geo);
+      const g = nuevoGrano(a, p);
       granos[a][p] = g;
       granosGrupo.add(g);
     }
@@ -627,9 +510,8 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
-    construirMaterialesFijos();
     hechos = 0; choclo = 0; compostaN = 0;
-    modo = null; cargado = null; giroObjetivo = null; girando = 0;
+    modo = null; cargado = null; giroObjetivo = null; girando = 0; pellizcando = false;
     terminado = false; ultimoPop = api.reloj; avisoCentro = 0;
     dichaCita = false; citaPendiente = false;
     reventados = 0; avisadoReventon = false;
@@ -832,9 +714,12 @@ export default {
      chiquita y a veces girando con la mazorca), y de ahí en más
      reusa el mismo ciclo de "cargar" que el arrastre de un dedo. */
   alPellizcarInicio(info) {
+    pellizcando = false;
+    modo = null;          /* que un modo viejo no siga vivo bajo el pellizco */
     if (terminado || fase === 'transicion') return;
     const w = gusanoMasCercaEnPantalla(info.cliente.x, info.cliente.y);
     if (!w) return;
+    pellizcando = true;
     modo = 'cargar';
     cargado = w;
     w.estado = 'cargado';
@@ -843,8 +728,14 @@ export default {
     api.sfx('tab'); api.buzz(12);
     api.aviso('Llévalo a la composta 🌿');
   },
-  alPellizcarMover(info) { this.alArrastrar(info); },
-  alPellizcarFin(info) { this.alArrastrarFin(info); },
+  /* Solo si el pellizco agarró un gusanito se sigue el ciclo de
+     cargar; si no agarró nada, el gesto no hace nada. */
+  alPellizcarMover(info) { if (pellizcando) this.alArrastrar(info); },
+  alPellizcarFin(info) {
+    if (!pellizcando) { modo = null; return; }
+    pellizcando = false;
+    this.alArrastrarFin(info);
+  },
 
   alControl(id, fase2) {
     if (fase2 === 'abajo') { girando = id === 'izq' ? -1 : 1; giroObjetivo = null; }
@@ -914,6 +805,6 @@ export default {
     transToken++;
     mazorca = giro = tusa = granosGrupo = gusanosGrupo = hojasGrupo = pelos = null;
     granos = []; gusanos = []; cascadas = []; hojas = [];
-    cargado = null; modo = null; hojaActiva = null; terminado = false;
+    cargado = null; modo = null; hojaActiva = null; pellizcando = false; terminado = false;
   },
 };

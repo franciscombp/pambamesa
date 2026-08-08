@@ -46,39 +46,17 @@ let terminado = false;
 const SUCIAS = () => PIEDRAS + PICADOS;
 const TOTAL = () => SUCIAS() + BUENAS;
 
-let matBuena, matPiedra, matPicado;
+/* Las tres formas —la buena, la piedra angulosa y la picada con su
+   agujero— viven en modelos/lenteja.js. Esa diferencia de forma ES
+   el nivel: si se vieran igual, escoger sería adivinar. */
 
-function construirMateriales() {
-  matBuena = new THREE.MeshLambertMaterial({ color: '#c98a4b' });
-  matPiedra = new THREE.MeshLambertMaterial({ color: '#8d8577' });
-  matPicado = new THREE.MeshLambertMaterial({ color: '#6b543a' });
-}
+const PIEZA_DE = { buena: 'lenteja', piedra: 'piedra', picado: 'lenteja-picada' };
 
 function nuevoGrano(clase, x, z) {
-  const g = new THREE.Group();
+  const g = api.pieza(PIEZA_DE[clase] || 'lenteja');
   g.position.set(x, api.MESA_Y + 0.13, z);
   g.rotation.set(Math.random() * 0.4, Math.random() * Math.PI, Math.random() * 0.4);
   g.userData = { tipo: 'grano', clase };
-
-  if (clase === 'piedra') {
-    /* angulosa: la piedra no es redonda, y eso es lo que la delata */
-    const m = new THREE.Mesh(new THREE.DodecahedronGeometry(0.055, 0), matPiedra);
-    m.scale.set(1, 0.62, 0.9);
-    g.add(m);
-  } else if (clase === 'picado') {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), matPicado);
-    m.scale.set(0.058, 0.026, 0.058);
-    /* el agujero del bicho, que es lo que lo hace descartable */
-    const hueco = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6),
-      new THREE.MeshLambertMaterial({ color: '#3a2a20' }));
-    hueco.position.set(0.018, 0.02, 0.01);
-    hueco.userData.ignorar = true;
-    g.add(m, hueco);
-  } else {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), matBuena);
-    m.scale.set(0.058, 0.024, 0.058);
-    g.add(m);
-  }
   return { obj: g, clase, ido: false };
 }
 
@@ -179,14 +157,10 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
-    construirMateriales();
     granos = []; sacados = 0; recogidas = 0; perdidas = 0;
     fase = 'escoger'; modo = null; pellizcando = false; terminado = false;
 
-    const tabla = new THREE.Mesh(
-      new THREE.BoxGeometry(3.1, 0.1, 1.7),
-      new THREE.MeshLambertMaterial({ color: '#ecc287' })
-    );
+    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: 1.7 });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);

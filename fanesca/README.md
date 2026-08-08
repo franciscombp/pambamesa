@@ -133,18 +133,33 @@ implementa `alPellizcarInicio/Mover/Fin`, casi siempre delegando en
 
 | Archivo | Rol |
 |---|---|
-| `motor3d.js` | La escena compartida: cocina de fondo, cámara fija, luces, tweens, chispas, batea y composta, y la lectura de los dedos (qué es toque, qué es arrastre, sobre qué cayó). Define el **contrato de nivel** — está documentado en su cabecera. |
+| `motor3d.js` | La escena compartida: cámara fija, luces, tweens, chispas, y —sobre todo— la lectura de los dedos (qué es toque, qué es arrastre, qué es pellizco, sobre qué cayó). Define el **contrato de nivel**, documentado en su cabecera. No dibuja: eso es de `modelos/`. |
+| `modelos/` | **La forma de todas las cosas**, una pieza por archivo, editable en Blender. Tiene su propio [README](modelos/README.md). |
 | `main.js` | El juego alrededor: pantallas, reloj, cucharas, guardado (`localStorage`), y el puente entre el motor y el HUD. No sabe nada de granos. |
 | `niveles.js` | Los datos: qué ingredientes, en qué orden, con qué copy y en cuántos segundos son 3 cucharas. |
-| `historia.js` | Lo que el plato cuenta: capítulos del cuaderno, tarjetas por ingrediente, la cita de Cacuango y las fuentes. Texto, no código. |
-| `bichos.js` | Gusanito, gorgojo y mosca: su forma, su aro rojo de alarma y su meneo. Uno solo para todos, para que la regla sea *una* regla. |
-| `plaga.js` | El drama compartido de habas/fréjol/chochos/escoger: el bicho camina hacia la batea, se carga (a mano o a pellizco) y se bota a la composta. Zapallo y bacalao llevan su propio bicho (uno solo, o una mosca que se posa) y repiten el mismo patrón a mano. |
-| `nivel-*.js` | Un archivo por ingrediente. Solo arma sus mallas y responde gestos; todo lo demás se lo pide a `ctx.api`. |
+| `historia.js` | Lo que el plato cuenta: capítulos del cuaderno, tarjetas por ingrediente, las voces de las lideresas y las fuentes. Texto, no código. |
+| `arruinado.js` | Por qué se arruinó la olla, dicho en palabras. Un solo sitio, para que el jugador sienta que perdió por la MISMA regla en los siete niveles. |
+| `plaga.js` | El drama compartido de habas/fréjol/chochos/escoger: el bicho camina hacia la batea, se carga (a pellizco o arrastrando) y se bota a la composta. Zapallo y bacalao llevan su propio bicho (uno solo, o una mosca que se posa) y repiten el mismo patrón a mano. |
+| `nivel-*.js` | Un archivo por ingrediente. **Solo lógica de juego**: pide sus piezas con `api.pieza('<id>')`, las coloca y responde gestos. |
+| `herramientas/` | La herramienta que exporta los modelos a `.glb` para abrirlos en Blender. |
 | `fanesca.css` | Composición de pantallas sobre `../design-system.css`. Aquí no se inventan colores. |
 
-**Agregar un ingrediente** es escribir `nivel-<id>.js` contra el
-contrato y agregar su entrada en `niveles.js`. No hay que tocar el
-motor ni la app.
+**Agregar un ingrediente** son dos archivos: `modelos/<algo>.js` con
+la forma de sus piezas (y su línea en `modelos/index.js`), y
+`nivel-<id>.js` con la lógica, contra el contrato del motor. Más su
+entrada en `niveles.js`. No hay que tocar el motor ni la app.
+
+### La forma se puede editar en Blender
+
+Los modelos no están hundidos en la lógica: cada pieza —un grano, una
+hoja, un gusano— vive en su propio archivo en `modelos/`, y el juego
+la pide por id. Si existe un `.glb` con ese nombre en `modelos/glb/`,
+usa ese en vez del código.
+
+Abre `herramientas/exportar-glb.html` para bajar todas las piezas tal
+como están hoy, ábrelas en Blender, y devuélvelas. El detalle
+—incluidos los nombres de objeto que **no** hay que cambiar— está en
+[`modelos/README.md`](modelos/README.md).
 
 ## Depurar
 

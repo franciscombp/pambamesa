@@ -334,6 +334,10 @@ const api = {
   proyectar: (...a) => Motor.proyectar(...a),
   sombraBlob: (...a) => Motor.sombraBlob(...a),
   ojitos: (...a) => Motor.ojitos(...a),
+  /* el catálogo de modelos: un nivel pide sus piezas por id, sin
+     saber si vienen de código o de un .glb esculpido en Blender */
+  pieza: (...a) => Motor.pieza(...a),
+  parte: (...a) => Motor.parte(...a),
   get reloj() { return Motor.reloj; },
 };
 
@@ -381,6 +385,10 @@ async function jugar(id) {
     mostrar('mesa');
     return;
   }
+  /* si hay modelos .glb esperando, que terminen de llegar antes de
+     armar el nivel: si no, la primera partida saldría con los de
+     código y la segunda con los de Blender */
+  await Motor.modelosListos();
   Motor.cargar(modActual, api);
   renderControles(modActual);
   pista(n.gesto, 5200);

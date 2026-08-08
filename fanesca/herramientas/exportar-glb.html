@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exportar los modelos a .glb — La fanesca</title>
+<link rel="stylesheet" href="../../design-system.css">
+<style>
+  body { font-family: var(--font-text); background: var(--peltre-200); color: var(--text); margin: 0; padding: var(--sp-5); }
+  .caja { max-width: 720px; margin: 0 auto; }
+  h1 { font-family: var(--font-display); font-size: var(--t-2xl); margin-bottom: var(--sp-2); }
+  .lede { color: var(--text-muted); line-height: var(--lead); margin-bottom: var(--sp-4); }
+  .lede code { background: rgba(0,0,0,.07); padding: .1em .35em; border-radius: 4px; }
+  .fila { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-4); }
+  #lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-2); }
+  .pieza {
+    background: var(--surface); border: var(--ring); border-radius: var(--r-md);
+    padding: var(--sp-2); text-align: center;
+  }
+  .pieza canvas { width: 100%; aspect-ratio: 1; border-radius: var(--r-sm); background: var(--peltre-300); display: block; }
+  .pieza b { display: block; font-family: var(--font-display); font-size: var(--t-xs); margin-top: .35rem; word-break: break-all; }
+  .pieza small { display: block; color: var(--text-muted); font-size: var(--t-2xs); }
+  #log {
+    margin-top: var(--sp-4); padding: var(--sp-3); border-radius: var(--r-md);
+    background: var(--pizarra-700); color: #cfe3b0;
+    font-family: ui-monospace, monospace; font-size: var(--t-xs); line-height: 1.6;
+    white-space: pre-wrap; max-height: 240px; overflow: auto;
+  }
+</style>
+<script type="importmap">
+  { "imports": { "three": "../../vendor/three.module.min.js", "three/addons/": "../../vendor/addons/" } }
+</script>
+</head>
+<body>
+<div class="caja">
+  <h1>Exportar los modelos a <code>.glb</code></h1>
+  <p class="lede">
+    Cada pieza del juego, tal como está hoy en código, lista para abrirla en
+    <b>Blender</b>. Descárgalas, edítalas, y devuélvelas a
+    <code>fanesca/modelos/glb/</code> — el juego usa el <code>.glb</code> en
+    lugar del código en cuanto lo encuentre listado en <code>indice.json</code>.
+    <br><br>
+    <b>Ojo con los nombres.</b> El juego busca las partes que anima o modifica
+    <em>por nombre de objeto</em> (la <code>pepa</code> del chocho, la
+    <code>carne</code> del bacalao, los <code>seg0…segN</code> del gusano). Si
+    en Blender los renombras, el juego deja de encontrarlas. Están anotados
+    debajo de cada pieza y en <code>modelos/README.md</code>.
+  </p>
+
+  <div class="fila">
+    <button type="button" id="todo" class="btn btn--nopal">Descargar todas</button>
+    <button type="button" id="indice" class="btn btn--peltre btn--sm">Descargar indice.json</button>
+  </div>
+
+  <div id="lista"></div>
+  <div id="log">listo.</div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { pieza, registradas } from '../modelos/index.js';
+
+const log = (m) => { const l = document.getElementById('log'); l.textContent += '\n' + m; l.scrollTop = l.scrollHeight; };
+
+/* Algunas piezas se piden con opciones (el grano de choclo tiene dos
+   madureces). Se exporta una variante por cada una que valga la pena
+   editar aparte; el resto sale con sus opciones por defecto. */
+const VARIANTES = {
+  'grano-choclo': [
+    { sufijo: '-tierno', opts: { madurez: 'tierno' } },
+    { sufijo: '-duro', opts: { madurez: 'duro' } },
+  ],
+  'tusa': [
+    { sufijo: '-tierno', opts: { madurez: 'tierno' } },
+    { sufijo: '-duro', opts: { madurez: 'duro' } },
+  ],
+};
+
+/* qué partes nombradas busca el juego en cada pieza: se muestran
+   debajo del preview para que nadie las renombre por accidente */
+const CLAVES = {
+  'gusano': 'seg0…segN',
+  'gorgojo': 'pata0…pata5, cuerpo',
+  'mosca': 'ala0, ala1',
+  'chocho': 'pepa, piel',
+  'presa-bacalao': 'carne',
+  'vaina-haba': 'bisagra',
+  'cuenco': 'relleno',
+};
+
+const exportador = new GLTFExporter();
+const generados = [];
+
+function bajar(nombre, buffer) {
+  const url = URL.createObjectURL(new Blob([buffer], { type: 'model/gltf-binary' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+function aGLB(obj) {
+  return new Promise((listo, falla) => {
+    /* la escena tiene que ser una raíz limpia: si exportáramos el
+       objeto con la transformación que le puso el nivel, en Blender
+       aparecería desplazado y rotado sin razón */
+    const escena = new THREE.Scene();
+    const copia = obj.clone(true);
+    copia.position.set(0, 0, 0);
+    copia.rotation.set(0, 0, 0);
+    copia.scale.set(1, 1, 1);
+    escena.add(copia);
+    exportador.parse(escena, listo, falla, { binary: true });
+  });
+}
+
+/* Una miniatura de cada pieza, para saber qué se está bajando.
+   UN SOLO renderer para todas y se copia el resultado a cada lienzo
+   2D: el navegador solo aguanta ~16 contextos WebGL vivos, y con una
+   pieza por contexto los primeros se apagaban solos y quedaban en
+   blanco justo cuando terminabas de cargar la página. */
+let rend = null;
+function preview(lienzo, obj) {
+  if (!rend) {
+    rend = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    rend.setSize(150, 150, false);
+    rend.outputColorSpace = THREE.SRGBColorSpace;
+  }
+  const esc = new THREE.Scene();
+  const copia = obj.clone(true);
+  esc.add(copia);
+  esc.add(new THREE.HemisphereLight('#ffffff', '#8a7a5a', 2.2));
+  const luz = new THREE.DirectionalLight('#fff2d8', 1.6);
+  luz.position.set(2, 3, 4);
+  esc.add(luz);
+
+  /* encuadre automático: cada pieza tiene su tamaño */
+  const caja = new THREE.Box3().setFromObject(copia);
+  const centro = caja.getCenter(new THREE.Vector3());
+  const tam = caja.getSize(new THREE.Vector3()).length() || 1;
+  const cam = new THREE.PerspectiveCamera(40, 1, 0.001, 100);
+  cam.position.set(centro.x + tam * 0.7, centro.y + tam * 0.5, centro.z + tam * 0.9);
+  cam.lookAt(centro);
+  rend.render(esc, cam);
+  /* del contexto compartido al lienzo de esta pieza */
+  lienzo.getContext('2d').drawImage(rend.domElement, 0, 0);
+}
+
+async function construir() {
+  const lista = document.getElementById('lista');
+  const ids = registradas();
+  log(`${ids.length} piezas registradas`);
+
+  for (const id of ids) {
+    const vars = VARIANTES[id] || [{ sufijo: '', opts: {} }];
+    for (const v of vars) {
+      const nombre = id + v.sufijo;
+      const obj = pieza(id, THREE, v.opts);
+      generados.push({ nombre, obj });
+
+      const div = document.createElement('div');
+      div.className = 'pieza';
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 150;
+      div.appendChild(cv);
+      const b = document.createElement('b');
+      b.textContent = nombre + '.glb';
+      div.appendChild(b);
+      if (CLAVES[id]) {
+        const s = document.createElement('small');
+        s.textContent = 'no renombrar: ' + CLAVES[id];
+        div.appendChild(s);
+      }
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn--peltre btn--sm';
+      btn.style.marginTop = '.4rem';
+      btn.textContent = 'descargar';
+      btn.addEventListener('click', async () => {
+        bajar(nombre + '.glb', await aGLB(obj));
+        log('↓ ' + nombre + '.glb');
+      });
+      div.appendChild(btn);
+      lista.appendChild(div);
+
+      try { preview(cv, obj); } catch (e) { log('preview falló en ' + nombre + ': ' + e.message); }
+    }
+  }
+  log('listo — ' + generados.length + ' archivos por bajar');
+}
+
+document.getElementById('todo').addEventListener('click', async () => {
+  for (const g of generados) {
+    bajar(g.nombre + '.glb', await aGLB(g.obj));
+    log('↓ ' + g.nombre + '.glb');
+    await new Promise(r => setTimeout(r, 220));   /* el navegador se atora si van todas de golpe */
+  }
+  log('todas listas. Ponlas en fanesca/modelos/glb/');
+});
+
+document.getElementById('indice').addEventListener('click', () => {
+  const json = JSON.stringify(generados.map(g => g.nombre), null, 2);
+  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = 'indice.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  log('↓ indice.json');
+});
+
+/* para poder generarlas sin navegador (Playwright, guiones) */
+window.Exportador = {
+  lista: () => generados.map(g => g.nombre),
+  glb: async (nombre) => {
+    const g = generados.find(x => x.nombre === nombre);
+    if (!g) throw new Error('no existe: ' + nombre);
+    const buf = await aGLB(g.obj);
+    return Array.from(new Uint8Array(buf));
+  },
+};
+
+construir();
+</script>
+</body>
+</html>

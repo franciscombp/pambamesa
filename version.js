@@ -14,10 +14,20 @@
    guardada — que es justo lo que hace que funcione sin conexión.
    ============================================================ */
 
-const APP_VERSION = '1.1.2';
+const APP_VERSION = '1.2.0';
 
 /* la más reciente primero */
 const NOVEDADES = [
+  {
+    v: '1.2.0',
+    fecha: '2026-08-08',
+    titulo: 'Los modelos, en archivos que se pueden esculpir',
+    cambios: [
+      'Cada cosa que se ve en la mesa de prep —el grano, la hoja, el gusano, la lenteja— pasó a tener su propio archivo en fanesca/modelos/. Los niveles ya no dibujan: piden sus piezas y las colocan.',
+      'Se pueden editar en Blender: la herramienta en fanesca/herramientas/ exporta las 28 piezas a .glb, y el juego usa tu versión en cuanto la devuelvas.',
+      'Todos los colores en un solo sitio, y los del sistema de diseño se leen en vivo: si cambia la paleta del juego, esta cocina se repinta sola.',
+    ],
+  },
   {
     v: '1.1.2',
     fecha: '2026-08-07',

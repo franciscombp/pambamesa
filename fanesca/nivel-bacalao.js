@@ -14,7 +14,9 @@
    arrastra desde ella: se espanta y se va.
    ============================================================ */
 
-import { nuevaMosca, ARRUINADO } from './bichos.js';
+import { nuevaMosca } from './modelos/bichos.js';
+import { ARRUINADO } from './arruinado.js';
+import { CARNE_LIMPIA } from './modelos/bacalao.js';
 
 let THREE, raiz, api;
 
@@ -39,57 +41,30 @@ let modo = null, cargada = null, frotando = null, ultimoPunto = null;
 let tMosca = 4, huecosCordel = [];
 let terminado = false, avisoLimpia = false;
 
-let matCarne, matCarneLimpia, matPiel, matSal, matCuerda;
-
-function construirMateriales() {
-  matCarne = new THREE.MeshLambertMaterial({ color: '#ecd8b4' });
-  matCarneLimpia = new THREE.MeshLambertMaterial({ color: '#fbf3e0' });
-  matPiel = new THREE.MeshLambertMaterial({ color: '#6f6a5e' });
-  matSal = new THREE.MeshLambertMaterial({ color: '#ffffff' });
-  matCuerda = new THREE.MeshLambertMaterial({ color: '#c9a06c' });
-}
+/* La presa con sus vetas y su piel, los cristales de sal y el
+   cordel viven en modelos/bacalao.js. La carne se busca POR NOMBRE
+   porque es la única pieza del juego que cambia de material en
+   vivo: al quedar sin sal, pasa de salada a limpia. */
 
 function nuevaPresa(x, z) {
-  const g = new THREE.Group();
+  const g = api.pieza('presa-bacalao');
   g.position.set(x, api.MESA_Y + 0.14, z);
   g.rotation.y = (Math.random() - 0.5) * 0.5;
   g.userData = { tipo: 'presa' };
-
-  const carne = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), matCarne);
-  carne.scale.set(0.31, 0.07, 0.2);
-  const piel = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), matPiel);
-  piel.scale.set(0.313, 0.072, 0.203);
-  piel.userData.ignorar = true;
-  /* las vetas del lomo, para que se lea como pescado y no como pan */
-  const matVeta = new THREE.MeshLambertMaterial({ color: '#dcc59c' });
-  for (let i = 0; i < 4; i++) {
-    const v = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.004, 0.24), matVeta);
-    v.position.set((i - 1.5) * 0.105, 0.066, 0);
-    v.userData.ignorar = true;
-    g.add(v);
-  }
-  /* el filo de piel oscura por un lado: sin esto es un pan blanco */
-  const filo = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10, 0, Math.PI), matPiel);
-  filo.scale.set(0.315, 0.073, 0.075);
-  filo.position.z = -0.145;
-  filo.rotation.y = Math.PI;
-  filo.userData.ignorar = true;
-  g.add(filo);
-  g.add(carne, piel, api.sombraBlob(0.62, -0.13));
+  g.add(api.sombraBlob(0.62, -0.13));
 
   /* los cristales de sal, que son el trabajo del nivel */
   const sal = [];
   for (let i = 0; i < SAL_POR_PRESA; i++) {
-    const s = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.014, 0.03), matSal);
+    const s = api.pieza('grano-sal');
     const a = Math.random() * Math.PI * 2, d = Math.random();
     s.position.set(Math.cos(a) * d * 0.23, 0.068, Math.sin(a) * d * 0.15);
     s.rotation.set(Math.random(), Math.random(), Math.random());
-    s.userData.ignorar = true;
     g.add(s);
     sal.push(s);
   }
 
-  return { obj: g, carne, sal, limpia: false, tendida: false, x, z };
+  return { obj: g, carne: api.parte(g, 'carne'), sal, limpia: false, tendida: false, x, z };
 }
 
 function quitarSal(rec) {
@@ -102,7 +77,7 @@ function quitarSal(rec) {
   api.sfx('frotar'); api.buzz(5);
   if (!rec.sal.length) {
     rec.limpia = true;
-    rec.carne.material = matCarneLimpia;
+    rec.carne.material.color.set(CARNE_LIMPIA);
     api.sfx('pop2'); api.buzz([10, 20]);
     if (!avisoLimpia) {
       avisoLimpia = true;
@@ -123,9 +98,8 @@ function tender(rec) {
   rec.obj.userData.colgada = { x: hueco, fase: Math.random() * 6 };
 
   /* la pinza de ropa */
-  const pinza = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.11, 0.035), matCuerda);
+  const pinza = api.pieza('pinza');
   pinza.position.set(0, 0, 0.16);
-  pinza.userData.ignorar = true;
   rec.obj.add(pinza);
 
   api.sfx('bien'); api.buzz([15, 25]);
@@ -147,7 +121,7 @@ function soltarMosca() {
     && !moscas.some(m => m.presa === p && m.estado === 'posada'));
   if (!candidatas.length) return;
   const presa = candidatas[Math.floor(Math.random() * candidatas.length)];
-  const m = nuevaMosca(THREE, api, { escala: 1.1 });
+  const m = nuevaMosca(THREE, { escala: 1.1 });
   const nodo = new THREE.Group();
   nodo.userData = { tipo: 'mosca' };
   nodo.add(m.obj);
@@ -177,28 +151,23 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
-    construirMateriales();
     presas = []; moscas = []; hechos = 0; terminado = false;
     modo = null; cargada = null; frotando = null; ultimoPunto = null;
     tMosca = 4.5; avisoLimpia = false;
     huecosCordel = [-1.0, -0.5, 0, 0.5, 1.0];
 
-    const tabla = new THREE.Mesh(
-      new THREE.BoxGeometry(3.1, 0.1, 1.4),
-      new THREE.MeshLambertMaterial({ color: '#ecc287' })
-    );
+    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: 1.4 });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);
 
     /* el cordel donde se tiende, al fondo: arrastrar "hacia arriba"
        en la pantalla es ir hacia allá en el mundo */
-    const cuerda = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 2.9, 8), matCuerda);
-    cuerda.rotation.z = Math.PI / 2;
+    const cuerda = api.pieza('cordel', { largo: 2.9 });
     cuerda.position.set(0, CORDEL_Y(), CORDEL_Z);
     raiz.add(cuerda);
     [-1.45, 1.45].forEach(x => {
-      const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 1.05, 8), matCuerda);
+      const poste = api.pieza('poste');
       poste.position.set(x, api.MESA_Y + 0.52, CORDEL_Z);
       raiz.add(poste);
     });

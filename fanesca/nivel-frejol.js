@@ -18,11 +18,11 @@
    ============================================================ */
 
 import { nuevaPlaga } from './plaga.js';
+import { POR_VAINA } from './modelos/frejol.js';
 
 let THREE, raiz, api;
 
 const VAINAS = 5;
-const POR_VAINA = 6;
 const TABLA_Z = 0.3;
 const APRIETE = 0.62;            /* segundos de presión para que reviente */
 const CON_GORGOJO = 2;
@@ -38,57 +38,22 @@ let apretando = null;            /* { rec, t0 } */
 let pellizcando = false;
 let terminado = false;
 
-let matVaina, matVainaInt, matGrano, matMota;
-
-function construirMateriales() {
-  matVaina = new THREE.MeshLambertMaterial({ color: '#d9c27a' });
-  matVainaInt = new THREE.MeshLambertMaterial({ color: '#f2e7c0', side: THREE.DoubleSide });
-  matGrano = new THREE.MeshLambertMaterial({ color: '#c9526a' });
-  matMota = new THREE.MeshLambertMaterial({ color: '#8e3550' });
-}
+/* La vaina moteada y el grano vino viven en modelos/frejol.js. */
 
 function nuevaVaina(x, z, conGorgojo) {
-  const v = new THREE.Group();
+  const v = api.pieza('vaina-frejol');
   v.position.set(x, api.MESA_Y + 0.2, z);
   v.rotation.y = (Math.random() - 0.5) * 0.8;
   v.userData = { tipo: 'vaina' };
-
-  /* la vaina moteada del fréjol: cuerpo claro con manchas vinos */
-  const cuerpo = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.62, 6, 14), matVaina);
-  cuerpo.rotation.z = Math.PI / 2;
-  v.add(cuerpo);
-  for (let i = 0; i < 7; i++) {
-    const mota = new THREE.Mesh(new THREE.SphereGeometry(0.03 + Math.random() * 0.02, 7, 5), matMota);
-    const a = Math.random() * Math.PI * 2;
-    mota.position.set((Math.random() - 0.5) * 0.68, Math.sin(a) * 0.09, Math.cos(a) * 0.09);
-    mota.scale.set(1.4, 0.5, 1);
-    mota.userData.ignorar = true;
-    v.add(mota);
-  }
-  /* los bultos de los granos, que se adivinan por fuera */
-  for (let i = 0; i < POR_VAINA; i++) {
-    const b = new THREE.Mesh(new THREE.SphereGeometry(0.062, 8, 6), matVaina);
-    b.position.set((i - (POR_VAINA - 1) / 2) * 0.128, 0.055, 0);
-    b.scale.set(0.9, 0.5, 0.9);
-    b.userData.ignorar = true;
-    v.add(b);
-  }
   v.add(api.sombraBlob(0.6, -0.19));
-
   return { obj: v, conGorgojo, reventada: false, x, z };
 }
 
 function nuevoGrano(x, z) {
-  const g = new THREE.Group();
+  const g = api.pieza('grano-frejol');
   g.position.set(x, api.MESA_Y + 0.14, z);
   g.rotation.y = Math.random() * Math.PI;
   g.userData = { tipo: 'grano' };
-  const m = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 9), matGrano);
-  m.scale.set(0.062, 0.05, 0.052);
-  const raya = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.008, 0.01), matMota);
-  raya.position.set(0, 0.048, 0.04);
-  raya.userData.ignorar = true;
-  g.add(m, raya);
   granosGrupo.add(g);
   granos.push(g);
   return g;
@@ -162,13 +127,9 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
-    construirMateriales();
     vainas = []; granos = []; hechos = 0; terminado = false; modo = null; apretando = null; pellizcando = false;
 
-    const tabla = new THREE.Mesh(
-      new THREE.BoxGeometry(3.1, 0.1, 1.7),
-      new THREE.MeshLambertMaterial({ color: '#ecc287' })
-    );
+    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: 1.7 });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);
