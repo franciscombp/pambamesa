@@ -14,13 +14,17 @@
 
 import { registrar } from './registro.js';
 import { COMIDA, mate } from './paleta.js';
+import { abollar, formaVariada } from './organico.js';
 
-registrar('chocho', (THREE) => {
+registrar('chocho', (THREE, opts = {}) => {
   const g = new THREE.Group();
   g.name = 'chocho';
 
-  /* la pepa: amarilla, achatada, con su ombliguito */
-  const pepa = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 9), mate(THREE, COMIDA.chocho_pepa));
+  /* la pepa: amarilla, achatada, con su ombliguito — y con la forma
+     de moneda irregular que tiene el chocho de verdad */
+  const geoP = formaVariada('chocho-pepa', 4, opts.variante || 0, (k) =>
+    abollar(new THREE.SphereGeometry(1, 12, 9), { fuerza: 0.1, escala: 2.4, semilla: k + 7 }));
+  const pepa = new THREE.Mesh(geoP, mate(THREE, COMIDA.chocho_pepa));
   pepa.scale.set(0.1, 0.062, 0.088);
   pepa.name = 'pepa';
 

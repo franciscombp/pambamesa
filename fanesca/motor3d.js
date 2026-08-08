@@ -73,6 +73,17 @@ import { sombraBlob as _sombraBlob, ojitos as _ojitos } from './modelos/utileria
 export const MESA_Y = 0.96;                              /* cara del mesón */
 export const BATEA = new THREE.Vector3(0.98, MESA_Y, 1.42);    /* lo bueno va aquí */
 export const COMPOSTA = new THREE.Vector3(-1.0, MESA_Y, 1.44);  /* cáscaras y bichos */
+export const RADIO_CUENCO = 0.44;
+
+/* Hasta dónde puede acercarse una tabla de picar sin meterse dentro
+   de los cuencos. Se calcula aquí porque los cuencos son del motor:
+   así, si mañana la batea se corre, las tablas se corren solas.
+
+   No es una manía: la tabla medía 3.1 × 1.7 y atravesaba los DOS
+   cuencos en todos los niveles — se veía la madera clara cruzando
+   por dentro del barro, que es exactamente el detalle que delata que
+   una escena está armada con cajas y no cocinada. */
+export const FRENTE_TABLA = Math.min(BATEA.z, COMPOSTA.z) - RADIO_CUENCO - 0.06;
 const UMBRAL_ARRASTRE = 8;                               /* px antes de considerar arrastre */
 
 let renderer, scene, camera, clock, raf = null, activo = false;
@@ -195,6 +206,9 @@ export function chispas(pos, color = '#ffd24d', cuantas = 10, escala = 1) {
   const tex = texturaChispa();
   for (let i = 0; i < cuantas; i++) {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, color }));
+    /* todos los Sprite de three comparten UNA geometría interna: si al
+       apagarse una chispa la tiráramos, las tirábamos todas */
+    s.geometry.userData.compartida = true;
     s.position.copy(pos);
     s.scale.setScalar((0.08 + Math.random() * 0.1) * escala);
     const a = Math.random() * Math.PI * 2;
@@ -236,7 +250,14 @@ function pasoVuelos() {
     if (t >= 1) { listos.push(v); return false; }
     return true;
   });
-  listos.forEach(v => { scene.remove(v.obj); if (v.fin) v.fin(); });
+  listos.forEach(v => {
+    scene.remove(v.obj);
+    if (v.fin) v.fin();
+    /* aterrizó y nadie lo volvió a colgar: se descarta aquí y no al
+       cambiar de nivel. Son ciento veintiséis granos por choclo — si
+       esperan al final de la partida, esperan de más */
+    if (!v.obj.parent) tirar(v.obj);
+  });
 }
 
 export function sacudir(fuerza = 1) { sacudida = { t: 0, fuerza }; }
@@ -438,6 +459,31 @@ function onUp(e) {
 
 /* ---------- API pública ---------- */
 
+/* ---------- tirar lo que ya no se usa ----------
+   Quitar una malla de la escena NO libera nada: la geometría y el
+   material siguen ocupando memoria de video hasta que alguien los
+   tira a mano. Como cada nivel arma sus mallas nuevas, sin esto la
+   cuenta sube cada vez que se cambia de ingrediente y nunca baja —
+   se nota en un teléfono a los pocos niveles.
+
+   Dos cosas NO se tiran:
+     · lo marcado `userData.compartida` — las formas del almacén de
+       organico.js y las plantillas .glb, que son de todos y viven
+       más que la partida;
+     · las texturas — las tres que hay (la sombra, la chispa, el
+       azulejo) se hacen una vez y se reparten. */
+function tirar(obj) {
+  obj.traverse(o => {
+    const g = o.geometry;
+    if (g && !(g.userData && g.userData.compartida)) g.dispose();
+    const m = o.material;
+    if (!m) return;
+    (Array.isArray(m) ? m : [m]).forEach(x => {
+      if (x && !(x.userData && x.userData.compartida)) x.dispose();
+    });
+  });
+}
+
 export const Motor = {
   init(cont, capaDestello) {
     contenedor = cont;
@@ -447,6 +493,21 @@ export const Motor = {
     } catch (e) { return false; }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    /* El mapeo de tonos es la mitad del "render de arcilla". Sin él
+       (NoToneMapping, el de fábrica) los claros se recortan de golpe
+       en blanco puro y los colores saturados se van a neón: eso es
+       lo que hace que un modelo se vea de plástico por más mate que
+       sea el material. ACES comprime los altos con una curva suave,
+       así el grano iluminado se apaga en un amarillo cremoso en vez
+       de reventarse, y el conjunto se lee como plastilina bien
+       fotografiada.
+
+       La exposición se calibró a ojo comparando cuatro combinaciones
+       de exposición y luces sobre la misma escena: por encima de ~1.1
+       los colores se lavan (el azulejo pierde el azul y la madera se
+       vuelve beige) y por debajo de ~0.9 el fondo se apaga. */
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.98;
     renderer.domElement.style.touchAction = 'none';
     cont.appendChild(renderer.domElement);
 
@@ -522,22 +583,35 @@ export const Motor = {
     return nivel;
   },
 
+  /* El orden importa: PRIMERO se barre y se tira lo que hay colgado,
+     DESPUÉS se avisa al nivel. Al revés, un nivel que en su destruir()
+     descuelga algo suyo (la plaga descuelga su grupo de bichos) lo
+     saca de la escena antes de que el motor pase a tirarlo, y esas
+     geometrías se quedan en la memoria de video sin dueño ni forma de
+     alcanzarlas. Como todos los destruir() de aquí solo sueltan
+     referencias, barrer antes no le quita nada a nadie. */
   descargar() {
-    if (nivel && nivel.destruir) { try { nivel.destruir(); } catch (e) {} }
-    nivel = null;
     gesto = null;
     pellizco = null;
     punteros.clear();
     tweens = [];
-    vuelos.forEach(v => scene.remove(v.obj));
+    vuelos.forEach(v => { scene.remove(v.obj); tirar(v.obj); });
     vuelos = [];
-    particulas.forEach(p => scene.remove(p));
+    particulas.forEach(p => { scene.remove(p); tirar(p); });
     particulas = [];
     if (raiz) {
-      while (raiz.children.length) raiz.remove(raiz.children[0]);
+      while (raiz.children.length) {
+        const o = raiz.children[0];
+        raiz.remove(o);
+        tirar(o);
+      }
     }
     /* los vuelos reparentan al mundo: barre lo que quedó suelto */
-    scene.children.slice().forEach(o => { if (o.userData && o.userData.suelto) scene.remove(o); });
+    scene.children.slice().forEach(o => {
+      if (o.userData && o.userData.suelto) { scene.remove(o); tirar(o); }
+    });
+    if (nivel && nivel.destruir) { try { nivel.destruir(); } catch (e) {} }
+    nivel = null;
   },
 
   /* ¿qué hay bajo este punto de la pantalla? Devuelve el userData de
@@ -572,6 +646,9 @@ export const Motor = {
   get escena() { return scene; },
   get camara() { return camera; },
   get lienzo() { return renderer ? renderer.domElement : null; },
+  /* el pintor, para calibrar luz y exposición desde la consola sin
+     recargar: `Fanesca.Motor.pintor.toneMappingExposure = 0.9` */
+  get pintor() { return renderer; },
   tween, chispas, volarA, sacudir, destello, raycast, puntoEnPlano,
   llenarRecipiente, sombraBlob, ojitos,
   /* el catálogo de modelos, para que un nivel pida sus piezas sin
@@ -580,7 +657,7 @@ export const Motor = {
   parte,
   /* la espera de los .glb, para que nadie monte un nivel a medias */
   modelosListos: () => modelosListos,
-  MESA_Y, BATEA, COMPOSTA,
+  MESA_Y, BATEA, COMPOSTA, FRENTE_TABLA,
 };
 
 function bucle() {
@@ -602,7 +679,7 @@ function bucle() {
 
   particulas = particulas.filter(s => {
     const edad = t - s.userData.nace;
-    if (edad > s.userData.vida) { scene.remove(s); return false; }
+    if (edad > s.userData.vida) { scene.remove(s); s.material.dispose(); return false; }
     s.userData.vel.y -= 4.2 * dt;
     s.position.addScaledVector(s.userData.vel, dt);
     s.material.opacity = 1 - edad / s.userData.vida;

@@ -26,7 +26,12 @@ let THREE, raiz, api;
 const FILAS = 4;
 const COLS = 6;
 const TOTAL = FILAS * COLS;
-const TABLA_Z = 0.3;
+/* La tabla no se planta en un z puesto a ojo: `api.FRENTE_TABLA` es
+   hasta dónde puede llegar sin meterse dentro de los cuencos, y de
+   ahí se resta media tabla. Si mañana la batea se mueve, la tabla se
+   corre sola. */
+const HONDO_TABLA = 1.7;
+let TABLA_Z = 0;                 /* se fija en construir(), desde api */
 const PASO_X = 0.44, PASO_Z = 0.34;
 const CON_GORGOJO = 2;
 const RADIO_DEDO = 0.16;         /* el dedo tapa más que un píxel */
@@ -42,8 +47,8 @@ let terminado = false;
 /* La forma del chocho vive en modelos/chochos.js: piel traslúcida
    con la pepa amarilla adentro. Aquí solo se pide y se coloca. */
 
-function nuevoChocho(x, z) {
-  const g = api.pieza('chocho');
+function nuevoChocho(x, z, i) {
+  const g = api.pieza('chocho', { variante: i });
   g.position.set(x, api.MESA_Y + 0.16, z);
   g.rotation.y = Math.random() * Math.PI;
   g.userData = { tipo: 'chocho' };
@@ -107,9 +112,10 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
+    TABLA_Z = api.FRENTE_TABLA - HONDO_TABLA / 2;
     chochos = []; hechos = 0; terminado = false; modo = null; pellizcando = false;
 
-    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: 1.7 });
+    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: HONDO_TABLA });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);
@@ -126,7 +132,7 @@ export default {
       for (let c = 0; c < COLS; c++) {
         const x = (c - (COLS - 1) / 2) * PASO_X + (f % 2 ? PASO_X * 0.22 : 0);
         const z = TABLA_Z + (f - (FILAS - 1) / 2) * PASO_Z;
-        const rec = nuevoChocho(x, z);
+        const rec = nuevoChocho(x, z, f * COLS + c);
         chochosGrupo.add(rec.obj);
         chochos.push(rec);
       }

@@ -17,6 +17,7 @@
 
 import { registrar } from './registro.js';
 import { COMIDA, mate } from './paleta.js';
+import { abollar, forma } from './organico.js';
 
 /* el color de la carne ya desalada: lo pide el nivel para el cambio */
 export const CARNE_SALADA = COMIDA.bacalao_carne;
@@ -26,7 +27,11 @@ registrar('presa-bacalao', (THREE) => {
   const g = new THREE.Group();
   g.name = 'presa';
 
-  const carne = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), mate(THREE, CARNE_SALADA));
+  /* la presa es un trozo cortado, no una pastilla: se abolla fuerte
+     para que se lea desgarrada */
+  const geoCarne = forma('bacalao-carne', () =>
+    abollar(new THREE.SphereGeometry(1, 14, 10), { fuerza: 0.1, escala: 2.8, semilla: 31 }));
+  const carne = new THREE.Mesh(geoCarne, mate(THREE, CARNE_SALADA));
   carne.scale.set(0.31, 0.07, 0.2);
   carne.name = 'carne';
 

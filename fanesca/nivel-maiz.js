@@ -40,7 +40,7 @@ import { ARRUINADO } from './arruinado.js';
 import { AMAGUANA_MAZORCA } from './historia.js';
 import {
   A, P, R, PASO, LARGO, perfil, uDe, posicionDe,
-  MADUREZ, HOJAS, LARGO_HOJA, BASE_HOJA,
+  MADUREZ, HOJAS, LARGO_HOJA, BASE_HOJA, NUDOS,
 } from './modelos/choclo.js';
 
 let THREE, raiz, api;
@@ -61,6 +61,11 @@ const GUSANOS_POR = [1, 2];/* bichos escondidos en cada choclo */
 const GUSANO_VEL = 0.52;   /* posiciones por segundo que BAJA el bicho */
 /* px/s: más rápido que esto es "con fuerza", y el tierno lo cobra */
 const FUERZA = 1600;
+/* El jalón de la hoja, en píxeles. Los primeros no mueven nada: la
+   hoja está pegada y hay que vencerla, y ese arranque duro es la
+   mitad de lo que hace que se sienta fibrosa en vez de floja. */
+const RESISTE_HOJA = 14;
+const SUELTA_HOJA = 105;
 /* El bicho sale justo del hueco que acabas de abrir, muchas veces con
    el dedo todavía encima. Sin este respiro, destaparlo sería perder
    sin poder reaccionar. */
@@ -96,6 +101,7 @@ const CORRIDA_PARA_LA_CITA = 7;
 let reventados = 0, avisadoReventon = false;
 let compostaN = 0;         /* cuánto ha caído a la composta (para pintarla) */
 let velT = 0, velX = 0, velY = 0;   /* medir la fuerza del dedo */
+let ultimoRasgue = 0;               /* para espaciar el sonido de rasgado */
 let transToken = 0;
 
 /* ---------- las piezas ----------
@@ -130,7 +136,30 @@ function nuevaHoja(i) {
   const mesh = api.pieza('hoja-choclo', { indice: i });
   mesh.userData = { tipo: 'hoja', idx: i };
   pivot.add(mesh);
-  return { pivot, mesh, th, ida: false };
+  /* los eslabones de la cadena, de la base a la punta: doblarlos en
+     cascada es lo que hace que la hoja se CURVE al pelarse en vez de
+     abrirse como una tapa */
+  const nudos = [];
+  for (let n = 0; n < NUDOS; n++) {
+    const nd = api.parte(mesh, 'nudo' + n);
+    if (nd) nudos.push(nd);
+  }
+  return { pivot, mesh, nudos, th, ida: false, abierta: 0 };
+}
+
+/* Cuánto se abre cada eslabón, de 0 (cerrada) a 1 (colgando).
+   El de la base abre menos que el de la punta: sumados dan la curva
+   de una hoja pelada de verdad, más cerrada abajo y volteada arriba.
+
+   Suman ~2.7 radianes, que son unos 155°: la hoja no se queda
+   apuntando hacia afuera —así se acostaba sobre la mesa como una
+   lona verde y tapaba media cocina— sino que se voltea y CUELGA
+   junto al choclo, que es como queda una hoja jalada hacia abajo. */
+const CURVA_HOJA = [1.15, 0.85, 0.70];  /* radianes por nudo, a tope */
+
+function doblarHoja(h, k) {
+  h.abierta = k;
+  h.nudos.forEach((nd, n) => { nd.rotation.x = (CURVA_HOJA[n] || 0.5) * k; });
 }
 
 function construirPelos() {
@@ -142,7 +171,7 @@ function construirPelos() {
 /* ---------- el gusanito ---------- */
 
 function nuevoBicho(a, p) {
-  const g = nuevoGusano(THREE, api, { eje: 'y' });
+  const g = nuevoGusano(THREE, { eje: 'y' });
   g.obj.userData = { tipo: 'gusano' };
   return { obj: g.obj, bicho: g, aro: g.aro, a, p, estado: 'oculto', t0: 0 };
 }
@@ -404,22 +433,27 @@ function intentarGrano(raizGrano, esArrastre) {
 
 function hojasQuedan() { return hojas.some(h => !h.ida); }
 
+/* La hoja cedió del todo. NO vuela a la composta: se queda colgando
+   abierta, como queda un choclo a medio pelar de verdad — y como se
+   ve en cualquier foto de choclo. La envoltura entera se va después,
+   de un tirón, junto con los pelos. */
 function pelarHoja(h) {
   if (h.ida) return;
   h.ida = true;
   h.mesh.userData.tipo = null;
+  /* pelada ya no intercepta el dedo: si no, taparía los granos de
+     abajo justo cuando toca empezar a desgranar */
+  h.mesh.traverse(o => { o.userData.ignorar = true; });
   api.sfx('crack'); api.buzz(10);
   const mundo = new THREE.Vector3();
   h.mesh.getWorldPosition(mundo);
   api.chispas(mundo.setY(mundo.y + 0.4), '#9dbb70', 5, 0.6);
-  /* la hoja se dobla hacia afuera desde la base, y de ahí vuela */
-  api.tween(h.pivot.rotation, 'x', 2.15, 0.26, undefined, () => {
-    api.volarA(h.pivot, api.COMPOSTA.clone().setY(api.MESA_Y + 0.16), { dur: 0.5, alto: 0.35 });
-    compostaN++; pintarComposta();
-  });
+  /* el último tramo lo termina sola, con un rebotito de hoja fibrosa */
+  api.tween({ get v() { return h.abierta; }, set v(x) { doblarHoja(h, x); } }, 'v', 1.12, 0.16,
+    undefined, () => api.tween({ get v() { return h.abierta; }, set v(x) { doblarHoja(h, x); } }, 'v', 1, 0.22));
   if (!hojasQuedan()) {
     api.sfx('bien');
-    api.pista('Ahora los <b>pelos</b>: un jalón y fuera.', 3600);
+    api.pista('Ahora los <b>pelos</b>: un jalón y se va toda la envoltura.', 3600);
   }
 }
 
@@ -428,8 +462,17 @@ function intentarPelos() {
   if (hojasQuedan()) { api.pista('Primero las hojas de afuera.', 2200); return; }
   pelos.userData.tipo = null;
   api.volarA(pelos, api.COMPOSTA.clone().setY(api.MESA_Y + 0.2), { dur: 0.5, alto: 0.5 });
-  compostaN++; pintarComposta();
   pelos = null;
+  /* Y con ellos se va la envoltura entera, de un tirón. Las hojas
+     peladas se quedaron colgando —así queda un choclo a medio pelar
+     de verdad— y este es el momento en que se arrancan todas juntas,
+     que es también como se hace. */
+  if (hojasGrupo) {
+    hojasGrupo.userData.escalaBase = 1;
+    api.volarA(hojasGrupo, api.COMPOSTA.clone().setY(api.MESA_Y + 0.16), { dur: 0.55, alto: 0.45 });
+    hojasGrupo = null;
+  }
+  compostaN += 2; pintarComposta();
   api.sfx('pop2'); api.buzz([8, 10]);
   fase = 'desgranar';
   if (api.rotulo) api.rotulo(`Desgranar · choclo ${choclo + 1} de ${CHOCLOS}`);
@@ -644,15 +687,31 @@ export default {
     }
     if (modo === 'hoja') {
       if (!hojaActiva || hojaActiva.ida) return;
-      /* jalar hacia abajo pela; de lado, el gesto se vuelve girar */
-      if (info.dy > 58 && info.dy > Math.abs(info.dx) * 0.8) {
-        pelarHoja(hojaActiva);
-        hojaActiva = null;
-        modo = null;
-      } else if (Math.abs(info.dx) > 55 && Math.abs(info.dx) > Math.abs(info.dy)) {
+      /* de lado, el gesto se vuelve girar: la hoja se vuelve a cerrar */
+      if (Math.abs(info.dx) > 55 && Math.abs(info.dx) > Math.abs(info.dy)) {
+        api.tween({ get v() { return hojaActiva.abierta; },
+                    set v(x) { doblarHoja(hojaActiva, x); } }, 'v', 0, 0.18);
         modo = 'girar';
         giro0 = giro.rotation.y; dx0 = info.dx;
         hojaActiva = null;
+        return;
+      }
+      /* LA HOJA SIGUE AL DEDO. Antes esto era un umbral: 58 px y
+         *chas*, la hoja saltaba sola a un ángulo fijo. Se sentía a
+         botón. Ahora se va abriendo con el jalón, y hasta que no la
+         sueltas del todo puede volver atrás — que es lo que hace una
+         hoja de verdad si aflojas a mitad de camino. */
+      const k = Math.max(0, Math.min(1, (info.dy - RESISTE_HOJA) / (SUELTA_HOJA - RESISTE_HOJA)));
+      doblarHoja(hojaActiva, k);
+      /* el rasgado suena mientras avanza, no al final */
+      if (k > 0 && k < 1 && api.reloj - ultimoRasgue > 0.075) {
+        ultimoRasgue = api.reloj;
+        api.sfx('frotar');
+      }
+      if (k >= 1) {
+        pelarHoja(hojaActiva);
+        hojaActiva = null;
+        modo = null;
       }
       return;
     }
@@ -704,6 +763,11 @@ export default {
         api.aviso('🪱 Se te resbaló. Otra vez: arrástralo hasta la composta');
       }
       return;
+    }
+    /* la soltaste a medio jalar: la hoja se cierra sola, fibrosa */
+    if (modo === 'hoja' && hojaActiva && !hojaActiva.ida) {
+      const h = hojaActiva;
+      api.tween({ get v() { return h.abierta; }, set v(x) { doblarHoja(h, x); } }, 'v', 0, 0.28);
     }
     modo = null;
     hojaActiva = null;

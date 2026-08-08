@@ -226,11 +226,34 @@ export function construirCocina(THREE, MESA_Y) {
     vapores.push(p);
   }
 
-  /* la luz: sol de ventana entrando por la izquierda */
-  grupo.add(new THREE.HemisphereLight('#fff6e6', token('--madera-300', '#d07c3f'), 1.2));
-  const sol = new THREE.DirectionalLight('#fff2d8', 1.45);
+  /* ---------- la luz ----------
+     Tres luces, y ninguna fuerte. El error fácil es una sola
+     direccional potente: da un lado quemado y otro casi negro, y eso
+     —más que el material— es lo que hace que todo parezca plástico
+     duro. Un render de arcilla está iluminado como un bodegón de
+     estudio: una luz principal suave, mucho relleno para que la
+     sombra sea CLARA y no negra, y un contraluz que despega las
+     cosas del fondo. */
+
+  /* el cielo de la cocina: relleno envolvente, la que más aporta */
+  grupo.add(new THREE.HemisphereLight('#fff8ec', token('--madera-400', '#b4632c'), 1.55));
+
+  /* la principal: sol de ventana por la izquierda, suave */
+  const sol = new THREE.DirectionalLight('#fff4e2', 1.3);
   sol.position.set(-2.5, 5.5, 4);
   grupo.add(sol);
+
+  /* el relleno del otro lado: sin esto la cara derecha se apaga */
+  const relleno = new THREE.DirectionalLight('#e8f0ff', 0.34);
+  relleno.position.set(3.5, 2.2, 2.5);
+  grupo.add(relleno);
+
+  /* el contraluz: un filo de luz por detrás que separa el ingrediente
+     del azulejo del fondo, como el borde claro de la refri en una
+     foto de estudio */
+  const contra = new THREE.DirectionalLight('#ffffff', 0.4);
+  contra.position.set(0.5, 3.5, -4);
+  grupo.add(contra);
 
   return { grupo, vapores };
 }

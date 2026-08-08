@@ -14,10 +14,23 @@
    guardada — que es justo lo que hace que funcione sin conexión.
    ============================================================ */
 
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 
 /* la más reciente primero */
 const NOVEDADES = [
+  {
+    v: '1.3.0',
+    fecha: '2026-08-08',
+    titulo: 'Menos plástico, más plastilina',
+    cambios: [
+      'Nada en la mesa es ya una esfera perfecta: los granos, las lentejas, los chochos y las vainas salen amasados, cada uno con su forma. El zapallo estrena gajos y por fin se ve zapallo y no pan.',
+      'El choclo se ve como se ve un choclo: los granos van al tresbolillo (encajados, no en cuadrícula), las hojas tienen nervadura y se cierran en punta, y el penacho de pelos se vence en vez de apuntar como palillos.',
+      'Las hojas peladas cuelgan junto al choclo en vez de acostarse sobre la mesa tapando los cuencos.',
+      'Arreglado: la tabla de picar atravesaba la batea y la composta en todos los niveles.',
+      'La cocina se ilumina como una foto de plastilina: luz suave, sin brillos de juguete y sin claros quemados.',
+      'Cambiar de nivel ya no deja modelos viejos ocupando memoria — importa en teléfonos, después de un rato jugando.',
+    ],
+  },
   {
     v: '1.2.0',
     fecha: '2026-08-08',

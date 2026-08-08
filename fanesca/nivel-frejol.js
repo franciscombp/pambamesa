@@ -23,7 +23,12 @@ import { POR_VAINA } from './modelos/frejol.js';
 let THREE, raiz, api;
 
 const VAINAS = 5;
-const TABLA_Z = 0.3;
+/* La tabla no se planta en un z puesto a ojo: `api.FRENTE_TABLA` es
+   hasta dónde puede llegar sin meterse dentro de los cuencos, y de
+   ahí se resta media tabla. Si mañana la batea se mueve, la tabla se
+   corre sola. */
+const HONDO_TABLA = 1.7;
+let TABLA_Z = 0;                 /* se fija en construir(), desde api */
 const APRIETE = 0.62;            /* segundos de presión para que reviente */
 const CON_GORGOJO = 2;
 const RADIO_BARRIDO = 0.17;      /* qué tan gordo es el dedo, en el mundo */
@@ -50,7 +55,7 @@ function nuevaVaina(x, z, conGorgojo) {
 }
 
 function nuevoGrano(x, z) {
-  const g = api.pieza('grano-frejol');
+  const g = api.pieza('grano-frejol', { variante: granos.length });
   g.position.set(x, api.MESA_Y + 0.14, z);
   g.rotation.y = Math.random() * Math.PI;
   g.userData = { tipo: 'grano' };
@@ -127,9 +132,10 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
+    TABLA_Z = api.FRENTE_TABLA - HONDO_TABLA / 2;
     vainas = []; granos = []; hechos = 0; terminado = false; modo = null; apretando = null; pellizcando = false;
 
-    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: 1.7 });
+    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: HONDO_TABLA });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);

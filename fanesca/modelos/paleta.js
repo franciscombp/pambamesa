@@ -106,10 +106,18 @@ export const COMIDA = {
 export const mate = (THREE, color, opts = {}) =>
   new THREE.MeshLambertMaterial({ color, ...opts });
 
-/* brillante: el grano tierno reluce, y ese brillito es la mitad de
-   las ganas de reventarlo */
+/* Apenas satinado: el grano tierno tiene humedad, pero NO es
+   plástico.
+
+   Aquí se pasó de rosca una vez y vale dejarlo escrito: buscando que
+   se viera jugoso se subió el shininess a 70 con un specular claro, y
+   el resultado fue justo lo contrario de apetecible — un reflejo
+   chico y duro que grita juguete. La comida en render de arcilla se
+   ve rica por la LUZ y la forma, no por el brillo: casi mate
+   (shininess 8) y con el specular oscuro y desaturado, que solo
+   marca el volumen del grano sin ponerle un punto blanco encima. */
 export const brillante = (THREE, color, opts = {}) =>
-  new THREE.MeshPhongMaterial({ color, shininess: 24, specular: '#5c4a12', ...opts });
+  new THREE.MeshPhongMaterial({ color, shininess: 8, specular: '#3a3226', ...opts });
 
 /* un material desde un token del sistema */
 export const mateToken = (THREE, nombre, respaldo, opts = {}) =>

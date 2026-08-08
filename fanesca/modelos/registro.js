@@ -73,9 +73,16 @@ export function pieza(id, THREE, opts = {}) {
     /* el clon comparte materiales con la plantilla: si el juego va a
        cambiarle el color a una parte (el bacalao al desalarse), tiene
        que ser SU material, no el de todas las copias */
-    if (opts.materialesPropios !== false) {
-      copia.traverse(o => { if (o.material) o.material = o.material.clone(); });
-    }
+    const propios = opts.materialesPropios !== false;
+    copia.traverse(o => {
+      /* la geometría SÍ se comparte con la plantilla, siempre: hay que
+         marcarla para que al descargar el nivel el motor no la tire y
+         deje al .glb sin malla en la siguiente partida */
+      if (o.geometry) o.geometry.userData.compartida = true;
+      if (!o.material) return;
+      if (propios) o.material = o.material.clone();
+      else o.material.userData.compartida = true;
+    });
     return copia;
   }
   const hace = constructores.get(id);

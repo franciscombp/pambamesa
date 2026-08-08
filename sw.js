@@ -58,6 +58,7 @@ const PRECACHE = [
   './fanesca/modelos/index.js',
   './fanesca/modelos/registro.js',
   './fanesca/modelos/paleta.js',
+  './fanesca/modelos/organico.js',
   './fanesca/modelos/utileria.js',
   './fanesca/modelos/cocina.js',
   './fanesca/modelos/bichos.js',

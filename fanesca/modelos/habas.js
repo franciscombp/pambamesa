@@ -15,16 +15,21 @@
 
 import { registrar } from './registro.js';
 import { COMIDA, mate } from './paleta.js';
+import { abollar, curvar, formaVariada, forma } from './organico.js';
 
 export const POR_VAINA = 5;
 export const PASO_HABA = 0.168;
 
 /* media cáscara: un casquete alargado, hueco por dentro */
 function mediaVaina(THREE, arriba) {
-  const g = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 18, 10, 0, Math.PI * 2, arriba ? 0 : Math.PI / 2, Math.PI / 2),
-    mate(THREE, COMIDA.vaina_haba)
-  );
+  /* abollada a lo largo: la vaina real se marca donde va cada haba y
+     se hunde entre una y otra, nunca es un casquete liso */
+  const geoV = forma('media-vaina-haba:' + (arriba ? 'a' : 'b'), () =>
+    abollar(
+      new THREE.SphereGeometry(1, 18, 10, 0, Math.PI * 2, arriba ? 0 : Math.PI / 2, Math.PI / 2),
+      { fuerza: 0.05, escala: 3.4, semilla: arriba ? 1 : 2 },
+    ));
+  const g = new THREE.Mesh(geoV, mate(THREE, COMIDA.vaina_haba));
   g.scale.set(0.44, 0.13, 0.115);
   /* forro interior: la cáscara es una superficie, y sin esto la vaina
      abierta se vería hueca por dentro (las caras traseras se descartan) */
@@ -83,10 +88,17 @@ registrar('vaina-haba', (THREE) => {
   return v;
 });
 
-registrar('haba', (THREE) => {
+registrar('haba', (THREE, opts = {}) => {
   const h = new THREE.Group();
   h.name = 'haba';
-  const cuerpo = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 9), mate(THREE, COMIDA.haba));
+  /* el haba es de las más irregulares: arriñonada, con una cara más
+     hinchada que la otra y el ombligo hundido */
+  const geo = formaVariada('haba', 4, opts.variante || 0, (k) =>
+    curvar(
+      abollar(new THREE.SphereGeometry(1, 12, 9), { fuerza: 0.13, escala: 1.9, semilla: k + 3 }),
+      { eje: 'x', hacia: 'z', k: 0.18 },
+    ));
+  const cuerpo = new THREE.Mesh(geo, mate(THREE, COMIDA.haba));
   cuerpo.scale.set(0.068, 0.052, 0.06);
   cuerpo.name = 'cuerpo';
   const ombligo = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.008, 0.012), mate(THREE, COMIDA.haba_ombligo));

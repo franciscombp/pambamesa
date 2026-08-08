@@ -16,6 +16,7 @@
 
 import { registrar } from './registro.js';
 import { COMIDA, mate } from './paleta.js';
+import { abollar, gajos, forma } from './organico.js';
 
 export const N = 8;              /* tajadas */
 export const GRUESO = 0.29;      /* ancho de cada tajada */
@@ -28,8 +29,20 @@ registrar('tajada-zapallo', (THREE) => {
   /* medio cilindro tumbado: el zapallo partido a lo largo, cara abajo.
      Tres materiales porque el cilindro trae tres grupos: costado,
      tapa y fondo — el costado es la piel, las caras son pulpa. */
+  /* Los gajos del zapallo: la piel no es un cilindro liso, tiene
+     lomos que le dan la vuelta. Solo con ruido salía un pan; con
+     gajos regulares —ocho, para que la mitad de cilindro contenga
+     cuatro enteros y las caras de corte queden en cresta— se lee
+     zapallo desde la silueta. El ruido se queda encima, flojito,
+     para que ningún gajo sea idéntico al de al lado. */
+  const geo = forma('tajada-zapallo', () =>
+    abollar(
+      gajos(new THREE.CylinderGeometry(R, R, GRUESO * 0.97, 40, 2, false, 0, Math.PI),
+        { eje: 'y', n: 8, hondura: 0.14 }),
+      { fuerza: 0.012, escala: 4.2, semilla: 41 },
+    ));
   const g = new THREE.Mesh(
-    new THREE.CylinderGeometry(R, R, GRUESO * 0.97, 22, 1, false, 0, Math.PI),
+    geo,
     [
       mate(THREE, COMIDA.zapallo_piel),
       mate(THREE, COMIDA.zapallo_pulpa),

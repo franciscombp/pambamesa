@@ -23,7 +23,12 @@ let THREE, raiz, api;
 
 const FILAS = [-0.3, 0.3];                  /* dos hileras de vainas */
 const COLS = [-0.96, 0, 0.96];
-const TABLA_Z = 0.28;
+/* La tabla no se planta en un z puesto a ojo: `api.FRENTE_TABLA` es
+   hasta dónde puede llegar sin meterse dentro de los cuencos, y de
+   ahí se resta media tabla. Si mañana la batea se mueve, la tabla se
+   corre sola. */
+const HONDO_TABLA = 1.7;
+let TABLA_Z = 0;                 /* se fija en construir(), desde api */
 const CON_GUSANO = 2;                       /* cuántas vainas traen sorpresa */
 const ABRIR = 0.16;                         /* mundo que recorre el dedo para abrir la vaina */
 
@@ -52,7 +57,7 @@ function nuevaVaina(x, z, conGusano) {
      cuando la cáscara vacía se va a la composta, no queda nada suelto */
   const habas = [];
   for (let i = 0; i < POR_VAINA; i++) {
-    const h = api.pieza('haba');
+    const h = api.pieza('haba', { variante: i });
     h.position.set((i - (POR_VAINA - 1) / 2) * PASO_HABA, -0.008, 0);
     h.userData = { tipo: 'haba' };
     h.visible = false;
@@ -137,9 +142,10 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
+    TABLA_Z = api.FRENTE_TABLA - HONDO_TABLA / 2;
     vainas = []; hechos = 0; terminado = false; modo = null; ultimoPunto = null; pellizcando = false;
 
-    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: 1.7 });
+    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: HONDO_TABLA });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);

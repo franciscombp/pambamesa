@@ -27,7 +27,12 @@ const BUENAS = 46;
 const PIEDRAS = 7;
 const PICADOS = 5;
 const GORGOJOS = 2;
-const TABLA_Z = 0.3;
+/* La tabla no se planta en un z puesto a ojo: `api.FRENTE_TABLA` es
+   hasta dónde puede llegar sin meterse dentro de los cuencos, y de
+   ahí se resta media tabla. Si mañana la batea se mueve, la tabla se
+   corre sola. */
+const HONDO_TABLA = 1.7;
+let TABLA_Z = 0;                 /* se fija en construir(), desde api */
 const ANCHO = 1.36, HONDO = 0.62;
 const RADIO_DEDO = 0.1;          /* fino a propósito: aquí se apunta */
 const RADIO_BARRIDO = 0.2;
@@ -53,7 +58,7 @@ const TOTAL = () => SUCIAS() + BUENAS;
 const PIEZA_DE = { buena: 'lenteja', piedra: 'piedra', picado: 'lenteja-picada' };
 
 function nuevoGrano(clase, x, z) {
-  const g = api.pieza(PIEZA_DE[clase] || 'lenteja');
+  const g = api.pieza(PIEZA_DE[clase] || 'lenteja', { variante: granos.length });
   g.position.set(x, api.MESA_Y + 0.13, z);
   g.rotation.set(Math.random() * 0.4, Math.random() * Math.PI, Math.random() * 0.4);
   g.userData = { tipo: 'grano', clase };
@@ -157,10 +162,11 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
+    TABLA_Z = api.FRENTE_TABLA - HONDO_TABLA / 2;
     granos = []; sacados = 0; recogidas = 0; perdidas = 0;
     fase = 'escoger'; modo = null; pellizcando = false; terminado = false;
 
-    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: 1.7 });
+    const tabla = api.pieza('tabla', { ancho: 3.1, hondo: HONDO_TABLA });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);

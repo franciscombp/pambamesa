@@ -8,7 +8,7 @@
    cronometrarlos y celebrarlos.
    ============================================================ */
 
-import Motor, { MESA_Y, BATEA, COMPOSTA } from './motor3d.js';
+import Motor, { MESA_Y, BATEA, COMPOSTA, FRENTE_TABLA } from './motor3d.js';
 import { NIVELES, porId, cucharasDe, tiempoBonito } from './niveles.js';
 import { HISTORIA, TARJETAS, CIERRE, CACUANGO_PARAMO } from './historia.js';
 
@@ -305,7 +305,7 @@ function alerta(msg) {
 
 /* lo que un nivel puede pedirle al juego */
 const api = {
-  MESA_Y, BATEA, COMPOSTA,
+  MESA_Y, BATEA, COMPOSTA, FRENTE_TABLA,
   progreso(hechos, total) {
     hechosAhora = hechos; totalAhora = total || 1;
     const k = Math.max(0, Math.min(1, hechos / totalAhora));

@@ -23,11 +23,14 @@
 
 import { registrar } from './registro.js';
 import { COMIDA, mate } from './paleta.js';
+import { abollar, formaVariada } from './organico.js';
 
-registrar('lenteja', (THREE) => {
+registrar('lenteja', (THREE, opts = {}) => {
   const g = new THREE.Group();
   g.name = 'lenteja';
-  const m = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), mate(THREE, COMIDA.lenteja));
+  const geo = formaVariada('lenteja', 5, opts.variante || 0, (k) =>
+    abollar(new THREE.SphereGeometry(1, 10, 8), { fuerza: 0.09, escala: 2.3, semilla: k + 17 }));
+  const m = new THREE.Mesh(geo, mate(THREE, COMIDA.lenteja));
   m.scale.set(0.058, 0.024, 0.058);
   m.name = 'cuerpo';
   g.add(m);
@@ -45,10 +48,12 @@ registrar('piedra', (THREE) => {
   return g;
 });
 
-registrar('lenteja-picada', (THREE) => {
+registrar('lenteja-picada', (THREE, opts = {}) => {
   const g = new THREE.Group();
   g.name = 'picado';
-  const m = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), mate(THREE, COMIDA.lenteja_picada));
+  const geo = formaVariada('lenteja-picada', 4, opts.variante || 0, (k) =>
+    abollar(new THREE.SphereGeometry(1, 10, 8), { fuerza: 0.1, escala: 2.3, semilla: k + 23 }));
+  const m = new THREE.Mesh(geo, mate(THREE, COMIDA.lenteja_picada));
   m.scale.set(0.058, 0.026, 0.058);
   m.name = 'cuerpo';
   /* el agujero del bicho, que es lo que lo hace descartable */

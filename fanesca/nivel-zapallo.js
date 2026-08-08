@@ -22,7 +22,12 @@ import { N, GRUESO, R, xDeTajada, xDeFrontera } from './modelos/zapallo.js';
 
 let THREE, raiz, api;
 
-const TABLA_Z = 0.24;
+/* La tabla no se planta en un z puesto a ojo: `api.FRENTE_TABLA` es
+   hasta dónde puede llegar sin meterse dentro de los cuencos, y de
+   ahí se resta media tabla. Si mañana la batea se mueve, la tabla se
+   corre sola. */
+const HONDO_TABLA = 1.5;
+let TABLA_Z = 0;                 /* se fija en construir(), desde api */
 const TOL_X = 0.19;             /* cuánto puede desviarse el corte */
 const LARGO_MIN = 0.42;         /* profundidad mínima del trazo, en el mundo */
 const GUSANO_VEL = 0.055;       /* se pasea despacio: da tiempo a verlo */
@@ -131,10 +136,11 @@ export default {
 
   construir(ctx) {
     THREE = ctx.THREE; raiz = ctx.raiz; api = ctx.api;
+    TABLA_Z = api.FRENTE_TABLA - HONDO_TABLA / 2;
     tajadas = []; guias = []; cortes = new Set(); hechos = 0;
     terminado = false; modo = null; cargado = false; pellizcando = false; bicho = null;
 
-    const tabla = api.pieza('tabla', { ancho: 3.2, hondo: 1.5 });
+    const tabla = api.pieza('tabla', { ancho: 3.2, hondo: HONDO_TABLA });
     tabla.position.set(0, api.MESA_Y + 0.05, TABLA_Z);
     tabla.userData = { tipo: 'tabla' };
     raiz.add(tabla);
