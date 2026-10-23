@@ -14,10 +14,18 @@
    guardada — que es justo lo que hace que funcione sin conexión.
    ============================================================ */
 
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.3.1';
 
 /* la más reciente primero */
 const NOVEDADES = [
+  {
+    v: '1.3.1',
+    fecha: '2026-10-23',
+    titulo: 'Toca rápido sin que la pantalla se acerque',
+    cambios: [
+      'Arreglado: tocar dos veces seguidas el mismo botón ya no acerca la página en el teléfono (y ya no te quedas atrapado con la pantalla agrandada). El zoom con dos dedos sigue funcionando como siempre.',
+    ],
+  },
   {
     v: '1.3.0',
     fecha: '2026-08-08',

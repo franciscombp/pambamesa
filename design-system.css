@@ -169,6 +169,15 @@
   --nav-h: 66px;
 }
 
+/* ---------- Sin zoom por doble toque ----------
+   Al tocar rápido el mismo botón, el navegador del teléfono lo
+   leía como doble toque y acercaba la página, y el jugador no
+   sabía cómo volver. manipulation quita ese zoom pero deja el
+   zoom con dos dedos (accesibilidad: nada de user-scalable=no).
+   :where() tiene especificidad cero: cualquier regla que ya pida
+   touch-action: none (el lienzo 3D, la carta que se gira) gana. */
+:where(*) { touch-action: manipulation; }
+
 /* ============================================================
    2. COMPONENTES
    ============================================================ */
